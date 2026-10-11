@@ -19,6 +19,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,13 +42,17 @@ import app.fitdash.ui.components.LocalRevealed
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.NavItem
 import app.fitdash.ui.theme.FitdashTheme
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.ThemeId
+import app.fitdash.ui.theme.ThemedBackground
 import app.fitdash.ui.today.TodayUiState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 private val NAV = listOf(
     NavItem("Today", NavIcons.today),
@@ -58,7 +63,7 @@ private val NAV = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -> Unit) {
+fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -> Unit, onSelectDate: (LocalDate) -> Unit) {
     val data = state.data
     val pager = rememberPagerState { NAV.size }
     val scope = rememberCoroutineScope()
@@ -67,16 +72,30 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     var showInfo by remember { mutableStateOf(false) }
+    var showCalendar by remember { mutableStateOf(false) }
+    val settings by store.flow.collectAsState()
+    val today = if (data.isToday) data.date else LocalDate.now()
 
     LaunchedEffect(pager) {
         snapshotFlow { pager.settledPage }.drop(1).collect { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) }
     }
     val goTo: (Int) -> Unit = { page -> scope.launch { pager.animateScrollToPage(page, animationSpec = tween(Motion.PAGE, easing = Motion.ease)) } }
+    val topColour = LocalTheme.current.bgTop
     val askAi = {
         val send = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, state.aiText)
         context.startActivity(Intent.createChooser(send, "Ask AI about my data"))
     }
-    val chrome = PageChrome(data.date, state.error, onInfo = { showInfo = true }, onRetry = onRefresh)
+    val chrome = PageChrome(
+        date = data.date,
+        today = today,
+        error = state.error,
+        onPrev = { onSelectDate(data.date.minusDays(1)) },
+        onNext = { onSelectDate(data.date.plusDays(1)) },
+        onPickDate = { showCalendar = true },
+        onMenu = {},
+        onInfo = { showInfo = true },
+        onRetry = onRefresh,
+    )
 
     CompositionLocalProvider(LocalRevealed provides revealed) {
         PullToRefreshBox(
@@ -84,12 +103,15 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize().background(Palette.Background),
         ) {
-            HorizontalPager(pager, Modifier.fillMaxSize().hazeSource(haze), beyondViewportPageCount = 1) { page ->
-                when (page) {
-                    0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, askAi)
-                    1 -> SleepPage(data, chrome)
-                    2 -> ActivityPage(data, chrome)
-                    else -> TrendsPage(data, chrome)
+            Box(Modifier.fillMaxSize().hazeSource(haze)) {
+                ThemedBackground()
+                HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
+                    when (page) {
+                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, {}, askAi)
+                        1 -> SleepPage(data, chrome)
+                        2 -> ActivityPage(data, chrome, settings.miles)
+                        else -> TrendsPage(data, chrome)
+                    }
                 }
             }
             Box(
@@ -97,7 +119,7 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
                     .fillMaxWidth()
                     .height(WindowInsets.statusBars.asPaddingValues().calculateTopPadding() + 24.dp)
                     .align(Alignment.TopCenter)
-                    .background(Brush.verticalGradient(listOf(Palette.Background, Palette.Background.copy(alpha = 0.85f), Color.Transparent))),
+                    .background(Brush.verticalGradient(listOf(topColour, topColour.copy(alpha = 0.85f), Color.Transparent))),
             )
             GlassNav(
                 NAV,
@@ -111,17 +133,34 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
             )
         }
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
+        if (showCalendar) DatePickerSheet(data.date, today, onSelectDate, onDismiss = { showCalendar = false })
     }
 }
 
 @Preview(heightDp = 900)
 @Composable
-private fun MorningPreview() {
-    FitdashTheme { PagerScreen(PreviewData.ready(8, 10), SettingsStore(LocalContext.current), onRefresh = {}) }
-}
+private fun TodayTeal() = PagePreview(ThemeId.TEAL, 0)
 
 @Preview(heightDp = 900)
 @Composable
-private fun EveningPreview() {
-    FitdashTheme { PagerScreen(PreviewData.ready(21, 30), SettingsStore(LocalContext.current), onRefresh = {}) }
+private fun TodayPastel() = PagePreview(ThemeId.PASTEL, 0)
+
+@Preview(heightDp = 900)
+@Composable
+private fun SleepTeal() = PagePreview(ThemeId.TEAL, 1)
+
+@Preview(heightDp = 900)
+@Composable
+private fun SleepPastel() = PagePreview(ThemeId.PASTEL, 1)
+
+@Composable
+private fun PagePreview(theme: ThemeId, page: Int) {
+    val data = PreviewData.today(21, 30)
+    val chrome = PageChrome(data.date, data.date, false, {}, {}, {}, {}, {}, {})
+    FitdashTheme(theme) {
+        Box(Modifier.fillMaxSize()) {
+            ThemedBackground()
+            if (page == 0) TodayPage(data, chrome, { 0f }, {}, {}, {}, {}) else SleepPage(data, chrome)
+        }
+    }
 }

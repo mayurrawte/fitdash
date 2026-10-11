@@ -124,15 +124,15 @@ fun Hypnogram(key: String, stages: List<SleepStage>, modifier: Modifier = Modifi
         val start = stages.minOf { it.start }
         val total = Duration.between(start, stages.maxOf { it.end }).seconds.toFloat()
         if (total <= 0f) return@Canvas
-        val lane = size.height / 4
         clipRect(right = size.width * progress.value) {
             stages.forEach { s ->
                 val x0 = Duration.between(start, s.start).seconds / total * size.width
                 val x1 = Duration.between(start, s.end).seconds / total * size.width
+                val h = size.height * (stageRow(s.type) * 0.24f + 0.14f)
                 drawRoundRect(
                     color = colors.getValue(s.type),
-                    topLeft = Offset(x0, stageRow(s.type) * lane + lane * 0.25f),
-                    size = Size(max(x1 - x0, 1f), lane * 0.5f),
+                    topLeft = Offset(x0, size.height - h),
+                    size = Size(max(x1 - x0 - 1.5.dp.toPx(), 1f), h),
                     cornerRadius = CornerRadius(Chart.corner.toPx()),
                 )
             }
@@ -265,7 +265,15 @@ private const val GAUGE_START = 189f
 private const val GAUGE_SWEEP = 162f
 
 @Composable
-fun SemiGauge(score: Int, label: String, status: Status, modifier: Modifier = Modifier, key: String = "gauge-$label-$score") {
+fun SemiGauge(
+    score: Int,
+    label: String,
+    status: Status,
+    modifier: Modifier = Modifier,
+    key: String = "gauge-$label-$score",
+    value: String = score.toString(),
+    tag: String = statusWord(status),
+) {
     val progress = rememberDrawProgress(key, Motion.DRAW)
     val track = Chart.track
     val from = Palette.Deep
@@ -288,9 +296,9 @@ fun SemiGauge(score: Int, label: String, status: Status, modifier: Modifier = Mo
         }
         Column(Modifier.padding(top = 70.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(label.uppercase(), style = Type.label, color = Palette.Muted)
-            Text(score.toString(), style = Type.hero.copy(fontSize = 50.sp), color = Palette.Text)
+            Text(value, style = Type.hero.copy(fontSize = 50.sp), color = Palette.Text)
             Text(
-                statusWord(status),
+                tag,
                 Modifier.padding(top = 2.dp).clip(RoundedCornerShape(8.dp)).background(Palette.Chip).padding(horizontal = 12.dp, vertical = 5.dp),
                 style = Type.tiny.copy(fontSize = 9.5.sp),
                 color = Palette.Text,

@@ -34,6 +34,7 @@ data class TodayData(
     val restingHrEstimated: Boolean,
     val trend: List<DayTrend>,
     val daysWithData: Set<LocalDate>,
+    val estimatedRestingHrDates: Set<LocalDate>,
 )
 
 data class DayScores(val sleep: Int?, val readiness: Int?, val movement: Int?)
@@ -95,5 +96,6 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         daysWithData = (snap.sleep.map { it.end.atZone(zone).toLocalDate() } +
             snap.dailyActivity.filter { it.steps > 0 }.map { it.date } +
             snap.hourlySteps.filter { it.steps > 0 }.map { it.start.atZone(zone).toLocalDate() }).toSet(),
+        estimatedRestingHrDates = snap.estimatedRestingHrDates,
     )
 }

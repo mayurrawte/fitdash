@@ -88,6 +88,6 @@ private fun App(store: SettingsStore) {
             action = "Retry",
             onAction = vm::load,
         )
-        is TodayUiState.Ready -> PagerScreen(s, store, onRefresh = vm::load)
+        is TodayUiState.Ready -> PagerScreen(s, store, onRefresh = vm::load, onSelectDate = vm::select)
     }
 }

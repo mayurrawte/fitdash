@@ -35,7 +35,7 @@ const val SUPPORT_URL = "https://buymeacoffee.com/thepsygeek"
 @Composable
 fun InfoSheet(sources: List<SourceStatus>, onDismiss: () -> Unit) {
     val uri = LocalUriHandler.current
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Palette.Card) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Palette.Background) {
         LazyColumn(contentPadding = PaddingValues(start = Space.xl, end = Space.xl, bottom = Space.xxl)) {
             item {
                 Text("About your data", style = Type.value, color = Palette.Text)

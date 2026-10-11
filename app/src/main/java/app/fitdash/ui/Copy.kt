@@ -48,9 +48,11 @@ fun formatSteps(n: Long): String = String.format(Locale.ENGLISH, "%,d", n)
 fun formatNumber(v: Double): String =
     if (abs(v - v.roundToLong()) < 0.05) v.roundToLong().toString() else String.format(Locale.ENGLISH, "%.1f", v)
 
-private val DATE = DateTimeFormatter.ofPattern("EEE, d MMM", Locale.ENGLISH)
+private val DATE = DateTimeFormatter.ofPattern("EEE '·' d MMM", Locale.ENGLISH)
 
 fun formatDate(d: LocalDate): String = DATE.format(d)
+
+fun daysOfData(n: Int): String = if (n == 1) "1 day of data" else "$n days of data"
 
 private val APP_NAMES = mapOf(
     "com.fitbit.FitbitMobile" to "Fitbit",
@@ -62,7 +64,7 @@ private val APP_NAMES = mapOf(
 fun sourceLine(s: SourceStatus): String = when {
     !s.granted -> "no access"
     !s.hasData -> "no data"
-    else -> "✓ " + s.apps.joinToString(", ") { APP_NAMES[it] ?: it }
+    else -> "✓ " + s.apps.map { APP_NAMES[it] ?: if (it.startsWith("com.android.healthconnect.phone")) "Phone" else it }.distinct().joinToString(", ")
 }
 
 fun suggestionText(s: Suggestion): String = when (s.kind) {
@@ -94,6 +96,9 @@ fun sleepWord(score: Int) = when {
 }
 
 private val CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
+private val CLOCK_12 = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
+
+fun formatTime12(t: Instant, zone: ZoneId): String = CLOCK_12.format(t.atZone(zone))
 
 fun formatClock(t: Instant, zone: ZoneId): String = CLOCK.format(t.atZone(zone))
 
