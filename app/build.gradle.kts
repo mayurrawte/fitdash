@@ -13,6 +13,7 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        buildConfigField("boolean", "SHOW_SUPPORT", "true")
     }
 
     compileOptions {
@@ -20,7 +21,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
 }
 
 dependencies {
@@ -34,6 +35,8 @@ dependencies {
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.coroutines.android)
     implementation(libs.health.connect)
+    implementation(libs.haze)
+    implementation(libs.haze.blur)
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)

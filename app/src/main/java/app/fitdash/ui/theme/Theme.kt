@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
@@ -24,6 +25,8 @@ object Palette {
     val Rem = Color(0xFF8B7CFF)
     val Light = Color(0xFF5B6BD6)
     val Deep = Color(0xFF3A3F9E)
+    val Amber = Color(0xFFF5B041)
+    val Glass = Color(0x731E1E26)
 }
 
 object Type {
@@ -32,6 +35,18 @@ object Type {
     val label = TextStyle(fontSize = 10.sp, letterSpacing = 0.18.em)
     val body = TextStyle(fontSize = 14.sp, lineHeight = 21.sp)
     val small = TextStyle(fontSize = 12.sp)
+    val title = TextStyle(fontSize = 30.sp, fontWeight = FontWeight.Light, fontFeatureSettings = "tnum")
+    val tile = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Light, fontFeatureSettings = "tnum")
+    val tiny = TextStyle(fontSize = 10.sp)
+}
+
+object Space {
+    val xs = 4.dp
+    val s = 8.dp
+    val m = 12.dp
+    val l = 16.dp
+    val xl = 24.dp
+    val xxl = 32.dp
 }
 
 @Composable

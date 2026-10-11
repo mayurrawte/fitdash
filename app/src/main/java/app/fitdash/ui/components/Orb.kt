@@ -1,6 +1,6 @@
 package app.fitdash.ui.components
 
-import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -10,11 +10,14 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -27,7 +30,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.breathMillis
 import app.fitdash.ui.theme.scoreColor
@@ -35,10 +40,13 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
+private val OnOrbDark = Color(0xFF0B1A14)
+
 @Composable
-fun Orb(score: Int?, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, content: @Composable () -> Unit) {
     val target = score?.let(::scoreColor) ?: Palette.Calibrating
-    val color by animateColorAsState(target, tween(1800), label = "orbColour")
+    val colour = remember { Animatable(Palette.Calibrating) }
+    LaunchedEffect(target) { colour.animateTo(target, tween(Motion.COLOUR, easing = Motion.ease)) }
     val transition = rememberInfiniteTransition(label = "orb")
     val breath = breathMillis(score ?: 50)
     val scale by transition.animateFloat(
@@ -53,25 +61,26 @@ fun Orb(score: Int?, modifier: Modifier = Modifier, content: @Composable () -> U
         animationSpec = infiniteRepeatable(tween(9000, easing = LinearEasing)),
         label = "morph",
     )
-    val highlight = lerp(color, Color.White, 0.55f)
-    val onOrb = if (target.luminance() > 0.45f) Color(0xFF0B1A14) else Color.White
+    val onOrb = if (colour.value.luminance() > 0.45f) OnOrbDark else Color.White
 
-    Box(modifier.size(220.dp), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.size(220.dp).graphicsLayer { scaleX = scale; scaleY = scale }) {
+    Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize().graphicsLayer { scaleX = scale; scaleY = scale }) {
+            val c = colour.value
+            val highlight = lerp(c, Color.White, 0.55f)
             drawPath(
-                blobPath(size, phase, 0.45f),
+                blobPath(size, phase, 0.40f),
                 Brush.radialGradient(
-                    listOf(highlight, color, lerp(color, Color.Black, 0.45f)),
+                    listOf(highlight, c, lerp(c, Color.Black, 0.45f)),
                     center = Offset(size.width * 0.38f, size.height * 0.38f),
-                    radius = size.minDimension * 0.6f,
+                    radius = size.minDimension * 0.55f,
                 ),
             )
             drawPath(
-                blobPath(size, -phase, 0.38f),
+                blobPath(size, -phase, 0.34f),
                 Brush.radialGradient(
                     listOf(highlight.copy(alpha = 0.7f), Color.Transparent),
                     center = Offset(size.width * 0.6f, size.height * 0.6f),
-                    radius = size.minDimension * 0.45f,
+                    radius = size.minDimension * 0.42f,
                 ),
                 blendMode = BlendMode.Screen,
             )
