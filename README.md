@@ -41,7 +41,7 @@ Expected SHA-256 of the signing certificate:
 
 (plain hex: `159aa214ac845908e6d430902d50d4fa85aa9ce19221e79ce73a83cab59e5572`)
 
-You can also read [`app/src/main/AndroidManifest.xml`](app/src/main/AndroidManifest.xml), or build it yourself with `./gradlew :app:assembleRelease`. Release APKs are built and signed by GitHub Actions from this public source ([`release.yml`](.github/workflows/release.yml)), triggered by version tags.
+You can also read [`app/src/main/AndroidManifest.xml`](app/src/main/AndroidManifest.xml), or build it yourself with `./gradlew :app:assembleGithubRelease`. Release APKs are built and signed by GitHub Actions from this public source ([`release.yml`](.github/workflows/release.yml)), triggered by version tags.
 
 To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
@@ -54,8 +54,12 @@ Download the latest APK: **[fitdash.apk](https://github.com/mayurrawte/fitdash/r
 Requires JDK 17 and the Android SDK.
 
 ```
-./gradlew :app:installDebug
+./gradlew :app:installGithubDebug
 ```
+
+## Publishing
+
+Google Play builds, the store listing and the release checklist are in [docs/play/PUBLISHING.md](docs/play/PUBLISHING.md).
 
 ## Licence
 
