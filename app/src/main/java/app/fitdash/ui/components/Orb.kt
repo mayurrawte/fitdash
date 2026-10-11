@@ -9,11 +9,9 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -22,7 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -31,7 +29,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.fitdash.ui.theme.Motion
@@ -42,12 +39,13 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private const val BLOB_TURN_MILLIS = 40_000
+private const val DIM = 0.55f
 
 @Composable
 fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, frozen: Boolean = false, content: @Composable () -> Unit) {
     val t = LocalTheme.current
-    val desaturate = remember { Animatable(if (score == null) 0.7f else 0f) }
-    LaunchedEffect(score == null) { desaturate.animateTo(if (score == null) 0.7f else 0f, tween(Motion.COLOUR, easing = Motion.ease)) }
+    val dim = remember { Animatable(if (score == null) DIM else 0f) }
+    LaunchedEffect(score == null) { dim.animateTo(if (score == null) DIM else 0f, tween(Motion.COLOUR, easing = Motion.ease)) }
     val transition = rememberInfiniteTransition(label = "orb")
     val breath = breathMillis(score ?: 50)
     val animatedScale by transition.animateFloat(
@@ -72,10 +70,25 @@ fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, froze
     val phase = if (frozen) 1f else animatedPhase
     val turn = if (frozen) 0.6f else animatedTurn
 
-    Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
-        Box(Modifier.size(diameter).blur(40.dp).background(t.glow, CircleShape))
+    Box(
+        modifier
+            .size(diameter)
+            .drawBehind {
+                val glowAlpha = 1f - 0.6f * dim.value / DIM
+                drawRect(
+                    Brush.radialGradient(
+                        listOf(t.glow.copy(alpha = t.glow.alpha * glowAlpha), Color.Transparent),
+                        center = center,
+                        radius = size.minDimension * 0.75f,
+                    ),
+                    topLeft = Offset(center.x - size.minDimension * 0.75f, center.y - size.minDimension * 0.75f),
+                    size = Size(size.minDimension * 1.5f, size.minDimension * 1.5f),
+                )
+            },
+        contentAlignment = Alignment.Center,
+    ) {
         Canvas(Modifier.fillMaxSize().graphicsLayer { scaleX = scale; scaleY = scale }) {
-            fun grey(c: Color) = lerp(c, Color(c.luminance(), c.luminance(), c.luminance()), desaturate.value)
+            fun grey(c: Color) = lerp(c, t.bgMid, dim.value)
             val c1 = grey(t.orb1)
             val c2 = grey(t.orb2)
             val c3 = grey(t.orb3)
