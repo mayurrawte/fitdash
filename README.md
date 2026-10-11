@@ -2,7 +2,7 @@
 
 # fitdash
 
-Site: https://mayurrawte.github.io/fitdash/
+Site: https://mayurrawte.is-a.dev/fitdash/
 
 A calm, animated Health Connect dashboard for Android. Recovery, sleep, activity and trends on four swipeable pages, in five themes, from whatever your watch or ring writes to Health Connect.
 
