@@ -34,6 +34,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.PreviewData
 import app.fitdash.ui.components.GlassNav
 import app.fitdash.ui.components.LocalRevealed
@@ -57,7 +58,7 @@ private val NAV = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PagerScreen(state: TodayUiState.Ready, onRefresh: () -> Unit) {
+fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -> Unit) {
     val data = state.data
     val pager = rememberPagerState { NAV.size }
     val scope = rememberCoroutineScope()
@@ -116,11 +117,11 @@ fun PagerScreen(state: TodayUiState.Ready, onRefresh: () -> Unit) {
 @Preview(heightDp = 900)
 @Composable
 private fun MorningPreview() {
-    FitdashTheme { PagerScreen(PreviewData.ready(8, 10), onRefresh = {}) }
+    FitdashTheme { PagerScreen(PreviewData.ready(8, 10), SettingsStore(LocalContext.current), onRefresh = {}) }
 }
 
 @Preview(heightDp = 900)
 @Composable
 private fun EveningPreview() {
-    FitdashTheme { PagerScreen(PreviewData.ready(21, 30), onRefresh = {}) }
+    FitdashTheme { PagerScreen(PreviewData.ready(21, 30), SettingsStore(LocalContext.current), onRefresh = {}) }
 }

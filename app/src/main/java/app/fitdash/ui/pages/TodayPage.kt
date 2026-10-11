@@ -69,7 +69,7 @@ private fun suggestionIcon(kind: SuggestionKind) = when (kind) {
 fun TodayPage(data: TodayData, chrome: PageChrome, pageOffset: () -> Float, onOpen: (Int) -> Unit, onAskAi: () -> Unit) {
     val r = data.readiness
     val score = (r as? ReadinessResult.Ready)?.score
-    PageColumn(chrome, accent = score?.let(::scoreColor) ?: Palette.Calibrating) {
+    PageColumn(chrome, accent = score?.let { scoreColor(it) } ?: Palette.Calibrating) {
         item(key = "orb") {
             Column(
                 Modifier
@@ -89,7 +89,7 @@ fun TodayPage(data: TodayData, chrome: PageChrome, pageOffset: () -> Float, onOp
                     is ReadinessResult.Calibrating -> "Calibrating · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to "Keep wearing your Fitbit to bed."
                     ReadinessResult.NoData -> "No data for last night" to "Sync your Fitbit, then pull down to refresh."
                 }
-                Text(word, style = Type.body, color = score?.let(::scoreColor) ?: Palette.Muted, modifier = Modifier.padding(top = Space.l))
+                Text(word, style = Type.body, color = score?.let { scoreColor(it) } ?: Palette.Muted, modifier = Modifier.padding(top = Space.l))
                 Text(
                     advice,
                     style = Type.body,

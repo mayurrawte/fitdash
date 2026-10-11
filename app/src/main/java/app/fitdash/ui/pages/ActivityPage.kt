@@ -57,10 +57,12 @@ fun ActivityPage(data: TodayData, chrome: PageChrome) {
                         }
                     }
                     val top = a.hourly.maxOrNull() ?: 0L
+                    val green = Palette.Green
+                    val dimGreen = Palette.DimGreen
                     Bars(
                         "steps-hourly",
                         a.hourly.map { it.toFloat() },
-                        { i -> if (top > 0 && a.hourly[i] * 3 > top * 2) Palette.Green else Palette.DimGreen },
+                        { i -> if (top > 0 && a.hourly[i] * 3 > top * 2) green else dimGreen },
                         Modifier.padding(top = Space.m),
                         height = 46.dp,
                     )
@@ -98,10 +100,12 @@ fun ActivityPage(data: TodayData, chrome: PageChrome) {
             val known = data.activityWeek.mapNotNull { it.steps }
             revealItem("steps-week", 1) {
                 SectionCard("STEPS · 7 DAYS", trailing = "avg ${formatSteps(known.average().roundToLong())}") {
+                    val divider = Palette.Divider
+                    val dayColors = data.activityWeek.map { d -> d.steps?.let { scoreColor((it * 100.0 / Tuning.STEP_GOAL).roundToInt()) } ?: divider }
                     Bars(
                         "steps-week",
                         data.activityWeek.map { (it.steps ?: 0L).toFloat() },
-                        { i -> data.activityWeek[i].steps?.let { scoreColor((it * 100.0 / Tuning.STEP_GOAL).roundToInt()) } ?: Palette.Divider },
+                        { i -> dayColors[i] },
                         labels = data.activityWeek.map { dayLetter(it.date) },
                     )
                 }

@@ -39,11 +39,12 @@ import kotlin.math.roundToInt
 fun SleepPage(data: TodayData, chrome: PageChrome) {
     val s = data.sleep
     val zone = ZoneId.systemDefault()
+    val headerColor = s?.let { scoreColor(it.score) }
     PageColumn(chrome, accent = Palette.Rem) {
         if (s == null) {
             item(key = "empty") { EmptyState("No sleep last night", "Wear your Fitbit to bed and sync it. Your night will show up here.") }
         } else {
-            pageHeader("LAST NIGHT", formatDuration(s.asleep), "Sleep score ${s.score} · ${sleepWord(s.score)}", scoreColor(s.score))
+            pageHeader("LAST NIGHT", formatDuration(s.asleep), "Sleep score ${s.score} · ${sleepWord(s.score)}", headerColor)
             if (s.hasStages) {
                 revealItem("stages", 0) {
                     SectionCard("STAGES") {
@@ -97,10 +98,12 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
             val known = data.sleepWeek.mapNotNull { it.hours }
             revealItem("sleep-week", 1) {
                 SectionCard("SLEEP · 7 NIGHTS", trailing = "avg ${formatDuration(Duration.ofMinutes((known.average() * 60).roundToInt().toLong()))}") {
+                    val divider = Palette.Divider
+                    val nightColors = data.sleepWeek.map { d -> d.score?.let { scoreColor(it) } ?: divider }
                     Bars(
                         "sleep-week",
                         data.sleepWeek.map { (it.hours ?: 0.0).toFloat() },
-                        { i -> data.sleepWeek[i].score?.let(::scoreColor) ?: Palette.Divider },
+                        { i -> nightColors[i] },
                         labels = data.sleepWeek.map { dayLetter(it.date) },
                     )
                 }

@@ -4,13 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.fitdash.health.Availability
 import app.fitdash.health.HealthSource
+import app.fitdash.health.HealthSnapshot
+import app.fitdash.metrics.Goals
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.buildToday
+import app.fitdash.settings.Settings
 import app.fitdash.ui.aiSummary
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.ZonedDateTime
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -26,11 +31,33 @@ sealed interface TodayUiState {
 class TodayViewModel(
     private val source: HealthSource,
     private val clock: () -> ZonedDateTime = { ZonedDateTime.now() },
+    private val settings: StateFlow<Settings> = MutableStateFlow(Settings()),
 ) : ViewModel() {
     private val _state = MutableStateFlow<TodayUiState>(TodayUiState.Loading)
     val state: StateFlow<TodayUiState> = _state
 
     private var job: Job? = null
+    private var snapshot: HealthSnapshot? = null
+    private var lastNow: ZonedDateTime? = null
+
+    val selectedDate = MutableStateFlow<LocalDate?>(null)
+
+    init {
+        viewModelScope.launch { settings.drop(1).collect { rebuild() } }
+    }
+
+    fun select(date: LocalDate) {
+        selectedDate.value = date.takeUnless { it == clock().toLocalDate() }
+        rebuild()
+    }
+
+    private fun rebuild() {
+        val snapshot = snapshot ?: return
+        val now = lastNow ?: return
+        val s = settings.value
+        val data = buildToday(snapshot, now, selectedDate.value ?: now.toLocalDate(), Goals(s.stepGoal, s.sleepHours))
+        _state.value = TodayUiState.Ready(data, aiSummary(snapshot, data, now))
+    }
 
     val permissions: Set<String> get() = source.allPermissions
 
@@ -55,9 +82,15 @@ class TodayViewModel(
                 if (source.grantedPermissions().none { it in source.allPermissions }) {
                     TodayUiState.NeedsPermission
                 } else {
-                    val snapshot = source.read(now)
-                    if (snapshot.sources.none { it.hasData }) TodayUiState.NoData
-                    else buildToday(snapshot, now).let { TodayUiState.Ready(it, aiSummary(snapshot, it, now)) }
+                    val read = source.read(now)
+                    snapshot = read
+                    lastNow = now
+                    if (read.sources.none { it.hasData }) TodayUiState.NoData
+                    else {
+                        val st = settings.value
+                        val date = selectedDate.value ?: now.toLocalDate()
+                        buildToday(read, now, date, Goals(st.stepGoal, st.sleepHours)).let { TodayUiState.Ready(it, aiSummary(read, it, now)) }
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e

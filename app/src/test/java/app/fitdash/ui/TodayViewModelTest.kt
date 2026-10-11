@@ -6,11 +6,13 @@ import app.fitdash.health.Availability
 import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.HealthSource
 import app.fitdash.health.SourceStatus
+import app.fitdash.settings.Settings
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -28,10 +30,12 @@ private class FakeSource(
     var fail: Boolean = false,
     var gate: CompletableDeferred<Unit>? = null,
 ) : HealthSource {
+    var reads = 0
     override val allPermissions = setOf("read")
     override fun availability() = status
     override suspend fun grantedPermissions() = granted
     override suspend fun read(now: ZonedDateTime): HealthSnapshot {
+        reads++
         gate?.await()
         if (fail) error("read failed")
         return snapshot
@@ -45,7 +49,7 @@ class TodayViewModelTest {
     @Before fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
     @After fun tearDown() = Dispatchers.resetMain()
 
-    private fun load(source: FakeSource) = TodayViewModel(source) { now }.also { it.load() }
+    private fun load(source: FakeSource) = TodayViewModel(source, { now }).also { it.load() }
 
     @Test fun `Health Connect missing or outdated`() {
         assertEquals(TodayUiState.NeedsHealthConnect(update = false), load(FakeSource(status = Availability.NOT_INSTALLED)).state.value)
@@ -82,12 +86,27 @@ class TodayViewModelTest {
     @Test fun `an overlapping load replaces the one in flight`() {
         val source = FakeSource(gate = CompletableDeferred())
         val first = source.gate!!
-        val vm = TodayViewModel(source) { now }
+        val vm = TodayViewModel(source, { now })
         vm.load()
         source.gate = null
         vm.load()
         assertTrue(vm.state.value is TodayUiState.Ready)
         first.completeExceptionally(IllegalStateException("stale"))
         assertTrue(vm.state.value is TodayUiState.Ready)
+    }
+
+    @Test fun `selecting a date rebuilds without reading again`() {
+        val source = FakeSource()
+        val vm = load(source)
+        vm.select(TODAY.minusDays(2))
+        assertEquals(1, source.reads)
+        assertEquals(TODAY.minusDays(2), (vm.state.value as TodayUiState.Ready).data.date)
+    }
+
+    @Test fun `settings change rebuilds with the new goal`() {
+        val settings = MutableStateFlow(Settings())
+        val vm = TodayViewModel(FakeSource(), { now }, settings).also { it.load() }
+        settings.value = Settings(stepGoal = 5000)
+        assertEquals(5000, (vm.state.value as TodayUiState.Ready).data.goals.steps)
     }
 }

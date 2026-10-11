@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
@@ -62,7 +63,7 @@ import kotlin.math.roundToLong
 object Chart {
     val stroke = 2.dp
     val corner = 3.dp
-    val track = Palette.Divider
+    val track: Color @Composable @ReadOnlyComposable get() = Palette.Divider
 }
 
 val LocalRevealed = staticCompositionLocalOf<MutableSet<String>> { mutableSetOf() }
@@ -91,6 +92,8 @@ fun CountUpText(key: String, target: Long, style: TextStyle, modifier: Modifier 
     Text(formatSteps(value.value.roundToLong()), modifier, style = style, color = color)
 }
 
+@Composable
+@ReadOnlyComposable
 private fun stageColor(t: StageType) = when (t) {
     StageType.AWAKE -> Palette.Awake
     StageType.REM -> Palette.Rem
@@ -108,6 +111,7 @@ private fun stageRow(t: StageType) = when (t) {
 @Composable
 fun Hypnogram(key: String, stages: List<SleepStage>, modifier: Modifier = Modifier) {
     val progress = rememberDrawProgress(key)
+    val colors = StageType.entries.associateWith { stageColor(it) }
     Canvas(modifier.fillMaxWidth().height(72.dp)) {
         if (stages.isEmpty()) return@Canvas
         val start = stages.minOf { it.start }
@@ -119,7 +123,7 @@ fun Hypnogram(key: String, stages: List<SleepStage>, modifier: Modifier = Modifi
                 val x0 = Duration.between(start, s.start).seconds / total * size.width
                 val x1 = Duration.between(start, s.end).seconds / total * size.width
                 drawRoundRect(
-                    color = stageColor(s.type),
+                    color = colors.getValue(s.type),
                     topLeft = Offset(x0, stageRow(s.type) * lane + lane * 0.25f),
                     size = Size(max(x1 - x0, 1f), lane * 0.5f),
                     cornerRadius = CornerRadius(Chart.corner.toPx()),
@@ -136,6 +140,7 @@ fun TrendLine(key: String, values: List<Double>, color: Color, modifier: Modifie
         return
     }
     val progress = rememberDrawProgress(key)
+    val faint = Palette.Faint
     Spacer(
         modifier.drawWithCache {
             val all = values + listOfNotNull(baseline)
@@ -155,7 +160,7 @@ fun TrendLine(key: String, values: List<Double>, color: Color, modifier: Modifie
             val dash = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 4.dp.toPx()))
             onDrawBehind {
                 baseline?.let {
-                    drawLine(Palette.Faint, Offset(0f, y(it)), Offset(size.width, y(it)), 1.dp.toPx(), pathEffect = dash)
+                    drawLine(faint, Offset(0f, y(it)), Offset(size.width, y(it)), 1.dp.toPx(), pathEffect = dash)
                 }
                 partial.reset()
                 measure.getSegment(0f, measure.length * progress.value, partial, true)
@@ -200,6 +205,9 @@ fun Bars(
 fun RangeBar(key: String, value: Double, range: ClosedFloatingPointRange<Double>, good: Good, modifier: Modifier = Modifier) {
     val progress = rememberDrawProgress(key, Motion.RING)
     val dot = if (rangeStatus(value, range, good) == RangeStatus.BAD_SIDE) Palette.Amber else Palette.Green
+    val track = Chart.track
+    val inRange = Palette.Green.copy(alpha = 0.25f)
+    val knob = Palette.Card
     Canvas(modifier.fillMaxWidth().height(14.dp)) {
         val span = (range.endInclusive - range.start).takeIf { it > 0 } ?: max(abs(range.start) * 0.1, 1.0)
         val lo = minOf(range.start, value) - span * 0.6
@@ -208,15 +216,15 @@ fun RangeBar(key: String, value: Double, range: ClosedFloatingPointRange<Double>
         val cy = size.height / 2
         val th = 8.dp.toPx()
         val r = CornerRadius(th / 2)
-        drawRoundRect(Chart.track, Offset(0f, cy - th / 2), Size(size.width, th), r)
+        drawRoundRect(track, Offset(0f, cy - th / 2), Size(size.width, th), r)
         drawRoundRect(
-            Palette.Green.copy(alpha = 0.25f),
+            inRange,
             Offset(x(range.start), cy - th / 2),
             Size(max(x(range.endInclusive) - x(range.start), th), th),
             r,
         )
         val dx = max(x(value) * progress.value, 7.dp.toPx())
-        drawCircle(Palette.Card, 7.dp.toPx(), Offset(dx, cy))
+        drawCircle(knob, 7.dp.toPx(), Offset(dx, cy))
         drawCircle(dot, 5.dp.toPx(), Offset(dx, cy))
     }
 }
@@ -232,11 +240,12 @@ fun MiniRing(
     delayMillis: Int = 0,
 ) {
     val progress = rememberDrawProgress(key, Motion.RING, delayMillis)
+    val track = Chart.track
     Canvas(modifier.size(diameter)) {
         val s = stroke.toPx()
         val topLeft = Offset(s / 2, s / 2)
         val arc = Size(size.width - s, size.height - s)
-        drawArc(Chart.track, -90f, 360f, false, topLeft, arc, style = Stroke(s))
+        drawArc(track, -90f, 360f, false, topLeft, arc, style = Stroke(s))
         drawArc(color, -90f, 360f * fraction.coerceIn(0f, 1f) * progress.value, false, topLeft, arc, style = Stroke(s, cap = StrokeCap.Round))
     }
 }
@@ -258,7 +267,7 @@ fun ScoreRing(key: String, label: String, score: Int?, index: Int, onClick: () -
         MiniRing(
             key,
             (score ?: 0) / 100f,
-            score?.let(::scoreColor) ?: Palette.Calibrating,
+            score?.let { scoreColor(it) } ?: Palette.Calibrating,
             diameter = 48.dp,
             stroke = 5.dp,
             delayMillis = index * Motion.STAGGER,
