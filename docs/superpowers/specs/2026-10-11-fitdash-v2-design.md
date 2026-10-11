@@ -26,6 +26,11 @@ Out of scope: MCP server (possible v3, opt-in, separate), Pro features, widgets,
 
 ## Pages
 
+**Every stat is visual, never a plain text row.** Detail stats use one shared **stat tile**: label, value with unit, and a small visual. Tiles sit in a 2-column grid.
+- **Range bar** for values with a baseline (SpO₂, breathing rate, skin temperature, HRV, resting HR): a short track showing your normal range (baseline ± typical variation), with a dot for today, coloured green inside the range and amber outside.
+- **Mini ring** for values with a goal or share (sleep stages as % of the night, steps / active minutes vs goal).
+- **7-day sparkline** for running totals (distance, calories, generic types).
+
 All pages share the v1 look (dark, orb gradient colours, cards fade up, charts draw in, count-ups) and pull-to-refresh. Each page scrolls vertically; swiping horizontally changes page.
 
 ### Top bar (every page)
@@ -40,20 +45,21 @@ Left: four page dots, active dot wider. Right: ⓘ button.
    - **Sleep** = last night's sleep score.
    - **Movement** = today's steps as % of the 9,000 goal, capped at 100.
    A ring with no data shows a grey empty arc and "—". Tapping Sleep or Movement swipes to that page.
-3. **Do this today** card: up to 3 suggestions from the rules below. Hidden when no rule fires.
-4. **Ask AI about my data** button.
+3. **Contributors**: HRV, resting HR and sleep as range-bar tiles showing how each pulled the score.
+4. **Do this today** card: up to 3 suggestions from the rules below. Hidden when no rule fires.
+5. **Ask AI about my data** button.
 
 ### ② Sleep
 
-Last night: duration, sleep score, hypnogram, stage totals (v1 Sleep card). Overnight vitals (v1 card). **Sleep · 7 nights**: bars of hours asleep, coloured by each night's sleep score. Empty state when there is no sleep data.
+Last night: duration, sleep score and hypnogram. Stage totals as four mini-ring tiles (deep, REM, light, awake as % of the night). Overnight vitals as range-bar tiles (SpO₂, breathing rate, skin temperature). **Sleep · 7 nights**: bars of hours asleep, coloured by each night's sleep score. Empty state when there is no sleep data.
 
 ### ③ Activity
 
-Today: steps with a goal ring, hourly bars, active minutes / km / kcal (v1 Activity card, now always today). **Steps · 7 days**: bars, coloured by % of goal. Empty state when there is no activity data.
+Today: steps with a goal ring and hourly bars. Active minutes as a mini-ring tile (goal 30 min), distance and calories as sparkline tiles. **Steps · 7 days**: bars, coloured by % of goal. Empty state when there is no activity data.
 
 ### ④ Trends
 
-HRV · 14 days and Resting HR · 14 days line charts. Readiness · 7 days bars (v1 Week card). Every generic data type with data, as v1 generic cards. Empty state when nothing qualifies.
+HRV · 14 days and Resting HR · 14 days line charts, each with its baseline drawn as a dashed line and a range-bar tile for today. Readiness · 7 days bars (v1 Week card). Every generic data type with data, as v1 generic cards. Empty state when nothing qualifies.
 
 ### ⓘ sheet
 
