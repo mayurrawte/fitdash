@@ -27,7 +27,7 @@ Out of scope: MCP server (possible v3, opt-in, separate), Pro features, widgets,
 ## Pages
 
 **Every stat is visual, never a plain text row.** Detail stats use one shared **stat tile**: label, value with unit, and a small visual. Tiles sit in a 2-column grid.
-- **Range bar** for values with a baseline (SpO₂, breathing rate, skin temperature, HRV, resting HR): a short track showing your normal range (baseline ± typical variation), with a dot for today, coloured green inside the range and amber outside it in the unhealthy direction. Each metric knows its good direction: higher HRV is green, lower resting HR is green, SpO₂ below range is amber, and skin temperature or breathing outside the range in either direction is amber.
+- **Range bar** for values with a baseline (SpO₂, breathing rate, skin temperature, HRV, resting HR): a short track showing your normal range (25th–75th percentile of the previous 30 days, today excluded), with a dot for today, coloured green inside the range and amber outside it in the unhealthy direction. Each metric knows its good direction: higher HRV is green, lower resting HR is green, SpO₂ below range is amber, and skin temperature or breathing outside the range in either direction is amber.
 - **Mini ring** for values with a goal or share (sleep stages as % of the night, steps / active minutes vs goal).
 - **7-day sparkline** for running totals (distance, calories, generic types).
 
