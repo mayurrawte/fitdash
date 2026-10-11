@@ -15,7 +15,18 @@ android {
         targetSdk = 36
         versionCode = 2
         versionName = "0.2.0"
-        buildConfigField("boolean", "SHOW_SUPPORT", "true")
+    }
+
+    flavorDimensions += "store"
+    productFlavors {
+        create("github") {
+            dimension = "store"
+            buildConfigField("boolean", "SHOW_SUPPORT", "true")
+        }
+        create("play") {
+            dimension = "store"
+            buildConfigField("boolean", "SHOW_SUPPORT", "false")
+        }
     }
 
     signingConfigs {
