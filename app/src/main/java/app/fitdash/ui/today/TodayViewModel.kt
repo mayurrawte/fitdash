@@ -6,6 +6,7 @@ import app.fitdash.health.Availability
 import app.fitdash.health.HealthSource
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.buildToday
+import app.fitdash.ui.aiSummary
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +20,7 @@ sealed interface TodayUiState {
     data object NeedsPermission : TodayUiState
     data object NoData : TodayUiState
     data object Failed : TodayUiState
-    data class Ready(val data: TodayData, val refreshing: Boolean = false, val error: Boolean = false) : TodayUiState
+    data class Ready(val data: TodayData, val aiText: String = "", val refreshing: Boolean = false, val error: Boolean = false) : TodayUiState
 }
 
 class TodayViewModel(
@@ -56,7 +57,7 @@ class TodayViewModel(
                 } else {
                     val snapshot = source.read(now)
                     if (snapshot.sources.none { it.hasData }) TodayUiState.NoData
-                    else TodayUiState.Ready(buildToday(snapshot, now))
+                    else buildToday(snapshot, now).let { TodayUiState.Ready(it, aiSummary(snapshot, it, now)) }
                 }
             } catch (e: CancellationException) {
                 throw e

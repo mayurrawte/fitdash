@@ -12,6 +12,7 @@ import app.fitdash.health.SourceStatus
 import app.fitdash.health.StageType
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.buildToday
+import app.fitdash.ui.today.TodayUiState
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -57,4 +58,10 @@ object PreviewData {
     }
 
     fun today(hour: Int, minute: Int = 0): TodayData = buildToday(snapshot, today.atTime(hour, minute).atZone(zone))
+
+    fun ready(hour: Int, minute: Int = 0): TodayUiState.Ready {
+        val now = today.atTime(hour, minute).atZone(zone)
+        val data = buildToday(snapshot, now)
+        return TodayUiState.Ready(data, aiSummary(snapshot, data, now))
+    }
 }
