@@ -1,6 +1,6 @@
 package app.fitdash.ui.components
 
-import androidx.compose.animation.Animatable
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -9,9 +9,11 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -20,34 +22,32 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.fitdash.ui.theme.Motion
-import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.breathMillis
-import app.fitdash.ui.theme.scoreColor
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-private val OnOrbDark = Color(0xFF0B1A14)
+private const val BLOB_TURN_MILLIS = 40_000
 
 @Composable
 fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, content: @Composable () -> Unit) {
-    val target = score?.let { scoreColor(it) } ?: Palette.Calibrating
-    val calibrating = Palette.Calibrating
-    val colour = remember { Animatable(calibrating) }
-    LaunchedEffect(target) { colour.animateTo(target, tween(Motion.COLOUR, easing = Motion.ease)) }
+    val t = LocalTheme.current
+    val desaturate = remember { Animatable(if (score == null) 0.7f else 0f) }
+    LaunchedEffect(score == null) { desaturate.animateTo(if (score == null) 0.7f else 0f, tween(Motion.COLOUR, easing = Motion.ease)) }
     val transition = rememberInfiniteTransition(label = "orb")
     val breath = breathMillis(score ?: 50)
     val scale by transition.animateFloat(
@@ -62,31 +62,52 @@ fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, conte
         animationSpec = infiniteRepeatable(tween(9000, easing = LinearEasing)),
         label = "morph",
     )
-    val onOrb = if (colour.value.luminance() > 0.45f) OnOrbDark else Color.White
+    val turn by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * PI).toFloat(),
+        animationSpec = infiniteRepeatable(tween(BLOB_TURN_MILLIS, easing = LinearEasing)),
+        label = "turn",
+    )
 
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(diameter).blur(40.dp).background(t.glow, CircleShape))
         Canvas(Modifier.fillMaxSize().graphicsLayer { scaleX = scale; scaleY = scale }) {
-            val c = colour.value
-            val highlight = lerp(c, Color.White, 0.55f)
-            drawPath(
-                blobPath(size, phase, 0.40f),
-                Brush.radialGradient(
-                    listOf(highlight, c, lerp(c, Color.Black, 0.45f)),
-                    center = Offset(size.width * 0.38f, size.height * 0.38f),
-                    radius = size.minDimension * 0.55f,
-                ),
-            )
-            drawPath(
-                blobPath(size, -phase, 0.34f),
-                Brush.radialGradient(
-                    listOf(highlight.copy(alpha = 0.7f), Color.Transparent),
-                    center = Offset(size.width * 0.6f, size.height * 0.6f),
-                    radius = size.minDimension * 0.42f,
-                ),
-                blendMode = BlendMode.Screen,
-            )
+            fun grey(c: Color) = lerp(c, Color(c.luminance(), c.luminance(), c.luminance()), desaturate.value)
+            val c1 = grey(t.orb1)
+            val c2 = grey(t.orb2)
+            val c3 = grey(t.orb3)
+            val m = size.minDimension
+            val mid = Offset(size.width / 2, size.height / 2)
+            fun centre(fx: Float, fy: Float): Offset {
+                val dx = size.width * fx - mid.x
+                val dy = size.height * fy - mid.y
+                return Offset(mid.x + dx * cos(turn) - dy * sin(turn), mid.y + dx * sin(turn) + dy * cos(turn))
+            }
+            fun blob(colour: Color, at: Offset, radius: Float) =
+                Brush.radialGradient(listOf(colour, colour.copy(alpha = 0f)), center = at, radius = radius)
+            clipPath(blobPath(size, phase, 0.42f)) {
+                drawRect(lerp(c2, c3, 0.5f))
+                drawRect(blob(c3, centre(0.45f, 0.75f), m * 0.45f))
+                drawRect(blob(c2, centre(0.7f, 0.4f), m * 0.30f))
+                drawRect(blob(c1, centre(0.3f, 0.3f), m * 0.35f))
+                drawRect(
+                    Brush.radialGradient(
+                        0.55f to Color.Transparent,
+                        1f to Color.Black.copy(alpha = 0.45f),
+                        center = Offset(size.width * 0.4f, size.height * 0.4f),
+                        radius = m * 0.7f,
+                    ),
+                )
+                drawRect(
+                    Brush.radialGradient(
+                        listOf(Color.White.copy(alpha = 0.18f), Color.Transparent),
+                        center = Offset(size.width * 0.32f, size.height * 0.28f),
+                        radius = m * 0.3f,
+                    ),
+                )
+            }
         }
-        CompositionLocalProvider(LocalContentColor provides onOrb) { content() }
+        CompositionLocalProvider(LocalContentColor provides t.onOrb) { content() }
     }
 }
 
@@ -114,10 +135,4 @@ private fun blobPath(size: Size, phase: Float, radiusFraction: Float): Path {
         }
         close()
     }
-}
-
-@Preview(backgroundColor = 0xFF0A0A0D, showBackground = true)
-@Composable
-private fun OrbPreview() {
-    Orb(78) {}
 }
