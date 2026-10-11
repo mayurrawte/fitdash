@@ -19,6 +19,12 @@ class SleepTest {
         assertEquals(main, nightEnding(TODAY, listOf(nap, main), IST))
     }
 
+    @Test fun `a lone nap is not a night`() {
+        val nap = SleepSession(at(TODAY, 11, 22), at(TODAY, 12, 19), emptyList())
+        assertNull(nightEnding(TODAY, listOf(nap), IST))
+        assertNull(summarizeSleep(TODAY, listOf(nap), IST))
+    }
+
     @Test fun `a night that crosses midnight belongs to the morning it ends`() {
         val n = night(TODAY, 7.0) // 23:00 on 10 Oct to 06:00 on 11 Oct
         assertEquals(n, nightEnding(TODAY, listOf(n), IST))
