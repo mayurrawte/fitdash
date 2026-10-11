@@ -14,6 +14,7 @@ object Tuning {
     const val RHR_BPM_SPAN = 5.0
 
     const val SLEEP_TARGET_HOURS = 8.0
+    const val MIN_NIGHT_HOURS = 3.0
     const val STAGE_ADJUST_MAX = 10.0
 
     const val BAND_STEADY = 40

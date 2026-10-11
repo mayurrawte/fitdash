@@ -8,6 +8,7 @@ import androidx.compose.ui.unit.dp
 import app.fitdash.health.GenericSeries
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.TodayData
+import app.fitdash.metrics.dailyMean
 import app.fitdash.ui.components.Bars
 import app.fitdash.ui.components.EmptyState
 import app.fitdash.ui.components.EmptyTrack
@@ -22,6 +23,7 @@ import app.fitdash.ui.formatNumber
 import app.fitdash.ui.rangeNote
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.scoreColor
+import java.time.ZoneId
 import kotlin.math.roundToInt
 
 @Composable
@@ -74,8 +76,9 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
                 TileGrid(
                     data.generic.map<GenericSeries, @Composable (Modifier) -> Unit> { g ->
                         { m ->
-                            StatTile(g.label, formatNumber(g.points.last().value), g.unit, "${g.points.size} readings", m) {
-                                if (g.points.size >= 2) TrendLine("generic-${g.label}", g.points.map { it.value }, Palette.Muted, Modifier.fillMaxWidth().height(28.dp)) else EmptyTrack()
+                            val days = dailyMean(g.points, ZoneId.systemDefault()).toSortedMap().values.toList()
+                            StatTile(g.label, formatNumber(days.last()), g.unit, "${days.size} days of data", m) {
+                                if (days.size >= 2) TrendLine("generic-${g.label}", days, Palette.Muted, Modifier.fillMaxWidth().height(28.dp)) else EmptyTrack()
                             }
                         }
                     },

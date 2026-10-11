@@ -22,7 +22,7 @@ data class SleepSummary(
 
 fun nightEnding(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): SleepSession? =
     sessions
-        .filter { it.end.atZone(zone).toLocalDate() == date }
+        .filter { it.end.atZone(zone).toLocalDate() == date && Duration.between(it.start, it.end).seconds >= Tuning.MIN_NIGHT_HOURS * 3600 }
         .maxByOrNull { Duration.between(it.start, it.end) }
 
 private fun SleepSession.total(vararg types: StageType): Duration =
