@@ -3,6 +3,12 @@ package app.fitdash
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
+import android.view.animation.DecelerateInterpolator
+import androidx.activity.viewModels
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -27,9 +33,24 @@ import app.fitdash.ui.theme.THEMES
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
 
+private const val SPLASH_MAX_MILLIS = 1200L
+private const val SPLASH_EXIT_MILLIS = 500L
+
 class MainActivity : ComponentActivity() {
+    private val splashStart = SystemClock.uptimeMillis()
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow) } } }
+        splash.setKeepOnScreenCondition { vm.state.value == TodayUiState.Loading && SystemClock.uptimeMillis() - splashStart < SPLASH_MAX_MILLIS }
+        splash.setOnExitAnimationListener { provider ->
+            val view = provider.view
+            val icon = provider.iconView
+            view.animate().alpha(0f).setDuration(SPLASH_EXIT_MILLIS).setInterpolator(DecelerateInterpolator()).start()
+            icon.animate().scaleX(1.35f).scaleY(1.35f).alpha(0f).setDuration(SPLASH_EXIT_MILLIS).setInterpolator(DecelerateInterpolator())
+                .withEndAction { provider.remove() }.start()
+        }
         setContent {
             val store = SettingsStore.get(this@MainActivity)
             val settings by store.flow.collectAsStateWithLifecycle()

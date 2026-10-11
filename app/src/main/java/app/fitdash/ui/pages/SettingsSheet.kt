@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
@@ -40,21 +42,23 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.health.connect.client.HealthConnectClient
 import app.fitdash.BuildConfig
 import app.fitdash.health.SourceStatus
 import app.fitdash.settings.SettingsStore
-import app.fitdash.ui.components.CardShape
 import app.fitdash.ui.components.ListRow
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.SectionCard
+import app.fitdash.ui.components.cardSurface
 import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.THEMES
+import app.fitdash.ui.theme.ThemeId
 import app.fitdash.ui.theme.ThemeTokens
 import app.fitdash.ui.theme.Type
 import java.util.Locale
@@ -76,14 +80,8 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onDismiss: 
         containerColor = Palette.Background,
     ) {
         LazyColumn(contentPadding = PaddingValues(bottom = Space.xxl), verticalArrangement = Arrangement.spacedBy(Space.l)) {
-            if (BuildConfig.SHOW_SUPPORT) item { SupportCard { uri.openUri(SUPPORT_URL) } }
-            item {
-                SectionCard("Theme") {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        THEMES.values.forEach { t -> Swatch(t, t.id == settings.theme) { store.update { it.copy(theme = t.id) } } }
-                    }
-                }
-            }
+            item { Label("THEME") }
+            item { ThemeRow(settings.theme) { id -> store.update { it.copy(theme = id) } } }
             item {
                 SectionCard("Goals") {
                     Stepper(
@@ -105,6 +103,10 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onDismiss: 
                     context.startActivity(HealthConnectClient.getHealthConnectManageDataIntent(context).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
             }
+            if (BuildConfig.SHOW_SUPPORT) {
+                item { Label("SUPPORT") }
+                item { ListRow(NavIcons.cup, "Buy me a coffee", null) { uri.openUri(SUPPORT_URL) } }
+            }
             item { Label("ABOUT") }
             item { Text(WHY, Modifier.padding(horizontal = Space.xl), style = Type.body, color = Palette.Muted) }
             item { ListRow(NavIcons.sparkle, "Open source · GPL-3.0", null) { uri.openUri(GITHUB_URL) } }
@@ -121,58 +123,45 @@ private fun Label(text: String) {
 }
 
 @Composable
-private fun SupportCard(onClick: () -> Unit) {
-    Row(
-        Modifier
-            .padding(horizontal = Space.l)
-            .fillMaxWidth()
-            .clip(CardShape)
-            .background(Palette.Card)
-            .border(1.5.dp, Brush.linearGradient(listOf(Palette.Accent, Palette.Rem)), CardShape)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(Space.l),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Palette.ChipStrong), contentAlignment = Alignment.Center) {
-            Icon(NavIcons.cup, null, Modifier.size(20.dp), tint = Palette.Accent)
+private fun ThemeRow(selected: ThemeId, onSelect: (ThemeId) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    val current = THEMES.getValue(selected)
+    Box(Modifier.padding(horizontal = Space.l).fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .cardSurface()
+                .clickable(role = Role.Button) { open = true }
+                .padding(horizontal = Space.l, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            MiniOrb(current, 22.dp)
+            Text("Theme", Modifier.weight(1f).padding(horizontal = Space.m), style = Type.body.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
+            Text(selected.label, style = Type.body.copy(fontSize = 13.5.sp), color = Palette.Muted)
+            Text("▾", Modifier.padding(start = Space.s), style = Type.body, color = Palette.Faint)
         }
-        Column(Modifier.weight(1f).padding(horizontal = Space.m)) {
-            Text("ENJOYING FITDASH?", style = Type.label, color = Palette.Muted)
-            Text("Buy me a coffee", Modifier.padding(top = 2.dp), style = Type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = current.bgMid) {
+            THEMES.values.forEach { t ->
+                DropdownMenuItem(
+                    text = { Text(t.id.label, style = Type.body, color = Palette.Text) },
+                    leadingIcon = { MiniOrb(t, 16.dp) },
+                    trailingIcon = { if (t.id == selected) Text("✓", style = Type.body, color = Palette.Accent) },
+                    onClick = { open = false; onSelect(t.id) },
+                )
+            }
         }
-        Text("›", style = Type.value, color = Palette.Accent)
     }
 }
 
 @Composable
-private fun Swatch(t: ThemeTokens, selected: Boolean, onClick: () -> Unit) {
-    Column(
-        Modifier.clip(RoundedCornerShape(12.dp)).clickable(role = Role.RadioButton, onClick = onClick),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Box(
-            Modifier
-                .size(56.dp)
-                .border(if (selected) 2.dp else 1.dp, if (selected) Palette.Accent else Palette.Divider, CircleShape)
-                .padding(4.dp)
-                .clip(CircleShape),
-        ) {
-            Canvas(Modifier.size(48.dp)) {
-                val m = size.minDimension
-                fun blob(c: Color, at: Offset, r: Float) = Brush.radialGradient(listOf(c, c.copy(alpha = 0f)), center = at, radius = r)
-                drawRect(lerp(t.orb2, t.orb3, 0.5f))
-                drawRect(blob(t.orb3, Offset(m * 0.45f, m * 0.75f), m * 0.45f))
-                drawRect(blob(t.orb2, Offset(m * 0.7f, m * 0.4f), m * 0.3f))
-                drawRect(blob(t.orb1, Offset(m * 0.3f, m * 0.3f), m * 0.35f))
-            }
-        }
-        Text(
-            t.id.label.uppercase(),
-            Modifier.padding(top = Space.xs).size(width = 56.dp, height = 24.dp),
-            style = Type.tiny.copy(fontSize = 7.sp),
-            color = if (selected) Palette.Text else Palette.Muted,
-            textAlign = TextAlign.Center,
-        )
+private fun MiniOrb(t: ThemeTokens, size: Dp) {
+    Canvas(Modifier.size(size).clip(CircleShape)) {
+        val m = this.size.minDimension
+        fun blob(c: Color, at: Offset, r: Float) = Brush.radialGradient(listOf(c, c.copy(alpha = 0f)), center = at, radius = r)
+        drawRect(lerp(t.orb2, t.orb3, 0.5f))
+        drawRect(blob(t.orb3, Offset(m * 0.45f, m * 0.75f), m * 0.45f))
+        drawRect(blob(t.orb2, Offset(m * 0.7f, m * 0.4f), m * 0.3f))
+        drawRect(blob(t.orb1, Offset(m * 0.3f, m * 0.3f), m * 0.35f))
     }
 }
 

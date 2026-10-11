@@ -42,10 +42,12 @@ private const val BLOB_TURN_MILLIS = 40_000
 private const val DIM = 0.55f
 
 @Composable
-fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, frozen: Boolean = false, content: @Composable () -> Unit) {
+fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, frozen: Boolean = false, intro: Boolean = false, content: @Composable () -> Unit) {
     val t = LocalTheme.current
     val dim = remember { Animatable(if (score == null) DIM else 0f) }
     LaunchedEffect(score == null) { dim.animateTo(if (score == null) DIM else 0f, tween(Motion.COLOUR, easing = Motion.ease)) }
+    val appear = remember { Animatable(if (intro) 0f else 1f) }
+    LaunchedEffect(Unit) { appear.animateTo(1f, tween(Motion.RISE, easing = Motion.ease)) }
     val transition = rememberInfiniteTransition(label = "orb")
     val breath = breathMillis(score ?: 50)
     val animatedScale by transition.animateFloat(
@@ -73,6 +75,7 @@ fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, froze
     Box(
         modifier
             .size(diameter)
+            .graphicsLayer { val a = appear.value; scaleX = 0.85f + 0.15f * a; scaleY = 0.85f + 0.15f * a; alpha = a }
             .drawBehind {
                 val glowAlpha = 1f - 0.6f * dim.value / DIM
                 drawRect(
