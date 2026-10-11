@@ -6,6 +6,7 @@ import app.fitdash.health.Availability
 import app.fitdash.health.HealthSource
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.buildToday
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -28,10 +29,13 @@ class TodayViewModel(
     private val _state = MutableStateFlow<TodayUiState>(TodayUiState.Loading)
     val state: StateFlow<TodayUiState> = _state
 
+    private var job: Job? = null
+
     val permissions: Set<String> get() = source.allPermissions
 
     fun load() {
-        viewModelScope.launch {
+        job?.cancel()
+        job = viewModelScope.launch {
             when (source.availability()) {
                 Availability.NOT_INSTALLED -> {
                     _state.value = TodayUiState.NeedsHealthConnect(update = false)
@@ -43,15 +47,16 @@ class TodayViewModel(
                 }
                 Availability.AVAILABLE -> Unit
             }
+            val now = clock()
             val previous = _state.value as? TodayUiState.Ready
             if (previous != null) _state.value = previous.copy(refreshing = true)
             _state.value = try {
                 if (source.grantedPermissions().none { it in source.allPermissions }) {
                     TodayUiState.NeedsPermission
                 } else {
-                    val snapshot = source.read(clock())
+                    val snapshot = source.read(now)
                     if (snapshot.sources.none { it.hasData }) TodayUiState.NoData
-                    else TodayUiState.Ready(buildToday(snapshot, clock()))
+                    else TodayUiState.Ready(buildToday(snapshot, now))
                 }
             } catch (e: CancellationException) {
                 throw e
