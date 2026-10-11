@@ -108,17 +108,9 @@ Activity
 
 Other data tiles (shown only if you have data, as a tile in the Other data section of Trends, and included in the Ask AI summary)
 - Weight, Body fat, VO2 max, Floors climbed, Active calories: each shown as a tile with its latest value and trend.
-- Height, Lean body mass, Bone mass, Body water mass, Basal metabolic rate, Blood pressure, Blood glucose, Body temperature, Basal body temperature, Hydration, Nutrition, Elevation gained, Wheelchair pushes, Power, Speed: each shown as a plain tile with its latest value and trend.
+- Height, Body temperature, Hydration, Elevation gained: each shown as a plain tile with its latest value and trend.
 
-### Permissions to remove before applying
-
-Every permission is used somewhere, but the eleven in the first two groups above power dedicated features. The rest only fill a generic "Other data" tile. Google rejects Health Connect permissions that are not clearly core to the app, and blood glucose, blood pressure and nutrition get the closest review. Recommended: remove
-
-`READ_BLOOD_GLUCOSE`, `READ_BLOOD_PRESSURE`, `READ_NUTRITION`, `READ_HYDRATION`, `READ_BODY_TEMPERATURE`, `READ_BASAL_BODY_TEMPERATURE`, `READ_BONE_MASS`, `READ_BODY_WATER_MASS`, `READ_LEAN_BODY_MASS`, `READ_HEIGHT`, `READ_BASAL_METABOLIC_RATE`, `READ_WHEELCHAIR_PUSHES`, `READ_POWER`, `READ_SPEED`
-
-and keep `READ_WEIGHT`, `READ_BODY_FAT`, `READ_VO2_MAX`, `READ_FLOORS_CLIMBED`, `READ_ELEVATION_GAINED` and `READ_ACTIVE_CALORIES_BURNED` if you want an Other data section at all.
-
-Removal needs a code change in two places that must match: the `uses-permission` lines in `app/src/main/AndroidManifest.xml` and the matching entries in `app/src/main/java/app/fitdash/health/RecordTypes.kt` (`GENERIC_TYPES`). This is a product decision for the owner, so it has not been made here.
+The Play build declares exactly these 20 read permissions. `app/src/play/AndroidManifest.xml` removes the other 11 (blood glucose, blood pressure, nutrition, basal body temperature, bone mass, body water mass, lean body mass, basal metabolic rate, wheelchair pushes, power, speed), and the app only requests and shows data types whose permission is declared. The GitHub APK requests all 31.
 
 Also provide the privacy policy link (step 9) and a short screen recording of the permission prompt if asked.
 

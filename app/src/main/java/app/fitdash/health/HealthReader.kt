@@ -1,6 +1,8 @@
 package app.fitdash.health
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.permission.HealthPermission
@@ -32,8 +34,20 @@ import kotlin.reflect.KClass
 class HealthReader(private val context: Context) : HealthSource {
     private val client by lazy { HealthConnectClient.getOrCreate(context) }
 
-    override val allPermissions: Set<String> =
-        ALL_TYPES.map { HealthPermission.getReadPermission(it.type) }.toSet()
+    private val declared: Set<String> = run {
+        val pm = context.packageManager
+        val info = if (Build.VERSION.SDK_INT >= 33) {
+            pm.getPackageInfo(context.packageName, PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong()))
+        } else {
+            @Suppress("DEPRECATION")
+            pm.getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
+        }
+        info.requestedPermissions.orEmpty().toSet()
+    }
+
+    private val types = ALL_TYPES.filter { HealthPermission.getReadPermission(it.type) in declared }
+
+    override val allPermissions: Set<String> = types.map { HealthPermission.getReadPermission(it.type) }.toSet()
 
     override fun availability() = when (HealthConnectClient.getSdkStatus(context)) {
         HealthConnectClient.SDK_AVAILABLE -> Availability.AVAILABLE
@@ -51,7 +65,7 @@ class HealthReader(private val context: Context) : HealthSource {
             val range = TimeRangeFilter.between(start.toInstant(), now.toInstant())
 
             val records = mutableMapOf<KClass<out Record>, List<Record>>()
-            val sources = ALL_TYPES.map { info ->
+            val sources = types.map { info ->
                 val list = if (can(info.type)) readAllOrEmpty(info.type, range) else emptyList()
                 records[info.type] = list
                 SourceStatus(info.label, can(info.type), list.isNotEmpty(), list.map { it.metadata.dataOrigin.packageName }.toSet())
