@@ -8,7 +8,7 @@ For non-sensitive problems, you can [open an issue](https://github.com/mayurrawt
 
 ## Verify a release
 
-fitdash has no server and no internet permission. You can check this on any release APK:
+fitdash has no server and the release APK requests no INTERNET permission, so fitdash itself cannot connect to the internet. You can check this on any release APK:
 
 ```
 aapt dump permissions fitdash.apk

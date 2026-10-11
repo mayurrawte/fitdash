@@ -1,6 +1,7 @@
 package app.fitdash
 
 import android.content.Intent
+import app.fitdash.ui.share.clearShareCache
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
@@ -42,6 +43,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        clearShareCache(applicationContext)
         val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow) } } }
         splash.setKeepOnScreenCondition { vm.state.value == TodayUiState.Loading && SystemClock.uptimeMillis() - splashStart < SPLASH_MAX_MILLIS }
         splash.setOnExitAnimationListener { provider ->

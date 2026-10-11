@@ -108,7 +108,7 @@
   <h1>Privacy policy</h1>
   <p class="date mono">11 October 2026</p>
   <section><h2>Summary</h2>
-    <p>fitdash reads your Health Connect data on your phone and shows it to you. It has no server, no account and no internet permission. Nothing leaves your phone unless you choose to share it.</p>
+    <p>fitdash reads your Health Connect data on your phone and shows it to you. It has no server, no account and no internet permission. Data only leaves your phone when you choose to share it.</p>
   </section>
   <section><h2>What data fitdash reads</h2>
     <p>fitdash asks Health Connect for read access to the following data types. You choose which of them to allow, and fitdash shows only what you have.</p>
@@ -116,21 +116,30 @@
     <p>fitdash only reads. It never writes to or changes Health Connect.</p>
   </section>
   <section><h2>How the data is used</h2>
-    <p>Data is read from Health Connect and processed on your phone to draw the dashboard, scores and trends. It is not sent to us or to anyone else, because the app has no internet permission and cannot make network connections.</p>
+    <p>Data is read from Health Connect and processed on your phone to draw the dashboard, scores and trends. It is not sent to us or to anyone else. The release APK requests no INTERNET permission, so fitdash itself cannot connect to the internet. fitdash can open links (the GitHub page, Buy Me a Coffee and the Play Store page for Health Connect) in your browser or the Play Store. These links carry none of your data.</p>
   </section>
   <section><h2>What is stored</h2>
-    <p>fitdash stores only your settings (theme, goals and units) in the app&rsquo;s local preferences on your phone. It does not keep a copy of your health data. Android backup is switched off for the app. Uninstalling fitdash removes its settings.</p>
+    <p>fitdash stores only your settings (theme, goals and units) in the app&rsquo;s local preferences on your phone. fitdash keeps no copy of your health data, apart from the image Share day creates. It is saved in the app&rsquo;s private cache, replaced the next time you share and cleared when the app starts. Uninstalling removes it. Android backup is switched off for the app.</p>
   </section>
   <section><h2>Sharing</h2>
     <p>Data leaves your phone only when you choose to send it:</p>
     <ul><li><b>Ask AI</b> opens the Android share sheet with a text summary of your day.</li><li><b>Share day</b> opens the share sheet with an image of your day.</li></ul>
-    <p>In both cases you pick the app that receives it. fitdash itself sends nothing. Once you share something with another app, that app&rsquo;s own privacy policy applies.</p>
+    <p>In both cases you pick the app that receives it. fitdash makes no network connections; it hands the text or image to the app you choose. Once you share something with another app, that app&rsquo;s own privacy policy applies.</p>
+  </section>
+  <section><h2>Ask AI and other apps</h2>
+    <p>The Ask AI summary and the Share day image contain health metrics. Once you send them, the app or AI service you pick handles them under its own privacy policy.</p>
+  </section>
+  <section><h2>Health Connect</h2>
+    <p>Health Connect keeps its own copy of your data under its own controls and backup settings. fitdash&rsquo;s <code>allowBackup=false</code> covers fitdash&rsquo;s own files only.</p>
+  </section>
+  <section><h2>Delete your data</h2>
+    <ul><li>Clear fitdash&rsquo;s storage or uninstall it to remove its settings and any share image.</li><li>Revoke fitdash&rsquo;s access in Health Connect (Settings &rarr; Health Connect &rarr; App permissions).</li><li>Delete the health data itself in Health Connect.</li></ul>
   </section>
   <section><h2>Third parties</h2>
     <p>fitdash has no analytics, crash reporting, advertising or trackers. Its only third-party libraries are AndroidX and Jetpack Compose, the Health Connect client and Haze (a blur effect). Your data is not shared with any third party.</p>
   </section>
   <section><h2>Children</h2>
-    <p>fitdash is not directed at children under 13, and it does not collect personal information from anyone.</p>
+    <p>fitdash is not directed at children under 13, and fitdash does not collect or transmit personal information to its developers.</p>
   </section>
   <section><h2>Open source and verification</h2>
     <p>fitdash is open source under GPL-3.0. Release APKs are built and signed by GitHub Actions from the public source. You can check the permissions and signing certificate yourself; the steps and fingerprint are in the <a class="ul" href="https://github.com/mayurrawte/fitdash/blob/main/SECURITY.md">security policy</a>.</p>
@@ -138,6 +147,7 @@
   <section><h2>Changes to this policy</h2>
     <p>If this policy changes, the updated version will be published on this page with a new date.</p>
   </section>
+  <!-- TODO: contact email for Play listing -->
   <section><h2>Contact</h2>
     <p>Questions or concerns? Please <a class="ul" href="https://github.com/mayurrawte/fitdash/issues">open an issue on GitHub</a>.</p>
   </section>

@@ -16,16 +16,17 @@ Also included:
 - Day picker: look back at any recent day.
 - Five themes: Midnight Teal, Pastel, Techno, Graphite and Sunrise.
 - Share day: turn the day into an image and send it wherever you choose.
-- Ask AI: build a plain-text summary of your recent data and hand it to the AI app of your choice. You pick the app; fitdash sends nothing itself.
+- Ask AI: build a plain-text summary of your recent data and hand it to the AI app of your choice. You pick the app; fitdash makes no network connections and hands the text or image to it.
 - Data sources: see which Health Connect data types fitdash can read and which apps supplied them.
 
 PRIVACY
 
-- No internet permission. The app has no way to send data off your phone.
+- No internet permission. The release APK requests no INTERNET permission, so fitdash itself cannot connect to the internet. It can open links (GitHub, Buy Me a Coffee and the Play Store page for Health Connect) in your browser or the Play Store; these links carry none of your data.
 - No account, no sign-in, no server.
 - Read-only. fitdash reads from Health Connect and never writes to it.
 - No analytics, advertising, crash reporting or trackers.
-- Nothing leaves your phone unless you share it. Ask AI and Share day use the standard Android share sheet, and you choose the destination each time.
+- Data only leaves your phone when you choose to share it. Ask AI and Share day use the standard Android share sheet, and you choose the destination each time. The summary and image contain health metrics, so the app you pick handles them under its own privacy policy.
+- fitdash keeps no copy of your health data, apart from the image Share day creates. It is saved in the app's private cache, replaced the next time you share and cleared when the app starts. Uninstalling removes it.
 
 You can read the privacy policy at https://mayurrawte.is-a.dev/fitdash/privacy.html
 

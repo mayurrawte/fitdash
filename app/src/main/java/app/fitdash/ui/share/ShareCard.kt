@@ -1,5 +1,6 @@
 package app.fitdash.ui.share
 
+import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
@@ -51,6 +52,10 @@ private const val WIDTH = 1080
 private const val HEIGHT = 1350
 private const val SCALE = 3f
 
+fun clearShareCache(context: Context) {
+    File(context.cacheDir, "share").listFiles()?.forEach { it.delete() }
+}
+
 @Composable
 fun ShareRender(data: TodayData, onDone: () -> Unit) {
     val context = LocalContext.current
@@ -63,6 +68,7 @@ fun ShareRender(data: TodayData, onDone: () -> Unit) {
             withFrameNanos { }
             val bitmap = layer.toImageBitmap().asAndroidBitmap()
             val file = withContext(Dispatchers.IO) {
+                clearShareCache(context)
                 File(context.cacheDir, "share").apply { mkdirs() }.resolve("fitdash-${data.date}.png").also { f ->
                     f.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
                 }

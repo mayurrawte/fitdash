@@ -11,13 +11,16 @@ A calm, animated Health Connect dashboard for Android. Recovery, sleep, activity
 
 ## Your data stays yours
 
-fitdash is built so that your health data cannot leave your phone unless you send it.
+fitdash is built so that data only leaves your phone when you choose to share it.
 
 - **No server, no API, no account.** There is no backend. Nothing to sign up for.
-- **No internet permission.** The release APK requests no `INTERNET` permission, so the app cannot send data anywhere.
+- **No internet permission.** The release APK requests no `INTERNET` permission, so fitdash itself cannot connect to the internet. It can open links (the GitHub page, Buy Me a Coffee and the Play Store page for Health Connect) in your browser or the Play Store; these carry none of your data.
 - **Read-only.** fitdash only reads from Health Connect. It never writes to it.
 - **No analytics, crash reporting, ads or trackers.** The only third-party libraries are AndroidX/Compose, the Health Connect client and Haze (blur).
-- **Nothing leaves unless you share it.** "Ask AI" and "Share day" open the Android share sheet. You pick the app; fitdash sends nothing itself.
+- **Nothing leaves unless you share it.** "Ask AI" and "Share day" open the Android share sheet. You pick the app; fitdash makes no network connections and hands the text or image to it. Both contain health metrics, so the app or AI service you pick handles them under its own privacy policy.
+- **Almost no copy on disk.** fitdash keeps no copy of your health data, apart from the image Share day creates. It is saved in the private cache, replaced on the next share and cleared when the app starts. Uninstalling removes it.
+- **Health Connect is separate.** It keeps its own copy under its own controls and backup settings; `allowBackup=false` covers fitdash's files only.
+- **Delete your data.** Clear fitdash's storage or uninstall it, revoke access in Health Connect (Settings > Health Connect > App permissions), and delete the data itself in Health Connect.
 
 Read the full [privacy policy](https://mayurrawte.is-a.dev/fitdash/privacy.html).
 
