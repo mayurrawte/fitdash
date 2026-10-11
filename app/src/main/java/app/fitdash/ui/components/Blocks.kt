@@ -1,6 +1,7 @@
 package app.fitdash.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,17 +21,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
+import app.fitdash.metrics.Status
+import app.fitdash.ui.theme.Mono
 import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 
-val CardShape = RoundedCornerShape(22.dp)
+val CardShape = RoundedCornerShape(18.dp)
+
+@Composable
+fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card).border(1.dp, Palette.Divider, CardShape)
 
 @Composable
 fun SectionCard(
@@ -44,13 +52,12 @@ fun SectionCard(
         modifier
             .padding(horizontal = Space.l)
             .fillMaxWidth()
-            .clip(CardShape)
-            .background(Palette.Card)
+            .cardSurface()
             .padding(horizontal = Space.l, vertical = Space.l),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(label, style = Type.label, color = Palette.Muted)
-            if (trailing != null) Text(trailing, style = Type.small, color = trailingColor)
+            Text(label.uppercase(), style = Type.label, color = Palette.Muted)
+            if (trailing != null) Text(trailing.uppercase(), style = Type.tiny, color = trailingColor)
         }
         Spacer(Modifier.height(Space.s))
         content()
@@ -59,7 +66,7 @@ fun SectionCard(
 
 @Composable
 fun SectionLabel(text: String) {
-    Text(text, style = Type.label, color = Palette.Muted, modifier = Modifier.padding(start = Space.xl, end = Space.xl, top = Space.s))
+    Text(text.uppercase(), style = Type.label, color = Palette.Muted, modifier = Modifier.padding(start = Space.xl, end = Space.xl, top = Space.s))
 }
 
 @Composable
@@ -67,7 +74,7 @@ fun ValueText(value: String, unit: String?, modifier: Modifier = Modifier, style
     Text(
         buildAnnotatedString {
             append(value)
-            if (!unit.isNullOrEmpty()) withStyle(SpanStyle(fontSize = 12.sp, color = Palette.Muted)) { append(" $unit") }
+            if (!unit.isNullOrEmpty()) withStyle(SpanStyle(fontFamily = Mono, fontSize = 9.sp, letterSpacing = 0.08.em, color = Palette.Muted)) { append(" ${unit.uppercase()}") }
         },
         modifier,
         style = style,
@@ -97,4 +104,36 @@ fun Reveal(key: String, index: Int = 0, content: @Composable () -> Unit) {
 @Composable
 fun EmptyTrack() {
     Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(Chart.track))
+}
+
+fun statusWord(status: Status) = when (status) {
+    Status.OPTIMAL -> "OPTIMAL"
+    Status.GOOD -> "GOOD"
+    Status.FAIR -> "FAIR"
+    Status.ATTENTION -> "NEEDS ATTENTION"
+}
+
+@Composable
+fun StatusText(status: Status, modifier: Modifier = Modifier) {
+    val colour = when (status) {
+        Status.OPTIMAL, Status.GOOD -> Palette.Good
+        Status.FAIR -> Palette.Warn
+        Status.ATTENTION -> Palette.Bad
+    }
+    Text(statusWord(status), modifier, style = Type.tiny.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Medium), color = colour)
+}
+
+@Composable
+fun NumberWithUnits(parts: List<Pair<String, String>>, modifier: Modifier = Modifier, style: TextStyle = Type.tile) {
+    Row(modifier) {
+        parts.forEachIndexed { i, (number, unit) ->
+            Text(number, Modifier.alignByBaseline(), style = style, color = Palette.Text)
+            Text(
+                unit.uppercase(),
+                Modifier.alignByBaseline().padding(start = 2.dp, end = if (i < parts.lastIndex) Space.xs + 2.dp else 0.dp),
+                style = Type.unit,
+                color = Palette.Muted,
+            )
+        }
+    }
 }

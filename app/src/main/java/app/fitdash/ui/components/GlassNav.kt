@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Type
 import dev.chrisbanes.haze.HazeInput
@@ -46,6 +47,8 @@ private val PillShape = RoundedCornerShape(20.dp)
 fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
     val background = Palette.Background
     val glass = Palette.Glass
+    val hairline = Palette.Divider
+    val activeFill = Palette.ChipStrong
     Box(
         modifier
             .shadow(18.dp, BarShape, ambientColor = Color.Black, spotColor = Color.Black)
@@ -59,7 +62,7 @@ fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSe
                     noiseFactor(0f)
                 },
             )
-            .border(1.dp, Color.White.copy(alpha = 0.12f), BarShape)
+            .border(1.dp, hairline, BarShape)
             .padding(6.dp),
     ) {
         Box(
@@ -67,7 +70,7 @@ fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSe
                 .size(ItemWidth, ItemHeight)
                 .graphicsLayer { translationX = (pager.currentPage + pager.currentPageOffsetFraction) * ItemWidth.toPx() }
                 .clip(PillShape)
-                .background(Color.White.copy(alpha = 0.14f)),
+                .background(activeFill),
         )
         Row {
             items.forEachIndexed { i, item ->
@@ -83,7 +86,7 @@ fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSe
                 ) {
                     val tint = if (selected) Palette.Text else Palette.Muted
                     Icon(item.icon, null, Modifier.size(18.dp), tint = tint)
-                    Text(item.label, style = Type.tiny, color = tint, modifier = Modifier.padding(top = 2.dp))
+                    Text(item.label.uppercase(), style = Type.tiny.copy(fontSize = 8.5.sp), color = tint, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }

@@ -1,6 +1,5 @@
 package app.fitdash.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -10,28 +9,44 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import app.fitdash.metrics.Status
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 
 @Composable
-fun StatTile(label: String, value: String, unit: String?, note: String, modifier: Modifier = Modifier, visual: @Composable () -> Unit) {
+fun StatTile(
+    label: String,
+    value: String,
+    unit: String?,
+    note: String,
+    modifier: Modifier = Modifier,
+    status: Status? = null,
+    icon: ImageVector? = null,
+    visual: @Composable () -> Unit,
+) {
     Column(
         modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Palette.Card)
+            .cardSurface()
             .padding(Space.m)
             .semantics(mergeDescendants = true) {},
     ) {
-        Text(label.uppercase(), style = Type.label, color = Palette.Muted)
-        ValueText(value, unit, Modifier.padding(top = Space.xs, bottom = Space.s), style = Type.tile)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (icon != null) Icon(icon, null, Modifier.padding(end = 6.dp).size(13.dp), tint = Palette.Muted)
+            Text(label, style = Type.small.copy(fontSize = 11.sp), color = Palette.Muted)
+        }
+        ValueText(value, unit, Modifier.padding(top = Space.xs, bottom = if (status == null) Space.s else 2.dp), style = Type.tile)
+        if (status != null) StatusText(status, Modifier.padding(bottom = Space.s))
         Spacer(Modifier.weight(1f))
         visual()
         Text(note, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s))
