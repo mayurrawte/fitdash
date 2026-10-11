@@ -9,9 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -31,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import app.fitdash.metrics.ReadinessResult
 import app.fitdash.metrics.TodayData
-import app.fitdash.metrics.asleepDuration
 import app.fitdash.ui.components.ListRow
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.Orb
@@ -100,20 +96,18 @@ fun ShareCard(data: TodayData) {
     Box(Modifier.requiredSize((WIDTH / SCALE).dp, (HEIGHT / SCALE).dp)) {
         ThemedBackground()
         Column(
-            Modifier.fillMaxSize().padding(horizontal = Space.xl, vertical = Space.xl),
+            Modifier.fillMaxSize().padding(horizontal = Space.xl, vertical = Space.l),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(formatDate(data.date).uppercase(), style = Type.label, color = Palette.Muted)
-            Spacer(Modifier.height(Space.l))
-            Orb(score, diameter = 200.dp, frozen = true) {
+            Orb(score, diameter = 168.dp, frozen = true) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(score?.toString() ?: "—", style = Type.hero)
                     Text("RECOVERY", style = Type.label)
                 }
             }
-            Spacer(Modifier.height(Space.l))
-            HorizontalDivider(color = Palette.Divider)
-            Row(Modifier.fillMaxWidth().padding(vertical = Space.m)) {
+            Row(Modifier.fillMaxWidth()) {
                 TrioStat("Sleep", data.sleep?.score, data.previous.sleep, Modifier.weight(1f))
                 TrioStat("Recovery", score, data.previous.readiness, Modifier.weight(1f))
                 TrioStat("Movement", data.movementScore, data.previous.movement, Modifier.weight(1f))
@@ -122,15 +116,14 @@ fun ShareCard(data: TodayData) {
                 data.sleep?.let {
                     ListRow(NavIcons.bed, "Sleep", "${formatDuration(it.asleep)} · ${formatTime12(it.start, zone)} – ${formatTime12(it.end, zone)}")
                 }
-                data.naps.forEach {
-                    ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(it))} · ${formatTime12(it.start, zone)} – ${formatTime12(it.end, zone)}")
-                }
                 data.activity?.let {
                     ListRow(NavIcons.walk, "Steps", "${formatSteps(it.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${it.goalPercent}%")
                 }
             }
-            Spacer(Modifier.weight(1f))
-            Text("FITDASH", style = Type.label, color = Palette.Faint, textAlign = TextAlign.Center)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("fitdash".uppercase(), style = Type.label, color = Palette.Text, textAlign = TextAlign.Center)
+                Text("fitdash · health connect dashboard".uppercase(), style = Type.tiny, color = Palette.Muted, textAlign = TextAlign.Center)
+            }
         }
     }
 }

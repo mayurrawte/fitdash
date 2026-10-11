@@ -123,7 +123,7 @@ fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, froze
                 )
             }
         }
-        CompositionLocalProvider(LocalContentColor provides t.onOrb) { content() }
+        CompositionLocalProvider(LocalContentColor provides if (score == null) t.text else t.onOrb) { content() }
     }
 }
 
