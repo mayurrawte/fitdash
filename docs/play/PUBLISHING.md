@@ -58,7 +58,7 @@ Copy from `fastlane/metadata/android/en-GB/`:
 
 The screenshots are built from the mockups in `docs/screens`, which use sample data only. Never upload screenshots from a real device.
 
-Category: Health & Fitness. Add contact email, and the website `https://mayurrawte.is-a.dev/fitdash/`.
+Category: Health & Fitness. Developer name: Mayur Rawte. Contact email: rawte.mayur@gmail.com. Website: `https://mayurrawte.is-a.dev/fitdash/`.
 
 ## 5. Content rating
 
