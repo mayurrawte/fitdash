@@ -86,7 +86,7 @@ Evaluated in this order, first 3 that fire are shown:
 | Readiness band Recover | "Rest or an easy walk today." |
 | Last night asleep < 7h | "Get to bed 30 minutes earlier tonight." |
 | HRV ≥ 10% below baseline | "Go easy on caffeine and alcohol today." |
-| Hour ≥ 16 and steps < goal | "N steps to go. A 15-minute walk does it." (N formatted with thousands separators) |
+| Hour ≥ 16 and steps < goal | "N steps to go. A 15-minute walk does it." when N ≤ 2,000; otherwise "N steps to go before bed." (N formatted with thousands separators) |
 
 Calibrating or NoData readiness fires none of the band rules.
 
@@ -125,9 +125,9 @@ Polish is a requirement, not a follow-up. v2 is not done until each item holds o
 
 ## Code changes
 
-- `metrics/Today.kt`: remove `HeroMode` and the card plan; `TodayData` gains `sleepWeek`, `stepsWeek`, `movementScore`, `suggestions`, `restingHrTrend` (in `HeartSummary`), and the activity summary is always today. `buildToday` still takes `now`.
+- `metrics/Today.kt`: remove `HeroMode` and the card plan; `TodayData` gains `sleepWeek`, `activityWeek` (steps, distance, kcal), `movementScore`, `suggestions`, `restingHrTrend` (in `HeartSummary`), and the activity summary is always today. `buildToday` still takes `now`.
 - New `metrics/Suggestions.kt`: pure rules above.
-- New `metrics/AiSummary.kt`: pure text builder.
+- New `ui/AiSummary.kt`: pure text builder (presentation text, so it lives in `ui/`).
 - `ui/today/` replaced by `ui/pages/`: `PagerScreen` (HorizontalPager + top bar + pull-to-refresh), `TodayPage`, `SleepPage`, `ActivityPage`, `TrendsPage`, `InfoSheet`, `Rings`. Existing cards are reused and the Sources card moves into `InfoSheet`.
 - Dependency: `dev.chrisbanes.haze:haze:2.0.1` for the glass blur.
 - `app/build.gradle.kts`: `buildConfig = true`, `SHOW_SUPPORT` true for debug and release (flip to false for a Play build).
