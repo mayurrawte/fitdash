@@ -8,6 +8,7 @@ import app.fitdash.health.HealthSource
 import app.fitdash.health.SourceStatus
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -25,11 +26,13 @@ private class FakeSource(
     var granted: Set<String> = setOf("read"),
     var snapshot: HealthSnapshot = HealthSnapshot(sources = listOf(SourceStatus("Sleep", true, true, setOf("com.fitbit.FitbitMobile")))),
     var fail: Boolean = false,
+    var gate: CompletableDeferred<Unit>? = null,
 ) : HealthSource {
     override val allPermissions = setOf("read")
     override fun availability() = status
     override suspend fun grantedPermissions() = granted
     override suspend fun read(now: ZonedDateTime): HealthSnapshot {
+        gate?.await()
         if (fail) error("read failed")
         return snapshot
     }
@@ -74,5 +77,17 @@ class TodayViewModelTest {
 
     @Test fun `a failed first load`() {
         assertEquals(TodayUiState.Failed, load(FakeSource(fail = true)).state.value)
+    }
+
+    @Test fun `an overlapping load replaces the one in flight`() {
+        val source = FakeSource(gate = CompletableDeferred())
+        val first = source.gate!!
+        val vm = TodayViewModel(source) { now }
+        vm.load()
+        source.gate = null
+        vm.load()
+        assertTrue(vm.state.value is TodayUiState.Ready)
+        first.completeExceptionally(IllegalStateException("stale"))
+        assertTrue(vm.state.value is TodayUiState.Ready)
     }
 }
