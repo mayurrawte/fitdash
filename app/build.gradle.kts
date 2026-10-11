@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+val keystorePath: String? = System.getenv("FITDASH_KEYSTORE")
+
 android {
     namespace = "app.fitdash"
     compileSdk = 37
@@ -14,6 +16,24 @@ android {
         versionCode = 2
         versionName = "0.2.0"
         buildConfigField("boolean", "SHOW_SUPPORT", "true")
+    }
+
+    signingConfigs {
+        if (keystorePath != null) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("FITDASH_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("FITDASH_KEY_ALIAS")
+                keyPassword = System.getenv("FITDASH_KEY_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            if (keystorePath != null) signingConfig = signingConfigs.getByName("release")
+        }
     }
 
     compileOptions {
