@@ -70,7 +70,7 @@ HRV · 14 days and Resting HR · 14 days line charts, each with its baseline dra
 Modal bottom sheet:
 - **Data sources**: the v1 list (type, ✓ app / no data / no access).
 - One line: "fitdash has no internet access. Your data never leaves this phone unless you share it."
-- **Support fitdash** row opening the support URL in the browser, only when `BuildConfig.SHOW_SUPPORT` is true. The URL is a single constant.
+- **Support fitdash** row opening the support URL in the browser, only when `BuildConfig.SHOW_SUPPORT` is true. The URL is a single constant: `https://buymeacoffee.com/thepsygeek`.
 - App version.
 
 The Data sources card is removed from the scrolling page.
@@ -138,6 +138,3 @@ Polish is a requirement, not a follow-up. v2 is not done until each item holds o
 - Compose previews for each page with `PreviewData`.
 - On device: swipe between pages, ring taps jump to pages, ⓘ sheet opens with Data sources, Ask AI opens the share sheet with the summary.
 
-## Open item
-
-The Support URL (Buy Me a Coffee / GitHub Sponsors / UPI link) — Mayur to provide.
