@@ -2,7 +2,9 @@
 
 # fitdash
 
-A calm, animated Health Connect dashboard for Android. Readiness, sleep and activity on one page, from whatever your watch or ring writes to Health Connect.
+Site: https://mayurrawte.github.io/fitdash/
+
+A calm, animated Health Connect dashboard for Android. Recovery, sleep, activity and trends on four swipeable pages, in five themes, from whatever your watch or ring writes to Health Connect.
 
 - No account, no cloud, no internet permission. Your data stays on your phone.
 - Reads every Health Connect data type and shows only what you have.
