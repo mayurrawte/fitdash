@@ -98,6 +98,21 @@ Other data (latest): Weight 72.4 kg, ...
 
 Missing values are blank. Nothing is sent anywhere by fitdash itself; the user picks the app.
 
+## Polish requirements
+
+Polish is a requirement, not a follow-up. v2 is not done until each item holds on the Pixel 9a.
+
+- **Spacing and type:** one spacing scale (4, 8, 12, 16, 24, 32 dp) and the v1 type scale only; page side gutter 16 dp; cards 22 dp radius; no hard-coded one-off sizes.
+- **Motion:** all durations and easings come from one `Motion` object. The pager has a subtle parallax (the orb moves slower than the page). Rings sweep in with a 120 ms stagger. Ring taps and page changes give a light haptic tick.
+- **First load:** the orb fades from grey to its score colour (not a separate grey orb that is then replaced). The text colour on the orb animates with the orb.
+- **Charts:** every chart shares one style (stroke width, corner radius, label size, grid colour). Charts draw in once; scrolling a card off-screen and back does not replay it.
+- **Smoothness:** no recomposition per animation frame. Animated values are read in the draw/layout phase; no `Path`/`PathMeasure` allocation per frame. Scrolling and swiping stay at 60 fps on the Pixel 9a.
+- **Orb fit:** the orb never clips at its largest breathing size.
+- **Empty states:** every page has a designed empty state (icon or grey orb, one sentence, what to do), never a blank page.
+- **Edges:** status and navigation bars are dark with light icons; content respects insets; nothing hides under the camera cut-out.
+- **Accessibility:** rings, orb and buttons have content descriptions; layouts hold at 1.3× font scale without overlap.
+- **On-device review:** after implementation, screenshots of each page (morning and evening, with data and empty) are taken from the phone with `adb exec-out screencap` and checked against this list before the work is called done.
+
 ## Code changes
 
 - `metrics/Today.kt`: remove `HeroMode` and the card plan; `TodayData` gains `sleepWeek`, `stepsWeek`, `movementScore`, `suggestions`, `restingHrTrend` (in `HeartSummary`), and the activity summary is always today. `buildToday` still takes `now`.
