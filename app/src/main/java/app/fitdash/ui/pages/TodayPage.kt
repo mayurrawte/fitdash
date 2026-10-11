@@ -116,7 +116,8 @@ fun TodayPage(
                 }
                 val (word, advice) = when (r) {
                     is ReadinessResult.Ready -> bandWord(r.band) to bandAdvice(r.band)
-                    is ReadinessResult.Calibrating -> "Night ${r.nights} of ${Tuning.MIN_NIGHTS}" to "Wear your Fitbit to bed. Recovery appears after ${Tuning.MIN_NIGHTS} nights of data."
+                    is ReadinessResult.Calibrating -> "Night ${r.nights} of ${Tuning.MIN_NIGHTS}" to
+                        if (data.isToday) "Wear your Fitbit to bed. Recovery appears after ${Tuning.MIN_NIGHTS} nights of data." else "Not enough earlier data for this day"
                     ReadinessResult.NoData -> "No data for last night" to "Sync your Fitbit, then pull down to refresh."
                 }
                 Text(word.uppercase(), style = Type.label, color = score?.let { scoreColor(it) } ?: Palette.Muted, modifier = Modifier.padding(top = Space.l))
@@ -149,14 +150,14 @@ fun TodayPage(
                 ListRow(NavIcons.bed, "Sleep", "${formatDuration(s.asleep)} · ${formatTime12(s.start, zone)} – ${formatTime12(s.end, zone)}") { onOpen(1) }
             }
         }
-        if (a != null) {
-            item(key = "row-steps") {
-                ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%") { onOpen(2) }
-            }
-        }
         data.naps.forEachIndexed { i, nap ->
             item(key = "row-nap-$i") {
                 ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${formatTime12(nap.start, zone)} – ${formatTime12(nap.end, zone)}") { onOpen(1) }
+            }
+        }
+        if (a != null) {
+            item(key = "row-steps") {
+                ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%") { onOpen(2) }
             }
         }
         val h = data.heart

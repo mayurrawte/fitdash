@@ -76,7 +76,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                 TileGrid(
                     listOf<@Composable (Modifier) -> Unit>(
                         { m -> NumberTile("Total sleep", NavIcons.moonSmall, hoursMins(s.asleep), m, scoreStatus(s.score)) },
-                        { m -> NumberTile("Time in bed", NavIcons.clock, hoursMins(s.timeInBed), m) },
+                        { m -> NumberTile("Time in bed", NavIcons.clock, hoursMins(s.timeInBed), m, if (s.timeInBed >= Duration.ofMinutes((data.goals.sleepHours * 60).roundToInt().toLong())) Status.GOOD else Status.FAIR) },
                         { m ->
                             NumberTile(
                                 "Restorative", NavIcons.moonSmall,
@@ -134,7 +134,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                 }
             } else {
                 revealItem("duration", 0) {
-                    SectionCard("DURATION", trailing = "goal ${data.goals.sleepHours.roundToInt()}h") {
+                    SectionCard("DURATION", trailing = "goal ${formatNumber(data.goals.sleepHours)}h") {
                         LinearProgressIndicator(
                             progress = { (s.asleep.toMinutes() / (data.goals.sleepHours * 60)).toFloat().coerceAtMost(1f) },
                             modifier = Modifier.fillMaxWidth(),

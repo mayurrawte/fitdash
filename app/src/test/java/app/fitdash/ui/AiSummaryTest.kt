@@ -45,6 +45,16 @@ class AiSummaryTest {
         assertTrue(t.contains("\n2026-10-11, , , , , 3000"))
     }
 
+    @Test fun `past date header names the date and has no Today`() {
+        val day = TODAY.minusDays(2)
+        val t = aiSummary(snap, buildToday(snap, now, day), now)
+        assertTrue(t.contains("\nFri 9 Oct: recovery "))
+        assertTrue(!t.contains("Today"))
+        assertTrue(!t.contains("steps so far"))
+        assertTrue(t.contains("\n2026-10-09, "))
+        assertTrue(!t.contains("\n2026-10-10, "))
+    }
+
     @Test fun `other data line`() {
         assertTrue(text.endsWith("Other data (latest): Weight 72.4 kg"))
     }

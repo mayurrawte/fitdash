@@ -49,7 +49,7 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean) {
                     SemiGauge(percent, "Steps", scoreStatus(percent), value = formatSteps(a.steps), tag = "of ${formatSteps(data.goals.steps.toLong())}")
                 }
             }
-            revealItem("hourly", 0) {
+            if (a.hourly.sum() > 0L) revealItem("hourly", 0) {
                 SectionCard("STEPS BY HOUR") {
                     val top = a.hourly.maxOrNull() ?: 0L
                     val green = Palette.Green

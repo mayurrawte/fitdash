@@ -24,7 +24,7 @@ private fun Long.toUtcDate() = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC)
 fun DatePickerSheet(selected: LocalDate, today: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
     val earliest = today.minusDays(DAYS_BACK)
     val state = rememberDatePickerState(
-        initialSelectedDateMillis = selected.toUtcMillis(),
+        initialSelectedDateMillis = null,
         initialDisplayedMonthMillis = selected.toUtcMillis(),
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long) = utcTimeMillis.toUtcDate() in earliest..today
@@ -34,7 +34,7 @@ fun DatePickerSheet(selected: LocalDate, today: LocalDate, onPick: (LocalDate) -
     LaunchedEffect(state) {
         snapshotFlow { state.selectedDateMillis }.collect { millis ->
             val date = millis?.toUtcDate()
-            if (date != null && date != selected) {
+            if (date != null) {
                 onPick(date)
                 onDismiss()
             }

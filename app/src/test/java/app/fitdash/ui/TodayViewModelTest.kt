@@ -49,7 +49,7 @@ class TodayViewModelTest {
     @Before fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
     @After fun tearDown() = Dispatchers.resetMain()
 
-    private fun load(source: FakeSource) = TodayViewModel(source, { now }).also { it.load() }
+    private fun load(source: FakeSource) = TodayViewModel(source, { now }, work = Dispatchers.Main).also { it.load() }
 
     @Test fun `Health Connect missing or outdated`() {
         assertEquals(TodayUiState.NeedsHealthConnect(update = false), load(FakeSource(status = Availability.NOT_INSTALLED)).state.value)
@@ -86,7 +86,7 @@ class TodayViewModelTest {
     @Test fun `an overlapping load replaces the one in flight`() {
         val source = FakeSource(gate = CompletableDeferred())
         val first = source.gate!!
-        val vm = TodayViewModel(source, { now })
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main)
         vm.load()
         source.gate = null
         vm.load()
@@ -105,7 +105,7 @@ class TodayViewModelTest {
 
     @Test fun `settings change rebuilds with the new goal`() {
         val settings = MutableStateFlow(Settings())
-        val vm = TodayViewModel(FakeSource(), { now }, settings).also { it.load() }
+        val vm = TodayViewModel(FakeSource(), { now }, settings, Dispatchers.Main).also { it.load() }
         settings.value = Settings(stepGoal = 5000)
         assertEquals(5000, (vm.state.value as TodayUiState.Ready).data.goals.steps)
     }
@@ -122,7 +122,7 @@ class TodayViewModelTest {
 
     @Test fun `a stale selected date is cleared on load`() {
         var current = now
-        val vm = TodayViewModel(FakeSource(), { current }).also { it.load() }
+        val vm = TodayViewModel(FakeSource(), { current }, work = Dispatchers.Main).also { it.load() }
         vm.select(TODAY.minusDays(10))
         current = now.plusDays(40)
         vm.load()

@@ -41,9 +41,9 @@ data class DayScores(val sleep: Int?, val readiness: Int?, val movement: Int?)
 
 data class DayTrend(val date: LocalDate, val recovery: Int?, val sleepScore: Int?, val steps: Long?, val restingHr: Double?, val hrv: Double?)
 
-fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = now.toLocalDate(), goals: Goals = Goals()): TodayData {
+fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = now.toLocalDate(), goals: Goals = Goals(), augmented: Boolean = false): TodayData {
     val zone = now.zone
-    val snap = withEstimatedRestingHr(snapshot, zone, now.toLocalDate())
+    val snap = if (augmented) snapshot else withEstimatedRestingHr(snapshot, zone, now.toLocalDate())
     val isToday = date == now.toLocalDate()
     val readiness = readiness(snap, date, zone, goals)
     val sleep = summarizeSleep(date, snap.sleep, zone, goals.sleepHours, snap.heartRate)

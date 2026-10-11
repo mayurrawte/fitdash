@@ -62,7 +62,7 @@ class HealthReader(private val context: Context) : HealthSource {
                     AggregateGroupByDurationRequest(
                         metrics = setOf(StepsRecord.COUNT_TOTAL),
                         timeRangeFilter = TimeRangeFilter.between(
-                            now.toLocalDate().minusDays(1).atStartOfDay(),
+                            start.toLocalDateTime(),
                             now.toLocalDateTime(),
                         ),
                         timeRangeSlicer = Duration.ofHours(1),

@@ -8,13 +8,19 @@ import app.fitdash.health.HealthSnapshot
 import app.fitdash.metrics.Goals
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.buildToday
+import app.fitdash.metrics.withEstimatedRestingHr
 import app.fitdash.settings.Settings
 import app.fitdash.ui.aiSummary
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZonedDateTime
 import kotlin.coroutines.cancellation.CancellationException
@@ -32,18 +38,20 @@ class TodayViewModel(
     private val source: HealthSource,
     private val clock: () -> ZonedDateTime = { ZonedDateTime.now() },
     private val settings: StateFlow<Settings> = MutableStateFlow(Settings()),
+    private val work: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val _state = MutableStateFlow<TodayUiState>(TodayUiState.Loading)
     val state: StateFlow<TodayUiState> = _state
 
     private var job: Job? = null
+    private var rebuildJob: Job? = null
     private var snapshot: HealthSnapshot? = null
     private var lastNow: ZonedDateTime? = null
 
     val selectedDate = MutableStateFlow<LocalDate?>(null)
 
     init {
-        viewModelScope.launch { settings.drop(1).collect { rebuild() } }
+        viewModelScope.launch { settings.map { Goals(it.stepGoal, it.sleepHours) }.distinctUntilChanged().drop(1).collect { rebuild() } }
     }
 
     fun select(date: LocalDate) {
@@ -54,16 +62,28 @@ class TodayViewModel(
     private fun rebuild() {
         val snapshot = snapshot ?: return
         val now = lastNow ?: return
-        val s = settings.value
-        val data = buildToday(snapshot, now, selectedDate.value ?: now.toLocalDate(), Goals(s.stepGoal, s.sleepHours))
-        val prev = _state.value as? TodayUiState.Ready
-        _state.value = TodayUiState.Ready(data, aiSummary(snapshot, data, now), prev?.refreshing ?: false, prev?.error ?: false)
+        val goals = currentGoals()
+        val date = selectedDate.value ?: now.toLocalDate()
+        rebuildJob?.cancel()
+        rebuildJob = viewModelScope.launch {
+            val (data, text) = withContext(work) { build(snapshot, now, date, goals) }
+            val prev = _state.value as? TodayUiState.Ready
+            _state.value = TodayUiState.Ready(data, text, prev?.refreshing ?: false, prev?.error ?: false)
+        }
+    }
+
+    private fun currentGoals() = settings.value.let { Goals(it.stepGoal, it.sleepHours) }
+
+    private fun build(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate, goals: Goals): Pair<TodayData, String> {
+        val data = buildToday(snapshot, now, date, goals, augmented = true)
+        return data to aiSummary(snapshot, data, now)
     }
 
     val permissions: Set<String> get() = source.allPermissions
 
     fun load() {
         job?.cancel()
+        rebuildJob?.cancel()
         job = viewModelScope.launch {
             when (source.availability()) {
                 Availability.NOT_INSTALLED -> {
@@ -85,19 +105,21 @@ class TodayViewModel(
                     TodayUiState.NeedsPermission
                 } else {
                     val read = source.read(now)
-                    snapshot = read
+                    val date = selectedDate.value ?: now.toLocalDate()
+                    val goals = currentGoals()
+                    val (augmented, built) = withContext(work) {
+                        val augmented = withEstimatedRestingHr(read, now.zone, now.toLocalDate())
+                        augmented to build(augmented, now, date, goals)
+                    }
+                    snapshot = augmented
                     lastNow = now
                     if (read.sources.none { it.hasData }) TodayUiState.NoData
-                    else {
-                        val st = settings.value
-                        val date = selectedDate.value ?: now.toLocalDate()
-                        buildToday(read, now, date, Goals(st.stepGoal, st.sleepHours)).let { TodayUiState.Ready(it, aiSummary(read, it, now)) }
-                    }
+                    else TodayUiState.Ready(built.first, built.second)
                 }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                previous?.copy(refreshing = false, error = true) ?: TodayUiState.Failed
+                (_state.value as? TodayUiState.Ready)?.copy(refreshing = false, error = true) ?: TodayUiState.Failed
             }
         }
     }
