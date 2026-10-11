@@ -9,6 +9,7 @@ import app.fitdash.metrics.dailyLast
 import app.fitdash.metrics.dailyMean
 import app.fitdash.metrics.nightEnding
 import app.fitdash.metrics.readiness
+import app.fitdash.metrics.stepsOn
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -38,7 +39,7 @@ fun aiSummary(snapshot: HealthSnapshot, data: TodayData, now: ZonedDateTime): St
         val sleepHours = nightEnding(d, snapshot.sleep, zone)?.let {
             String.format(Locale.ENGLISH, "%.1f", asleepDuration(it).seconds / 3600.0)
         }
-        val daySteps = snapshot.dailyActivity.firstOrNull { it.date == d }?.steps?.toString()
+        val daySteps = stepsOn(snapshot, d, zone)?.toString()
         listOf(d.toString(), score, sleepHours, hrv[d]?.roundToInt()?.toString(), rhr[d]?.roundToInt()?.toString(), daySteps)
             .joinToString(", ") { it ?: "" }
     }

@@ -67,12 +67,18 @@ fun vitals(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): List<VitalR
         daily[date]?.let { VitalReading(s.label, s.unit, it, baseline(daily, date), normalRange(daily, date), s.good) }
     }
 
+fun stepsOn(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): Long? {
+    snapshot.dailyActivity.firstOrNull { it.date == date }?.let { return it.steps }
+    val buckets = snapshot.hourlySteps.filter { it.start.atZone(zone).toLocalDate() == date }
+    return if (buckets.isEmpty()) null else buckets.sumOf { it.steps }
+}
+
 fun activitySummary(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): ActivitySummary? {
     val day = snapshot.dailyActivity.firstOrNull { it.date == date }
     val buckets = snapshot.hourlySteps.filter { it.start.atZone(zone).toLocalDate() == date }
     if (day == null && buckets.isEmpty()) return null
     val hourly = List(24) { h -> buckets.filter { it.start.atZone(zone).hour == h }.sumOf { it.steps } }
-    val steps = day?.steps ?: hourly.sum()
+    val steps = stepsOn(snapshot, date, zone)!!
     val active = snapshot.exercise
         .filter { it.start.atZone(zone).toLocalDate() == date }
         .sumOf { Duration.between(it.start, it.end).toMinutes() }

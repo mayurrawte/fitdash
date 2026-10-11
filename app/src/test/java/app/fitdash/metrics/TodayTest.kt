@@ -9,6 +9,7 @@ import app.fitdash.plus
 import app.fitdash.health.DayActivity
 import app.fitdash.health.GenericSeries
 import app.fitdash.health.HealthSnapshot
+import app.fitdash.health.HourBucket
 import app.fitdash.health.Sample
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -57,6 +58,14 @@ class TodayTest {
             listOf(Suggestion(SuggestionKind.HARD_WORKOUT), Suggestion(SuggestionKind.WALK, 760)),
             buildToday(full, time(21, 30)).suggestions,
         )
+    }
+
+    @Test fun `hourly-only steps reach the week series`() {
+        val snap = HealthSnapshot(hourlySteps = listOf(HourBucket(at(TODAY, 9), 1000), HourBucket(at(TODAY, 10), 2000)))
+        val t = buildToday(snap, time(12))
+        assertEquals(3000L, t.activityWeek.last().steps)
+        assertEquals(t.activity!!.steps, t.activityWeek.last().steps)
+        assertEquals(33, t.movementScore)
     }
 
     @Test fun `empty snapshot`() {

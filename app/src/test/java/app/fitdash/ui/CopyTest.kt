@@ -39,7 +39,8 @@ class CopyTest {
         assertEquals("Rest or an easy walk today.", suggestionText(Suggestion(SuggestionKind.REST)))
         assertEquals("Get to bed 30 minutes earlier tonight.", suggestionText(Suggestion(SuggestionKind.EARLIER_BED)))
         assertEquals("Go easy on caffeine and alcohol today.", suggestionText(Suggestion(SuggestionKind.EASY_ON_STIMULANTS)))
-        assertEquals("2,100 steps to go. A 15-minute walk does it.", suggestionText(Suggestion(SuggestionKind.WALK, 2100)))
+        assertEquals("2,000 steps to go. A 15-minute walk does it.", suggestionText(Suggestion(SuggestionKind.WALK, 2000)))
+        assertEquals("2,001 steps to go before bed.", suggestionText(Suggestion(SuggestionKind.WALK, 2001)))
     }
 
     @Test fun `range notes`() {

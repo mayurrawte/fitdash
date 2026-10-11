@@ -27,4 +27,5 @@ object Tuning {
     const val SUGGEST_MIN_SLEEP_HOURS = 7.0
     const val SUGGEST_HRV_DROP = 0.10
     const val ACTIVE_MINUTES_GOAL = 30
+    const val WALK_15_MIN_STEPS = 2000
 }

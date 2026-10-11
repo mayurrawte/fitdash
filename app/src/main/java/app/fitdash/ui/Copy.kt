@@ -7,6 +7,7 @@ import app.fitdash.metrics.Good
 import app.fitdash.metrics.RangeStatus
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
+import app.fitdash.metrics.Tuning
 import app.fitdash.metrics.rangeStatus
 import java.time.Duration
 import java.time.Instant
@@ -70,7 +71,9 @@ fun suggestionText(s: Suggestion): String = when (s.kind) {
     SuggestionKind.REST -> "Rest or an easy walk today."
     SuggestionKind.EARLIER_BED -> "Get to bed 30 minutes earlier tonight."
     SuggestionKind.EASY_ON_STIMULANTS -> "Go easy on caffeine and alcohol today."
-    SuggestionKind.WALK -> "${formatSteps(s.stepsLeft)} steps to go. A 15-minute walk does it."
+    SuggestionKind.WALK ->
+        if (s.stepsLeft <= Tuning.WALK_15_MIN_STEPS) "${formatSteps(s.stepsLeft)} steps to go. A 15-minute walk does it."
+        else "${formatSteps(s.stepsLeft)} steps to go before bed."
 }
 
 fun rangeNote(value: Double, range: ClosedFloatingPointRange<Double>?, good: Good): String {
