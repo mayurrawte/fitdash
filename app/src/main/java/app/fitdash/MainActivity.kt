@@ -19,7 +19,6 @@ import app.fitdash.health.HealthReader
 import app.fitdash.ui.LoadingScreen
 import app.fitdash.ui.MessageScreen
 import app.fitdash.ui.theme.FitdashTheme
-import app.fitdash.ui.today.TodayScreen
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
 
@@ -77,6 +76,6 @@ private fun App() {
             action = "Retry",
             onAction = vm::load,
         )
-        is TodayUiState.Ready -> TodayScreen(s, onRefresh = vm::load)
+        is TodayUiState.Ready -> LoadingScreen()
     }
 }

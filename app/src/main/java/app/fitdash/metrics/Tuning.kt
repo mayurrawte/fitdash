@@ -22,4 +22,9 @@ object Tuning {
     const val STEP_GOAL = 9000
     const val EVENING_HOUR = 16
     const val TREND_DAYS = 14L
+    const val MIN_RANGE_VALUES = 5
+    const val WEEK_DAYS = 7L
+    const val SUGGEST_MIN_SLEEP_HOURS = 7.0
+    const val SUGGEST_HRV_DROP = 0.10
+    const val ACTIVE_MINUTES_GOAL = 30
 }

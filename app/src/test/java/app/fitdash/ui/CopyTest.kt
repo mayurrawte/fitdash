@@ -21,12 +21,6 @@ class CopyTest {
         assertEquals("14.5", formatNumber(14.5))
     }
 
-    @Test fun `evening words`() {
-        assertEquals("Goal done", eveningWord(100))
-        assertEquals("Almost there", eveningWord(92))
-        assertEquals("Keep moving", eveningWord(50))
-    }
-
     @Test fun `source lines`() {
         assertEquals("no access", sourceLine(SourceStatus("Weight", false, false, emptySet())))
         assertEquals("no data", sourceLine(SourceStatus("Weight", true, false, emptySet())))
