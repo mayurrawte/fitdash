@@ -9,6 +9,10 @@ A calm, animated Health Connect dashboard for Android. Recovery, sleep, activity
 - No account, no cloud, no internet permission. Your data stays on your phone.
 - Reads every Health Connect data type and shows only what you have.
 
+## Install
+
+Download the latest APK: **[fitdash.apk](https://github.com/mayurrawte/fitdash/releases/latest/download/fitdash.apk)** (all builds on the [releases page](https://github.com/mayurrawte/fitdash/releases)). Needs Android 8+ and Health Connect.
+
 ## Build
 
 Requires JDK 17 and the Android SDK.
