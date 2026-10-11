@@ -31,14 +31,6 @@ class BaselinesTest {
         assertEquals(mapOf(TODAY to 61.0), dailyLast(samples, IST))
     }
 
-    @Test fun `dailySum adds up the day`() {
-        val samples = listOf(
-            Sample(Instant.parse("2026-10-11T03:00:00Z"), 2.0),
-            Sample(Instant.parse("2026-10-11T05:00:00Z"), 3.0),
-        )
-        assertEquals(mapOf(TODAY to 5.0), dailySum(samples, IST))
-    }
-
     @Test fun `baseline excludes today and anything older than 30 days`() {
         val daily = mapOf(
             TODAY to 100.0,

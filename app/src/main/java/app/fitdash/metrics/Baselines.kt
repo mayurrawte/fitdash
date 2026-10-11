@@ -20,8 +20,5 @@ fun dailyMean(samples: List<Sample>, zone: ZoneId): Map<LocalDate, Double> =
 fun dailyLast(samples: List<Sample>, zone: ZoneId): Map<LocalDate, Double> =
     byDate(samples, zone).mapValues { (_, v) -> v.maxBy { it.time }.value }
 
-fun dailySum(samples: List<Sample>, zone: ZoneId): Map<LocalDate, Double> =
-    byDate(samples, zone).mapValues { (_, v) -> v.sumOf { it.value } }
-
 fun baseline(daily: Map<LocalDate, Double>, date: LocalDate): Double? =
     median(daily.filterKeys { it < date && it >= date.minusDays(Tuning.BASELINE_DAYS) }.values.toList())

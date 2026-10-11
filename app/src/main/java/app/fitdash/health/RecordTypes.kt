@@ -1,5 +1,7 @@
 package app.fitdash.health
 
+import androidx.health.connect.client.aggregate.AggregateMetric
+import androidx.health.connect.client.aggregate.AggregationResult
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.BasalBodyTemperatureRecord
 import androidx.health.connect.client.records.BasalMetabolicRateRecord
@@ -36,12 +38,16 @@ import kotlin.reflect.KClass
 
 data class TypeInfo(val label: String, val type: KClass<out Record>)
 
+class DailyTotal<R : Any>(val metric: AggregateMetric<R>, private val convert: (R) -> Double) {
+    fun value(result: AggregationResult): Double? = result[metric]?.let(convert)
+}
+
 class GenericType<T : Record>(
     val label: String,
     val unit: String,
     val type: KClass<T>,
-    val perDay: Boolean = false,
-    private val extract: (T) -> Sample?,
+    val dailyTotal: DailyTotal<*>? = null,
+    private val extract: (T) -> Sample? = { null },
 ) {
     @Suppress("UNCHECKED_CAST")
     fun sample(record: Record): Sample? = extract(record as T)
@@ -82,20 +88,12 @@ val GENERIC_TYPES: List<GenericType<*>> = listOf(
     GenericType("Basal body temperature", "°C", BasalBodyTemperatureRecord::class) {
         Sample(it.time, it.temperature.inCelsius)
     },
-    GenericType("Hydration", "L", HydrationRecord::class, perDay = true) { Sample(it.startTime, it.volume.inLiters) },
-    GenericType("Nutrition", "kcal", NutritionRecord::class, perDay = true) { r ->
-        r.energy?.let { Sample(r.startTime, it.inKilocalories) }
-    },
-    GenericType("Floors climbed", "floors", FloorsClimbedRecord::class, perDay = true) { Sample(it.startTime, it.floors) },
-    GenericType("Elevation gained", "m", ElevationGainedRecord::class, perDay = true) {
-        Sample(it.startTime, it.elevation.inMeters)
-    },
-    GenericType("Active calories", "kcal", ActiveCaloriesBurnedRecord::class, perDay = true) {
-        Sample(it.startTime, it.energy.inKilocalories)
-    },
-    GenericType("Wheelchair pushes", "pushes", WheelchairPushesRecord::class, perDay = true) {
-        Sample(it.startTime, it.count.toDouble())
-    },
+    GenericType("Hydration", "L", HydrationRecord::class, DailyTotal(HydrationRecord.VOLUME_TOTAL) { it.inLiters }),
+    GenericType("Nutrition", "kcal", NutritionRecord::class, DailyTotal(NutritionRecord.ENERGY_TOTAL) { it.inKilocalories }),
+    GenericType("Floors climbed", "floors", FloorsClimbedRecord::class, DailyTotal(FloorsClimbedRecord.FLOORS_CLIMBED_TOTAL) { it }),
+    GenericType("Elevation gained", "m", ElevationGainedRecord::class, DailyTotal(ElevationGainedRecord.ELEVATION_GAINED_TOTAL) { it.inMeters }),
+    GenericType("Active calories", "kcal", ActiveCaloriesBurnedRecord::class, DailyTotal(ActiveCaloriesBurnedRecord.ACTIVE_CALORIES_TOTAL) { it.inKilocalories }),
+    GenericType("Wheelchair pushes", "pushes", WheelchairPushesRecord::class, DailyTotal(WheelchairPushesRecord.COUNT_TOTAL) { it.toDouble() }),
     GenericType("Power", "W", PowerRecord::class) { r ->
         r.samples.takeIf { it.isNotEmpty() }?.let { s -> Sample(r.startTime, s.map { it.power.inWatts }.average()) }
     },
