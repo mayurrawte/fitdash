@@ -55,6 +55,8 @@ class TodayViewModel(
 
     private val permissionRequests = Channel<Unit>(Channel.CONFLATED)
     val permissionNeeded: Flow<Unit> = permissionRequests.receiveAsFlow()
+    private val messageChannel = Channel<String>(Channel.CONFLATED)
+    val messages: Flow<String> = messageChannel.receiveAsFlow()
     private var lastWaterId: String? = null
 
     init {
@@ -90,11 +92,17 @@ class TodayViewModel(
 
     val permissions: Set<String> get() = source.allPermissions
 
+    private suspend fun writeFailed() {
+        val granted = source.grantedPermissions()
+        if (source.allPermissions.any { ".WRITE_" in it && it !in granted }) permissionRequests.trySend(Unit)
+        else messageChannel.trySend("Couldn't save to Health Connect")
+    }
+
     fun addWater(ml: Int) {
         viewModelScope.launch {
             val id = source.addWater(ml / 1000.0, clock().toInstant())
             if (id == null) {
-                permissionRequests.trySend(Unit)
+                writeFailed()
             } else {
                 lastWaterId = id
                 load()
@@ -106,14 +114,13 @@ class TodayViewModel(
         val id = lastWaterId ?: return
         lastWaterId = null
         viewModelScope.launch {
-            source.deleteWater(id)
-            load()
+            if (source.deleteWater(id)) load() else messageChannel.trySend("Couldn't save to Health Connect")
         }
     }
 
     fun setHeight(cm: Int) {
         viewModelScope.launch {
-            if (source.setHeight(cm / 100.0, clock().toInstant())) load() else permissionRequests.trySend(Unit)
+            if (source.setHeight(cm / 100.0, clock().toInstant())) load() else writeFailed()
         }
     }
 

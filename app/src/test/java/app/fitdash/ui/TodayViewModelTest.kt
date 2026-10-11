@@ -28,7 +28,7 @@ import java.time.ZonedDateTime
 
 private class FakeSource(
     var status: Availability = Availability.AVAILABLE,
-    var granted: Set<String> = setOf("read"),
+    var granted: Set<String> = setOf("read", "x.WRITE_water"),
     var snapshot: HealthSnapshot = HealthSnapshot(sources = listOf(SourceStatus("Sleep", true, true, setOf("com.fitbit.FitbitMobile")))),
     var fail: Boolean = false,
     var gate: CompletableDeferred<Unit>? = null,
@@ -38,7 +38,7 @@ private class FakeSource(
     val waterAdded = mutableListOf<Double>()
     val waterDeleted = mutableListOf<String>()
     val heights = mutableListOf<Double>()
-    override val allPermissions = setOf("read")
+    override val allPermissions = setOf("read", "x.WRITE_water")
     override fun availability() = status
     override suspend fun grantedPermissions() = granted
     override suspend fun read(now: ZonedDateTime): HealthSnapshot {
@@ -52,7 +52,7 @@ private class FakeSource(
         waterAdded += liters
         return "water-${waterAdded.size}"
     }
-    override suspend fun deleteWater(id: String) { waterDeleted += id }
+    override suspend fun deleteWater(id: String): Boolean { waterDeleted += id; return true }
     override suspend fun setHeight(meters: Double, at: Instant): Boolean {
         if (canWrite) heights += meters
         return canWrite
@@ -174,7 +174,7 @@ class TodayViewModelTest {
     }
 
     @Test fun `a write without permission asks for the permission once`() = runBlocking {
-        val source = FakeSource(canWrite = false)
+        val source = FakeSource(canWrite = false, granted = setOf("read"))
         val vm = load(source)
         vm.addWater(250)
         vm.permissionNeeded.first()
@@ -182,5 +182,12 @@ class TodayViewModelTest {
         vm.permissionNeeded.first()
         assertEquals(1, source.reads)
         assertTrue(source.waterAdded.isEmpty())
+    }
+
+    @Test fun `a failed write with permission shows a message`() = runBlocking {
+        val source = FakeSource(canWrite = false)
+        val vm = load(source)
+        vm.addWater(250)
+        assertEquals("Couldn't save to Health Connect", vm.messages.first())
     }
 }

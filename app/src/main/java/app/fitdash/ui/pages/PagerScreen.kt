@@ -145,7 +145,7 @@ fun PagerScreen(
             )
         }
         if (sharing) ShareRender(data, onDone = { sharing = false })
-        if (showSettings) SettingsSheet(store, data.sources, onSetHeight, onDismiss = { showSettings = false })
+        if (showSettings) SettingsSheet(store, data.sources, data.heightMeters, onSetHeight, onDismiss = { showSettings = false })
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
         metric?.let { MetricDetailSheet(it, data, settings.miles, onDismiss = { metric = null }) }
         if (showCalendar) DatePickerSheet(data.date, today, onSelectDate, onDismiss = { showCalendar = false })

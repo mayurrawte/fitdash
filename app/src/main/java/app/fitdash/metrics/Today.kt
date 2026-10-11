@@ -39,6 +39,7 @@ data class TodayData(
     val genericDaily: Map<String, List<DayValue>>,
     val waterLiters: Double,
     val waterGoal: Double,
+    val heightMeters: Double?,
     val bmi: Double?,
     val bmiBand: BmiBand?,
 )
@@ -108,6 +109,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         genericDaily = snap.generic.filter { it.points.isNotEmpty() }.associate { it.label to genericDailySeries(it.points, date, zone) },
         waterLiters = snap.waterDaily[date] ?: 0.0,
         waterGoal = goals.waterLiters,
+        heightMeters = snap.heightMeters,
         bmi = bmiValue,
         bmiBand = bmiValue?.let(::bmiBand),
     )

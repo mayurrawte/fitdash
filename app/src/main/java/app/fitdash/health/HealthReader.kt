@@ -177,18 +177,35 @@ class HealthReader(private val context: Context) : HealthSource {
         if (writeWater !in grantedPermissions()) return null
         val offset = ZoneId.systemDefault().rules.getOffset(at)
         val record = HydrationRecord(at, offset, at.plusSeconds(1), offset, Volume.liters(liters), Metadata.manualEntry())
-        return client.insertRecords(listOf(record)).recordIdsList.first()
+        return try {
+            client.insertRecords(listOf(record)).recordIdsList.first()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
     }
 
-    override suspend fun deleteWater(id: String) {
+    override suspend fun deleteWater(id: String): Boolean = try {
         client.deleteRecords(HydrationRecord::class, listOf(id), emptyList())
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        false
     }
 
     override suspend fun setHeight(meters: Double, at: Instant): Boolean {
         if (writeHeight !in grantedPermissions()) return false
         val offset = ZoneId.systemDefault().rules.getOffset(at)
-        client.insertRecords(listOf(HeightRecord(at, offset, Length.meters(meters), Metadata.manualEntry())))
-        return true
+        return try {
+            client.insertRecords(listOf(HeightRecord(at, offset, Length.meters(meters), Metadata.manualEntry())))
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private suspend inline fun <reified T : Record> latest(now: ZonedDateTime): T? =

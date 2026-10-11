@@ -79,12 +79,13 @@ private const val WHY =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onSetHeight: (Int) -> Unit, onDismiss: () -> Unit) {
+fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, heightMeters: Double?, onSetHeight: (Int) -> Unit, onDismiss: () -> Unit) {
     val settings by store.flow.collectAsState()
     val uri = LocalUriHandler.current
     val context = LocalContext.current
     var showInfo by remember { mutableStateOf(false) }
     var showHeight by remember { mutableStateOf(false) }
+    val heightCm = heightMeters?.let { (it * 100).roundToInt() } ?: settings.heightCm
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -110,7 +111,7 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onSetHeight
                 }
             }
             item {
-                ListRow(NavIcons.walk, "Height", settings.heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set") { showHeight = true }
+                ListRow(NavIcons.walk, "Height", heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set") { showHeight = true }
             }
             item { Label("UNITS") }
             item { SegmentedControl(listOf("km", "miles"), if (settings.miles) 1 else 0, { i -> store.update { it.copy(miles = i == 1) } }) }
@@ -134,7 +135,7 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onSetHeight
     }
     if (showInfo) InfoSheet(sources, onDismiss = { showInfo = false })
     if (showHeight) {
-        HeightDialog(settings.heightCm, settings.miles, onDismiss = { showHeight = false }) { cm ->
+        HeightDialog(heightCm, settings.miles, onDismiss = { showHeight = false }) { cm ->
             store.update { it.copy(heightCm = cm) }
             onSetHeight(cm)
             showHeight = false

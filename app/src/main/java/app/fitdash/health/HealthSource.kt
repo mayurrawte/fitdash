@@ -11,6 +11,6 @@ interface HealthSource {
     suspend fun grantedPermissions(): Set<String>
     suspend fun read(now: ZonedDateTime): HealthSnapshot
     suspend fun addWater(liters: Double, at: Instant): String?
-    suspend fun deleteWater(id: String)
+    suspend fun deleteWater(id: String): Boolean
     suspend fun setHeight(meters: Double, at: Instant): Boolean
 }
