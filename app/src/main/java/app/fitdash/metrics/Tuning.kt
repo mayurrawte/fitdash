@@ -29,4 +29,7 @@ object Tuning {
     const val SUGGEST_HRV_DROP = 0.10
     const val ACTIVE_MINUTES_GOAL = 30
     const val WALK_15_MIN_STEPS = 2000
+    const val RHR_WINDOW_MINUTES = 30L
+    const val MIN_WINDOW_SAMPLES = 3
+    const val MIN_HR_SAMPLES = 30
 }

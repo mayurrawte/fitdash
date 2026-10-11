@@ -4,6 +4,7 @@ import app.fitdash.TODAY
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.Duration
+import java.time.Instant
 
 class SuggestionsTest {
     private fun ready(score: Int) = ReadinessResult.Ready(score, band(score), Component.entries.toSet())
@@ -12,6 +13,7 @@ class SuggestionsTest {
         asleep = Duration.ofSeconds((hours * 3600).toLong()),
         deep = Duration.ZERO, rem = Duration.ZERO, light = Duration.ZERO, awake = Duration.ZERO,
         hasStages = false, score = 80, stages = emptyList(),
+        start = Instant.EPOCH, end = Instant.EPOCH, timeInBed = Duration.ZERO, restorative = null, overnightHr = null,
     )
 
     private fun heart(hrv: Double, base: Double) = HeartSummary(hrv, base, 60.0, 60.0, emptyList(), emptyList(), null, null)

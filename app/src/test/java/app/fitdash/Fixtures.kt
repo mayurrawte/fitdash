@@ -60,6 +60,7 @@ operator fun HealthSnapshot.plus(o: HealthSnapshot) = HealthSnapshot(
     sleep = sleep + o.sleep,
     hrv = hrv + o.hrv,
     restingHr = restingHr + o.restingHr,
+    heartRate = heartRate + o.heartRate,
     spo2 = spo2 + o.spo2,
     respiratoryRate = respiratoryRate + o.respiratoryRate,
     skinTempDelta = skinTempDelta + o.skinTempDelta,
@@ -68,4 +69,5 @@ operator fun HealthSnapshot.plus(o: HealthSnapshot) = HealthSnapshot(
     exercise = exercise + o.exercise,
     generic = generic + o.generic,
     sources = sources + o.sources,
+    estimatedRestingHrDates = estimatedRestingHrDates + o.estimatedRestingHrDates,
 )

@@ -25,6 +25,7 @@ data class HealthSnapshot(
     val sleep: List<SleepSession> = emptyList(),
     val hrv: List<Sample> = emptyList(),
     val restingHr: List<Sample> = emptyList(),
+    val heartRate: List<Sample> = emptyList(),
     val spo2: List<Sample> = emptyList(),
     val respiratoryRate: List<Sample> = emptyList(),
     val skinTempDelta: List<Sample> = emptyList(),
@@ -33,4 +34,5 @@ data class HealthSnapshot(
     val exercise: List<Interval> = emptyList(),
     val generic: List<GenericSeries> = emptyList(),
     val sources: List<SourceStatus> = emptyList(),
+    val estimatedRestingHrDates: Set<LocalDate> = emptySet(),
 )
