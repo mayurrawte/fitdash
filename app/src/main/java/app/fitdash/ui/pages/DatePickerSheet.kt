@@ -5,12 +5,21 @@ import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SelectableDates
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.graphics.Color
 import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.Space
+import app.fitdash.ui.theme.Type
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -24,7 +33,7 @@ private fun Long.toUtcDate() = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC)
 fun DatePickerSheet(selected: LocalDate, today: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
     val earliest = today.minusDays(DAYS_BACK)
     val state = rememberDatePickerState(
-        initialSelectedDateMillis = null,
+        initialSelectedDateMillis = selected.toUtcMillis(),
         initialDisplayedMonthMillis = selected.toUtcMillis(),
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long) = utcTimeMillis.toUtcDate() in earliest..today
@@ -34,7 +43,7 @@ fun DatePickerSheet(selected: LocalDate, today: LocalDate, onPick: (LocalDate) -
     LaunchedEffect(state) {
         snapshotFlow { state.selectedDateMillis }.collect { millis ->
             val date = millis?.toUtcDate()
-            if (date != null) {
+            if (date != null && date != selected) {
                 onPick(date)
                 onDismiss()
             }
@@ -64,5 +73,10 @@ fun DatePickerSheet(selected: LocalDate, today: LocalDate, onPick: (LocalDate) -
                 dividerColor = Palette.Divider,
             ),
         )
+        Box(Modifier.fillMaxWidth().padding(bottom = Space.l), contentAlignment = Alignment.Center) {
+            TextButton(onClick = { onPick(today); onDismiss() }) {
+                Text("TODAY", style = Type.label, color = Palette.Accent)
+            }
+        }
     }
 }
