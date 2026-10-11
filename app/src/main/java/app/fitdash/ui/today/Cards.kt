@@ -142,7 +142,16 @@ private fun HeartCard(h: HeartSummary) {
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(28.dp)) {
             h.hrv?.let { Column { ValueText(it.roundToInt().toString(), "ms"); Text("HRV", style = Type.label, color = Palette.Muted) } }
-            h.restingHr?.let { Column { ValueText(it.roundToInt().toString(), "bpm"); Text("RESTING", style = Type.label, color = Palette.Muted) } }
+            h.restingHr?.let {
+                Column {
+                    ValueText(it.roundToInt().toString(), "bpm")
+                    Text("RESTING", style = Type.label, color = Palette.Muted)
+                    if (h.restingHrBaseline != null) {
+                        val d = it - h.restingHrBaseline
+                        Text("${if (d > 0) "↑" else "↓"} ${abs(d).roundToInt()} vs baseline", style = Type.small, color = if (d <= 0) scoreColor(80) else scoreColor(30))
+                    }
+                }
+            }
         }
         if (h.hrvTrend.size >= 2) TrendLine(h.hrvTrend, Palette.Hrv, Modifier.fillMaxWidth().height(56.dp).padding(top = 8.dp))
     }
