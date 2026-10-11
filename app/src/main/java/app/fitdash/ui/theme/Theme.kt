@@ -30,7 +30,6 @@ object Palette {
     val Faint: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.faint
     val Calibrating: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.faint
     val Green: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.good
-    val DimGreen: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.good.copy(alpha = 0.45f)
     val Hrv: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.accent
     val Awake: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.awake
     val Rem: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.rem

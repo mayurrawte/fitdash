@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.fitdash.health.GenericSeries
 import app.fitdash.metrics.DayTrend
+import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.dailyMean
 import app.fitdash.ui.components.Bars
@@ -26,8 +27,8 @@ import app.fitdash.ui.dayLetter
 import app.fitdash.ui.daysOfData
 import app.fitdash.ui.formatNumber
 import app.fitdash.ui.formatSteps
+import app.fitdash.ui.metricName
 import app.fitdash.ui.theme.Palette
-import app.fitdash.ui.theme.scoreColor
 import java.time.ZoneId
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
@@ -45,26 +46,28 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
         }
         item(key = "toggle") { SegmentedControl(listOf("Week", "Month"), if (month) 1 else 0, { month = it == 1 }) }
         val letters = if (month) emptyList() else days.map { dayLetter(it.date) }
-        fun scoreBars(key: String, label: String, pick: (DayTrend) -> Int?, index: Int) {
+        @Composable fun opener(kind: MetricKind) = metricOpener(MetricRef.Kind(kind))
+        fun scoreBars(key: String, label: String, kind: MetricKind, pick: (DayTrend) -> Int?, index: Int) {
             val values = days.map(pick)
             if (values.all { it == null }) return
             revealItem("$key-$range", index) {
-                SectionCard(label, trailing = "avg ${values.filterNotNull().average().roundToInt()}") {
-                    val divider = Palette.Divider
-                    val colors = values.map { v -> v?.let { scoreColor(it) } ?: divider }
-                    Bars("$key-$range", values.map { (it ?: 0).toFloat() }, { i -> colors[i] }, labels = letters)
+                SectionCard(label, trailing = "avg ${values.filterNotNull().average().roundToInt()}", onClick = opener(kind), description = "${metricName(kind)} details") {
+                    Bars("$key-$range", values.map { (it ?: 0).toFloat() }, labels = letters, poor = { i -> (values[i] ?: 100) < 50 })
                 }
             }
         }
-        scoreBars("recovery", "RECOVERY", { it.recovery }, 0)
-        scoreBars("sleep-score", "SLEEP SCORE", { it.sleepScore }, 1)
+        scoreBars("recovery", "RECOVERY", MetricKind.RECOVERY, { it.recovery }, 0)
+        scoreBars("sleep-score", "SLEEP SCORE", MetricKind.SLEEP_SCORE, { it.sleepScore }, 1)
         if (days.any { it.steps != null }) {
             val known = days.mapNotNull { it.steps }
             revealItem("steps-$range", 2) {
-                SectionCard("STEPS", trailing = "avg ${formatSteps(known.average().roundToLong())}") {
-                    val divider = Palette.Divider
-                    val colors = days.map { d -> d.steps?.let { scoreColor((it * 100.0 / data.goals.steps).roundToInt()) } ?: divider }
-                    Bars("steps-$range", days.map { (it.steps ?: 0L).toFloat() }, { i -> colors[i] }, labels = letters)
+                SectionCard("STEPS", trailing = "avg ${formatSteps(known.average().roundToLong())}", onClick = opener(MetricKind.STEPS), description = "Steps details") {
+                    Bars(
+                        "steps-$range",
+                        days.map { (it.steps ?: 0L).toFloat() },
+                        labels = letters,
+                        poor = { i -> (days[i].steps ?: Long.MAX_VALUE) * 2 < data.goals.steps },
+                    )
                 }
             }
         }
@@ -72,16 +75,16 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
         if (rhr.size >= 2) {
             val estimated = rhr.any { it.date in data.estimatedRestingHrDates }
             revealItem("rhr-$range", 3) {
-                SectionCard("RESTING HR", trailing = "avg ${rhr.mapNotNull { it.restingHr }.average().roundToInt()} bpm" + if (estimated) " · est." else "") {
-                    TrendLine("rhr-$range", rhr.mapNotNull { it.restingHr }, Palette.Rem, Modifier.fillMaxWidth().height(74.dp))
+                SectionCard("RESTING HR", trailing = "avg ${rhr.mapNotNull { it.restingHr }.average().roundToInt()} bpm" + if (estimated) " · est." else "", onClick = opener(MetricKind.RESTING_HR), description = "Resting heart rate details") {
+                    TrendLine("rhr-$range", rhr.mapNotNull { it.restingHr }, Modifier.fillMaxWidth().height(74.dp))
                 }
             }
         }
         val hrv = days.mapNotNull { it.hrv }
         if (hrv.size >= 2) {
             revealItem("hrv-$range", 4) {
-                SectionCard("HRV", trailing = "avg ${hrv.average().roundToInt()} ms") {
-                    TrendLine("hrv-$range", hrv, Palette.Hrv, Modifier.fillMaxWidth().height(74.dp))
+                SectionCard("HRV", trailing = "avg ${hrv.average().roundToInt()} ms", onClick = opener(MetricKind.HRV), description = "HRV details") {
+                    TrendLine("hrv-$range", hrv, Modifier.fillMaxWidth().height(74.dp))
                 }
             }
         }
@@ -92,8 +95,9 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
                     data.generic.map<GenericSeries, @Composable (Modifier) -> Unit> { g ->
                         { m ->
                             val daily = dailyMean(g.points, ZoneId.systemDefault()).toSortedMap().values.toList()
-                            StatTile(g.label, formatNumber(daily.last()), g.unit, daysOfData(daily.size), m) {
-                                if (daily.size >= 2) TrendLine("generic-${g.label}", daily, Palette.Muted, Modifier.fillMaxWidth().height(28.dp)) else EmptyTrack()
+                            val ref = MetricRef.Generic(g.label, g.unit)
+                            StatTile(g.label, formatNumber(daily.last()), g.unit, daysOfData(daily.size), m, onClick = metricOpener(ref), description = metricDescription(ref)) {
+                                if (daily.size >= 2) TrendLine("generic-${g.label}", daily, Modifier.fillMaxWidth().height(28.dp)) else EmptyTrack()
                             }
                         }
                     },

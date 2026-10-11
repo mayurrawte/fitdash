@@ -76,6 +76,7 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
     var showSettings by remember { mutableStateOf(false) }
     var sharing by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
+    var metric by remember { mutableStateOf<MetricRef?>(null) }
     val settings by store.flow.collectAsState()
     val today = if (data.isToday) data.date else LocalDate.now()
 
@@ -100,7 +101,7 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
         onRetry = onRefresh,
     )
 
-    CompositionLocalProvider(LocalRevealed provides revealed) {
+    CompositionLocalProvider(LocalRevealed provides revealed, LocalOpenMetric provides { metric = it }) {
         PullToRefreshBox(
             isRefreshing = state.refreshing,
             onRefresh = onRefresh,
@@ -138,6 +139,7 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
         if (sharing) ShareRender(data, onDone = { sharing = false })
         if (showSettings) SettingsSheet(store, data.sources, onDismiss = { showSettings = false })
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
+        metric?.let { MetricDetailSheet(it, data, settings.miles, onDismiss = { metric = null }) }
         if (showCalendar) DatePickerSheet(data.date, today, onSelectDate, onDismiss = { showCalendar = false })
     }
 }

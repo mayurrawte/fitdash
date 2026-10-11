@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -45,12 +47,18 @@ val CardShape = RoundedCornerShape(18.dp)
 @Composable
 fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card).border(1.dp, Palette.Divider, CardShape)
 
+fun Modifier.tappable(onClick: (() -> Unit)?, description: String?): Modifier =
+    if (onClick == null) this
+    else clickable(role = Role.Button, onClick = onClick).semantics { if (description != null) contentDescription = description }
+
 @Composable
 fun SectionCard(
     label: String,
     modifier: Modifier = Modifier,
     trailing: String? = null,
     trailingColor: Color = Palette.Muted,
+    onClick: (() -> Unit)? = null,
+    description: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
@@ -58,6 +66,7 @@ fun SectionCard(
             .padding(horizontal = Space.l)
             .fillMaxWidth()
             .cardSurface()
+            .tappable(onClick, description)
             .padding(horizontal = Space.l, vertical = Space.l),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

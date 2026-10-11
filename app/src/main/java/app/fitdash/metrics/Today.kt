@@ -35,6 +35,8 @@ data class TodayData(
     val trend: List<DayTrend>,
     val daysWithData: Set<LocalDate>,
     val estimatedRestingHrDates: Set<LocalDate>,
+    val series: Map<MetricKind, List<DayValue>>,
+    val genericDaily: Map<String, List<DayValue>>,
 )
 
 data class DayScores(val sleep: Int?, val readiness: Int?, val movement: Int?)
@@ -97,5 +99,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
             snap.dailyActivity.filter { it.steps > 0 }.map { it.date } +
             snap.hourlySteps.filter { it.steps > 0 }.map { it.start.atZone(zone).toLocalDate() }).toSet(),
         estimatedRestingHrDates = snap.estimatedRestingHrDates,
+        series = MetricKind.entries.associateWith { metricSeries(snap, it, date, zone, goals) },
+        genericDaily = snap.generic.filter { it.points.isNotEmpty() }.associate { it.label to genericDailySeries(it.points, date, zone) },
     )
 }

@@ -34,11 +34,14 @@ fun StatTile(
     status: Status? = null,
     icon: ImageVector? = null,
     labelTag: String? = null,
+    onClick: (() -> Unit)? = null,
+    description: String? = null,
     visual: @Composable () -> Unit,
 ) {
     Column(
         modifier
             .cardSurface()
+            .tappable(onClick, description)
             .padding(Space.m)
             .semantics(mergeDescendants = true) {},
     ) {
@@ -63,10 +66,13 @@ fun NumberTile(
     modifier: Modifier = Modifier,
     status: Status? = null,
     note: String? = null,
+    onClick: (() -> Unit)? = null,
+    description: String? = null,
 ) {
     Column(
         modifier
             .cardSurface()
+            .tappable(onClick, description)
             .padding(Space.m)
             .semantics(mergeDescendants = true) {},
     ) {
