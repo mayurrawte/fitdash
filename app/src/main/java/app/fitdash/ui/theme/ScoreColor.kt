@@ -1,18 +1,19 @@
 package app.fitdash.ui.theme
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import kotlin.math.roundToInt
 
-private data class Stop(val at: Int, val r: Int, val g: Int, val b: Int)
-
-private val STOPS = listOf(Stop(0, 229, 72, 77), Stop(50, 245, 176, 65), Stop(100, 61, 220, 151))
-
-fun scoreColor(score: Int): Color {
+fun scoreColor(score: Int, bad: Color, warn: Color, good: Color): Color {
     val s = score.coerceIn(0, 100)
-    val (lo, hi) = if (s <= 50) STOPS[0] to STOPS[1] else STOPS[1] to STOPS[2]
-    val t = (s - lo.at) / (hi.at - lo.at).toFloat()
-    fun mix(a: Int, b: Int) = (a + (b - a) * t).roundToInt()
-    return Color(mix(lo.r, hi.r), mix(lo.g, hi.g), mix(lo.b, hi.b))
+    val (lo, hi, t) = if (s <= 50) Triple(bad, warn, s / 50f) else Triple(warn, good, (s - 50) / 50f)
+    fun mix(a: Float, b: Float) = (((a + (b - a) * t) * 255).roundToInt())
+    return Color(mix(lo.red, hi.red), mix(lo.green, hi.green), mix(lo.blue, hi.blue))
 }
+
+@Composable
+@ReadOnlyComposable
+fun scoreColor(score: Int): Color = LocalTheme.current.let { scoreColor(score, it.bad, it.warn, it.good) }
 
 fun breathMillis(score: Int): Int = (7000 - (score.coerceIn(15, 98) - 15) / 83.0 * 3000).roundToInt()

@@ -44,6 +44,8 @@ private val PillShape = RoundedCornerShape(20.dp)
 
 @Composable
 fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    val background = Palette.Background
+    val glass = Palette.Glass
     Box(
         modifier
             .shadow(18.dp, BarShape, ambientColor = Color.Black, spotColor = Color.Black)
@@ -52,8 +54,8 @@ fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSe
                 HazeInput.Sources(hazeState),
                 HazeBlurStyle {
                     blurRadius(20.dp)
-                    backgroundColor(Palette.Background)
-                    colorEffects(listOf(HazeColorEffect.tint(Palette.Glass)))
+                    backgroundColor(background)
+                    colorEffects(listOf(HazeColorEffect.tint(glass)))
                     noiseFactor(0f)
                 },
             )

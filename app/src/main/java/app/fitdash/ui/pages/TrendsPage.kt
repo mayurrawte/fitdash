@@ -61,10 +61,12 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
             val known = data.readinessWeek.mapNotNull { it.score }
             revealItem("recovery-week", 2) {
                 SectionCard("RECOVERY · 7 DAYS", trailing = "avg ${known.average().roundToInt()}") {
+                    val divider = Palette.Divider
+                    val dayColors = data.readinessWeek.map { d -> d.score?.let { scoreColor(it) } ?: divider }
                     Bars(
                         "recovery-week",
                         data.readinessWeek.map { (it.score ?: 0).toFloat() },
-                        { i -> data.readinessWeek[i].score?.let(::scoreColor) ?: Palette.Divider },
+                        { i -> dayColors[i] },
                         labels = data.readinessWeek.map { dayLetter(it.date) },
                     )
                 }

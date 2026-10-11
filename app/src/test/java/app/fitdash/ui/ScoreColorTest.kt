@@ -7,16 +7,20 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ScoreColorTest {
+    private val bad = Color(229, 72, 77)
+    private val warn = Color(245, 176, 65)
+    private val good = Color(61, 220, 151)
+
     @Test fun `traffic light stops`() {
-        assertEquals(Color(229, 72, 77), scoreColor(0))
-        assertEquals(Color(245, 176, 65), scoreColor(50))
-        assertEquals(Color(61, 220, 151), scoreColor(100))
+        assertEquals(Color(229, 72, 77), scoreColor(0, bad, warn, good))
+        assertEquals(Color(245, 176, 65), scoreColor(50, bad, warn, good))
+        assertEquals(Color(61, 220, 151), scoreColor(100, bad, warn, good))
     }
 
     @Test fun `interpolates and clamps`() {
-        assertEquals(Color(237, 124, 71), scoreColor(25))
-        assertEquals(scoreColor(0), scoreColor(-5))
-        assertEquals(scoreColor(100), scoreColor(130))
+        assertEquals(Color(237, 124, 71), scoreColor(25, bad, warn, good))
+        assertEquals(scoreColor(0, bad, warn, good), scoreColor(-5, bad, warn, good))
+        assertEquals(scoreColor(100, bad, warn, good), scoreColor(130, bad, warn, good))
     }
 
     @Test fun `breathing slows when the score is low`() {

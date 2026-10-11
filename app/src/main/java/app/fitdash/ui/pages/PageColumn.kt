@@ -113,12 +113,12 @@ fun LazyListScope.revealItem(key: String, index: Int, content: @Composable () ->
     item(key = key) { Reveal(key, index) { content() } }
 }
 
-fun LazyListScope.pageHeader(kicker: String, title: String?, sub: String?, subColor: Color = Palette.Green) {
+fun LazyListScope.pageHeader(kicker: String, title: String?, sub: String?, subColor: Color? = null) {
     item(key = "header") {
         Column(Modifier.padding(horizontal = Space.xl, vertical = Space.s)) {
             Text(kicker, style = Type.label, color = Palette.Muted)
             if (title != null) Text(title, style = Type.title, color = Palette.Text, modifier = Modifier.padding(top = Space.xs))
-            if (sub != null) Text(sub, style = Type.small, color = subColor, modifier = Modifier.padding(top = 2.dp))
+            if (sub != null) Text(sub, style = Type.small, color = subColor ?: Palette.Green, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }

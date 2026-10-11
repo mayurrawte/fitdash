@@ -9,28 +9,40 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.graphics.Color.TRANSPARENT
 import app.fitdash.health.HealthReader
+import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.LoadingScreen
 import app.fitdash.ui.MessageScreen
 import app.fitdash.ui.pages.PagerScreen
 import app.fitdash.ui.theme.FitdashTheme
+import app.fitdash.ui.theme.THEMES
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-        )
-        setContent { FitdashTheme { App() } }
+        setContent {
+            val store = remember { SettingsStore(applicationContext) }
+            val settings by store.flow.collectAsStateWithLifecycle()
+            val light = THEMES.getValue(settings.theme).lightSystemBars
+            LaunchedEffect(settings.theme) {
+                (this@MainActivity as ComponentActivity).enableEdgeToEdge(
+                    statusBarStyle = if (light) SystemBarStyle.light(TRANSPARENT, TRANSPARENT) else SystemBarStyle.dark(TRANSPARENT),
+                    navigationBarStyle = if (light) SystemBarStyle.light(TRANSPARENT, TRANSPARENT) else SystemBarStyle.dark(TRANSPARENT),
+                )
+            }
+            FitdashTheme(settings.theme) { App(store) }
+        }
     }
 }
 
@@ -38,9 +50,9 @@ private const val HEALTH_CONNECT_STORE =
     "market://details?id=com.google.android.apps.healthdata&url=healthconnect%3A%2F%2Fonboarding"
 
 @Composable
-private fun App() {
+private fun App(store: SettingsStore) {
     val context = LocalContext.current
-    val vm: TodayViewModel = viewModel { TodayViewModel(HealthReader(context.applicationContext)) }
+    val vm: TodayViewModel = viewModel { TodayViewModel(HealthReader(context.applicationContext), settings = store.flow) }
     val state by vm.state.collectAsStateWithLifecycle()
     val askPermissions = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { vm.load() }
 
@@ -77,6 +89,6 @@ private fun App() {
             action = "Retry",
             onAction = vm::load,
         )
-        is TodayUiState.Ready -> PagerScreen(s, onRefresh = vm::load)
+        is TodayUiState.Ready -> PagerScreen(s, store, onRefresh = vm::load)
     }
 }

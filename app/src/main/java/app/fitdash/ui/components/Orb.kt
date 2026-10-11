@@ -44,8 +44,9 @@ private val OnOrbDark = Color(0xFF0B1A14)
 
 @Composable
 fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, content: @Composable () -> Unit) {
-    val target = score?.let(::scoreColor) ?: Palette.Calibrating
-    val colour = remember { Animatable(Palette.Calibrating) }
+    val target = score?.let { scoreColor(it) } ?: Palette.Calibrating
+    val calibrating = Palette.Calibrating
+    val colour = remember { Animatable(calibrating) }
     LaunchedEffect(target) { colour.animateTo(target, tween(Motion.COLOUR, easing = Motion.ease)) }
     val transition = rememberInfiniteTransition(label = "orb")
     val breath = breathMillis(score ?: 50)
