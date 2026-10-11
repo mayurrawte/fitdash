@@ -110,7 +110,7 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onDismiss: 
             item { Label("ABOUT") }
             item { Text(WHY, Modifier.padding(horizontal = Space.xl), style = Type.body, color = Palette.Muted) }
             item { ListRow(NavIcons.sparkle, "Open source · GPL-3.0", null) { uri.openUri(GITHUB_URL) } }
-            item { ListRow(NavIcons.today, "Made by Mayur Rawte", null) }
+            item { ListRow(NavIcons.today, "View on GitHub", null) { uri.openUri(GITHUB_URL) } }
             item { ListRow(NavIcons.clock, "Version ${BuildConfig.VERSION_NAME}", null) }
         }
     }
