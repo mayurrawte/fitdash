@@ -20,7 +20,6 @@ import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import app.fitdash.metrics.Tuning
-import app.fitdash.metrics.dailySum
 import java.time.Duration
 import java.time.Period
 import java.time.ZonedDateTime
@@ -90,11 +89,24 @@ class HealthReader(private val context: Context) : HealthSource {
             }.filter { it.steps > 0 || it.distanceMeters > 0 }
         }
 
+        val totals = GENERIC_TYPES.filter { it.dailyTotal != null && can(it.type) }
+        val dailyTotals = if (totals.isEmpty()) emptyList() else {
+            client.aggregateGroupByPeriod(
+                AggregateGroupByPeriodRequest(
+                    metrics = totals.map { it.dailyTotal!!.metric }.toSet(),
+                    timeRangeFilter = TimeRangeFilter.between(start.toLocalDateTime(), now.toLocalDateTime()),
+                    timeRangeSlicer = Period.ofDays(1),
+                ),
+            )
+        }
+
         val generic = GENERIC_TYPES.mapNotNull { g ->
-            val points = records[g.type].orEmpty().mapNotNull(g::sample).sortedBy { it.time }
-            val shown = if (g.perDay) {
-                dailySum(points, now.zone).toSortedMap().map { (d, v) -> Sample(d.atStartOfDay(now.zone).toInstant(), v) }
-            } else points
+            val total = g.dailyTotal
+            val shown = if (total != null) {
+                dailyTotals.mapNotNull { day ->
+                    total.value(day.result)?.let { Sample(day.startTime.atZone(now.zone).toInstant(), it) }
+                }
+            } else records[g.type].orEmpty().mapNotNull(g::sample).sortedBy { it.time }
             if (shown.isEmpty()) null else GenericSeries(g.label, g.unit, shown)
         }
 
