@@ -109,4 +109,23 @@ class TodayViewModelTest {
         settings.value = Settings(stepGoal = 5000)
         assertEquals(5000, (vm.state.value as TodayUiState.Ready).data.goals.steps)
     }
+
+    @Test fun `selecting a date keeps the error flag from a failed refresh`() {
+        val source = FakeSource()
+        val vm = load(source)
+        source.fail = true
+        vm.load()
+        vm.select(TODAY.minusDays(1))
+        val s = vm.state.value as TodayUiState.Ready
+        assertTrue(s.error)
+    }
+
+    @Test fun `a stale selected date is cleared on load`() {
+        var current = now
+        val vm = TodayViewModel(FakeSource(), { current }).also { it.load() }
+        vm.select(TODAY.minusDays(10))
+        current = now.plusDays(40)
+        vm.load()
+        assertEquals(null, vm.selectedDate.value)
+    }
 }
