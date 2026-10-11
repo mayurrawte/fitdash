@@ -1,6 +1,5 @@
 package app.fitdash.ui.pages
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -8,22 +7,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.dp
 import app.fitdash.BuildConfig
 import app.fitdash.health.SourceStatus
+import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.sourceLine
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
@@ -56,18 +50,7 @@ fun InfoSheet(sources: List<SourceStatus>, onDismiss: () -> Unit) {
             }
             if (BuildConfig.SHOW_SUPPORT) {
                 item {
-                    Row(
-                        Modifier
-                            .padding(top = Space.xl)
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable { uri.openUri(SUPPORT_URL) }
-                            .semantics { role = Role.Button }
-                            .padding(Space.l),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("☕  Support fitdash", style = Type.body, color = Palette.Amber)
-                    }
+                    ListRow(NavIcons.cup, "Support fitdash", null, Modifier.padding(top = Space.xl)) { uri.openUri(SUPPORT_URL) }
                 }
             }
             item {

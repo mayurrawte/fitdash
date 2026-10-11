@@ -1,6 +1,7 @@
 package app.fitdash.ui.share
 
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.ZoneId
+import kotlin.coroutines.cancellation.CancellationException
 
 private const val WIDTH = 1080
 private const val HEIGHT = 1350
@@ -71,6 +73,10 @@ fun ShareRender(data: TodayData, onDone: () -> Unit) {
                 .putExtra(Intent.EXTRA_STREAM, uri)
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             context.startActivity(Intent.createChooser(send, "Share your day"))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Toast.makeText(context, "Couldn't create the image", Toast.LENGTH_SHORT).show()
         } finally {
             onDone()
         }
