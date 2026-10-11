@@ -5,7 +5,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.roundToInt
 
-data class Goals(val steps: Int = Tuning.STEP_GOAL, val sleepHours: Double = Tuning.SLEEP_TARGET_HOURS)
+data class Goals(val steps: Int = Tuning.STEP_GOAL, val sleepHours: Double = Tuning.SLEEP_TARGET_HOURS, val waterLiters: Double = 2.5)
 
 enum class Band { RECOVER, STEADY, PRIMED }
 

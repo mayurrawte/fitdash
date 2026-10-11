@@ -78,6 +78,8 @@ private fun App(store: SettingsStore) {
     val state by vm.state.collectAsStateWithLifecycle()
     val askPermissions = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { vm.load() }
 
+    LaunchedEffect(vm) { vm.permissionNeeded.collect { askPermissions.launch(vm.permissions) } }
+
     LifecycleResumeEffect(Unit) {
         vm.load()
         onPauseOrDispose { }
@@ -95,7 +97,7 @@ private fun App(store: SettingsStore) {
         )
         TodayUiState.NeedsPermission -> MessageScreen(
             title = "Welcome to fitdash",
-            body = "Allow read access in Health Connect. Nothing leaves your phone.",
+            body = "Allow access in Health Connect. Nothing leaves your phone.",
             action = "Grant access",
             onAction = { askPermissions.launch(vm.permissions) },
         )
@@ -111,6 +113,6 @@ private fun App(store: SettingsStore) {
             action = "Retry",
             onAction = vm::load,
         )
-        is TodayUiState.Ready -> PagerScreen(s, store, onRefresh = vm::load, onSelectDate = vm::select)
+        is TodayUiState.Ready -> PagerScreen(s, store, onRefresh = vm::load, onSelectDate = vm::select, onAddWater = vm::addWater, onUndoWater = vm::undoWater, onSetHeight = vm::setHeight)
     }
 }

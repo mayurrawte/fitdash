@@ -9,7 +9,7 @@ import java.time.ZoneId
 enum class MetricKind {
     RECOVERY, SLEEP_SCORE, SLEEP_HOURS, DEEP, REM, LIGHT, AWAKE,
     RESTING_HR, HRV, SPO2, RESPIRATORY, SKIN_TEMP,
-    STEPS, DISTANCE, CALORIES, ACTIVE_MINUTES,
+    STEPS, DISTANCE, CALORIES, ACTIVE_MINUTES, WATER, BMI,
 }
 
 data class DayValue(val date: LocalDate, val value: Double?)
@@ -41,6 +41,8 @@ fun metricSeries(snapshot: HealthSnapshot, kind: MetricKind, date: LocalDate, zo
             MetricKind.DISTANCE -> snapshot.dailyActivity.firstOrNull { it.date == d }?.let { it.distanceMeters / 1000 }
             MetricKind.CALORIES -> snapshot.dailyActivity.firstOrNull { it.date == d }?.kcal
             MetricKind.ACTIVE_MINUTES -> activitySummary(snapshot, d, zone, goals.steps)?.activeMinutes?.toDouble()
+            MetricKind.WATER -> snapshot.waterDaily[d]
+            MetricKind.BMI -> null
         }
         DayValue(d, value)
     }

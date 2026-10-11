@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.roundToInt
 
-data class Settings(val theme: ThemeId = ThemeId.TEAL, val stepGoal: Int = 9000, val sleepHours: Double = 8.0, val miles: Boolean = false)
+data class Settings(val theme: ThemeId = ThemeId.TEAL, val stepGoal: Int = 9000, val sleepHours: Double = 8.0, val miles: Boolean = false, val waterGoalMl: Int = 2500, val heightCm: Int? = null)
 
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("fitdash", Context.MODE_PRIVATE)
@@ -18,12 +18,15 @@ class SettingsStore(context: Context) {
         stepGoal = prefs.getInt("stepGoal", 9000),
         sleepHours = prefs.getInt("sleepTenths", 80) / 10.0,
         miles = prefs.getBoolean("miles", false),
+        waterGoalMl = prefs.getInt("waterGoalMl", 2500),
+        heightCm = prefs.getInt("heightCm", 0).takeIf { it > 0 },
     )
 
     fun update(change: (Settings) -> Settings) {
         val s = change(_flow.value)
         prefs.edit().putString("theme", s.theme.name).putInt("stepGoal", s.stepGoal)
-            .putInt("sleepTenths", (s.sleepHours * 10).roundToInt()).putBoolean("miles", s.miles).apply()
+            .putInt("sleepTenths", (s.sleepHours * 10).roundToInt()).putBoolean("miles", s.miles)
+            .putInt("waterGoalMl", s.waterGoalMl).putInt("heightCm", s.heightCm ?: 0).apply()
         _flow.value = s
     }
 

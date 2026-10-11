@@ -4,13 +4,25 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +49,7 @@ import app.fitdash.metrics.rangeWord
 import app.fitdash.ui.bandAdvice
 import app.fitdash.ui.bandWord
 import app.fitdash.ui.basedOn
+import app.fitdash.ui.components.Chart
 import app.fitdash.ui.components.CountUpText
 import app.fitdash.ui.components.EmptyTrack
 import app.fitdash.ui.components.Heading
@@ -46,9 +59,11 @@ import app.fitdash.ui.components.Orb
 import app.fitdash.ui.components.RangeBar
 import app.fitdash.ui.components.SectionLabel
 import app.fitdash.ui.components.StatTile
+import app.fitdash.ui.components.cardSurface
 import app.fitdash.ui.components.TileGrid
 import app.fitdash.ui.components.WeekStrip
 import app.fitdash.ui.formatDuration
+import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.formatTime12
 import app.fitdash.ui.rangeNote
@@ -57,12 +72,15 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 import app.fitdash.ui.theme.scoreColor
+import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 import kotlin.math.abs
 import kotlin.math.roundToInt
+
+private const val UNDO_MILLIS = 5000L
 
 private fun suggestionIcon(kind: SuggestionKind) = when (kind) {
     SuggestionKind.HARD_WORKOUT -> NavIcons.bolt
@@ -82,6 +100,8 @@ fun TodayPage(
     onSelectDate: (LocalDate) -> Unit,
     onShareDay: () -> Unit,
     onAskAi: () -> Unit,
+    onAddWater: (Int) -> Unit,
+    onUndoWater: () -> Unit,
 ) {
     val r = data.readiness
     val score = (r as? ReadinessResult.Ready)?.score
@@ -166,6 +186,7 @@ fun TodayPage(
                 ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%", Modifier.semantics { contentDescription = "Steps details" }) { openSteps() }
             }
         }
+        item(key = "row-water") { WaterCard(data, onAddWater, onUndoWater) }
         val h = data.heart
         val tiles = buildList<@Composable (Modifier) -> Unit> {
             h?.hrv?.let { v ->
@@ -206,6 +227,53 @@ fun TodayPage(
             Row(Modifier.padding(horizontal = Space.l).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Pill("SHARE DAY", Palette.Text, Palette.Divider, onShareDay, Modifier.weight(1f))
                 Pill("✦ ASK AI", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), onAskAi, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun WaterCard(data: TodayData, onAdd: (Int) -> Unit, onUndo: () -> Unit) {
+    var adds by remember { mutableIntStateOf(0) }
+    var canUndo by remember { mutableStateOf(false) }
+    LaunchedEffect(adds) {
+        if (adds > 0) {
+            canUndo = true
+            delay(UNDO_MILLIS)
+            canUndo = false
+        }
+    }
+    Column(Modifier.padding(horizontal = Space.l).fillMaxWidth().cardSurface().padding(horizontal = Space.l, vertical = 14.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(Palette.ChipStrong), contentAlignment = Alignment.Center) {
+                Icon(NavIcons.drop, null, Modifier.size(16.dp), tint = Palette.Accent)
+            }
+            Column(Modifier.weight(1f).padding(horizontal = Space.m)) {
+                Text("WATER", style = Type.label, color = Palette.Muted)
+                Text(
+                    "${formatLiters(data.waterLiters)} L of ${formatLiters(data.waterGoal)} L",
+                    style = Type.small.copy(fontSize = 11.sp),
+                    color = Palette.Text,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+            if (data.isToday && canUndo) {
+                Text(
+                    "UNDO",
+                    Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button) { canUndo = false; onUndo() }.padding(Space.s),
+                    style = Type.tiny,
+                    color = Palette.Accent,
+                )
+            }
+        }
+        Box(Modifier.padding(top = Space.m).fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Chart.track)) {
+            Box(Modifier.fillMaxHeight().fillMaxWidth((data.waterLiters / data.waterGoal).toFloat().coerceIn(0f, 1f)).background(Palette.Accent))
+        }
+        if (data.isToday) {
+            Row(Modifier.padding(top = Space.m).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                listOf(250, 500).forEach { ml ->
+                    Pill("+$ml ML", Palette.Text, Palette.Divider, { adds++; onAdd(ml) }, Modifier.weight(1f))
+                }
             }
         }
     }

@@ -37,6 +37,10 @@ data class TodayData(
     val estimatedRestingHrDates: Set<LocalDate>,
     val series: Map<MetricKind, List<DayValue>>,
     val genericDaily: Map<String, List<DayValue>>,
+    val waterLiters: Double,
+    val waterGoal: Double,
+    val bmi: Double?,
+    val bmiBand: BmiBand?,
 )
 
 data class DayScores(val sleep: Int?, val readiness: Int?, val movement: Int?)
@@ -65,6 +69,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
     }
     val prev = date.minusDays(1)
     val week = trend.takeLast(Tuning.WEEK_DAYS.toInt())
+    val bmiValue = snap.weightKg?.let { w -> snap.heightMeters?.let { h -> bmi(w, h) } }
     return TodayData(
         date = date,
         isToday = isToday,
@@ -101,5 +106,9 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         estimatedRestingHrDates = snap.estimatedRestingHrDates,
         series = MetricKind.entries.associateWith { metricSeries(snap, it, date, zone, goals) },
         genericDaily = snap.generic.filter { it.points.isNotEmpty() }.associate { it.label to genericDailySeries(it.points, date, zone) },
+        waterLiters = snap.waterDaily[date] ?: 0.0,
+        waterGoal = goals.waterLiters,
+        bmi = bmiValue,
+        bmiBand = bmiValue?.let(::bmiBand),
     )
 }

@@ -10,6 +10,8 @@ import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
+import androidx.health.connect.client.records.HeightRecord
+import androidx.health.connect.client.records.HydrationRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.Record
 import androidx.health.connect.client.records.RespiratoryRateRecord
@@ -18,15 +20,22 @@ import androidx.health.connect.client.records.SkinTemperatureRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
+import androidx.health.connect.client.records.WeightRecord
+import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.AggregateGroupByDurationRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
+import androidx.health.connect.client.units.Length
+import androidx.health.connect.client.units.Volume
 import app.fitdash.metrics.Tuning
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.Duration
+import java.time.Instant
+import java.time.LocalDate
 import java.time.Period
+import java.time.ZoneId
 import java.time.ZonedDateTime
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.reflect.KClass
@@ -47,7 +56,11 @@ class HealthReader(private val context: Context) : HealthSource {
 
     private val types = ALL_TYPES.filter { HealthPermission.getReadPermission(it.type) in declared }
 
-    override val allPermissions: Set<String> = types.map { HealthPermission.getReadPermission(it.type) }.toSet()
+    private val writeWater = HealthPermission.getWritePermission(HydrationRecord::class)
+    private val writeHeight = HealthPermission.getWritePermission(HeightRecord::class)
+
+    override val allPermissions: Set<String> =
+        types.map { HealthPermission.getReadPermission(it.type) }.toSet() + writeWater + writeHeight
 
     override fun availability() = when (HealthConnectClient.getSdkStatus(context)) {
         HealthConnectClient.SDK_AVAILABLE -> Availability.AVAILABLE
@@ -117,6 +130,16 @@ class HealthReader(private val context: Context) : HealthSource {
                 )
             }
 
+            val waterDaily = if (can(HydrationRecord::class)) {
+                client.aggregateGroupByPeriod(
+                    AggregateGroupByPeriodRequest(
+                        metrics = setOf(HydrationRecord.VOLUME_TOTAL),
+                        timeRangeFilter = TimeRangeFilter.between(start.toLocalDateTime(), now.toLocalDate().plusDays(1).atStartOfDay()),
+                        timeRangeSlicer = Period.ofDays(1),
+                    ),
+                ).mapNotNull { day -> day.result[HydrationRecord.VOLUME_TOTAL]?.let { day.startTime.toLocalDate() to it.inLiters } }.toMap()
+            } else emptyMap<LocalDate, Double>()
+
             val generic = GENERIC_TYPES.mapNotNull { g ->
                 val total = g.dailyTotal
                 val shown = if (total != null) {
@@ -144,8 +167,32 @@ class HealthReader(private val context: Context) : HealthSource {
                 exercise = records.of<ExerciseSessionRecord>().map { Interval(it.startTime, it.endTime) },
                 generic = generic,
                 sources = sources,
+                waterDaily = waterDaily,
+                heightMeters = if (can(HeightRecord::class)) latest<HeightRecord>(now)?.height?.inMeters else null,
+                weightKg = if (can(WeightRecord::class)) latest<WeightRecord>(now)?.weight?.inKilograms else null,
             )
     }
+
+    override suspend fun addWater(liters: Double, at: Instant): String? {
+        if (writeWater !in grantedPermissions()) return null
+        val offset = ZoneId.systemDefault().rules.getOffset(at)
+        val record = HydrationRecord(at, offset, at.plusSeconds(1), offset, Volume.liters(liters), Metadata.manualEntry())
+        return client.insertRecords(listOf(record)).recordIdsList.first()
+    }
+
+    override suspend fun deleteWater(id: String) {
+        client.deleteRecords(HydrationRecord::class, listOf(id), emptyList())
+    }
+
+    override suspend fun setHeight(meters: Double, at: Instant): Boolean {
+        if (writeHeight !in grantedPermissions()) return false
+        val offset = ZoneId.systemDefault().rules.getOffset(at)
+        client.insertRecords(listOf(HeightRecord(at, offset, Length.meters(meters), Metadata.manualEntry())))
+        return true
+    }
+
+    private suspend inline fun <reified T : Record> latest(now: ZonedDateTime): T? =
+        client.readRecords(ReadRecordsRequest(T::class, TimeRangeFilter.before(now.toInstant()), ascendingOrder = false, pageSize = 1)).records.firstOrNull()
 
     // One type failing (e.g. skin temperature unsupported on this device) must not hide the rest.
     private suspend fun readAllOrEmpty(type: KClass<out Record>, range: TimeRangeFilter): List<Record> = try {

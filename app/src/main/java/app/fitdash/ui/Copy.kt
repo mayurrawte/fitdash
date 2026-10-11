@@ -2,6 +2,7 @@ package app.fitdash.ui
 
 import app.fitdash.health.SourceStatus
 import app.fitdash.metrics.Band
+import app.fitdash.metrics.BmiBand
 import app.fitdash.metrics.Component
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.MetricKind
@@ -18,6 +19,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 fun bandWord(band: Band) = when (band) {
@@ -45,6 +47,23 @@ fun formatDuration(d: Duration): String {
 }
 
 fun formatSteps(n: Long): String = String.format(Locale.ENGLISH, "%,d", n)
+
+fun formatLiters(v: Double): String = String.format(Locale.ENGLISH, "%.2f", v).trimEnd('0').trimEnd('.')
+
+fun formatBmi(v: Double): String = String.format(Locale.ENGLISH, "%.1f", v)
+
+fun bmiWord(band: BmiBand) = when (band) {
+    BmiBand.UNDER -> "UNDERWEIGHT"
+    BmiBand.HEALTHY -> "HEALTHY"
+    BmiBand.OVER -> "OVERWEIGHT"
+    BmiBand.OBESE -> "OBESE"
+}
+
+fun formatHeight(cm: Int, miles: Boolean): String {
+    if (!miles) return "$cm cm"
+    val inches = (cm / 2.54).roundToInt()
+    return "${inches / 12} ft ${inches % 12} in"
+}
 
 fun formatNumber(v: Double): String =
     if (abs(v - v.roundToLong()) < 0.05) v.roundToLong().toString() else String.format(Locale.ENGLISH, "%.1f", v)
@@ -122,6 +141,8 @@ fun metricName(kind: MetricKind) = when (kind) {
     MetricKind.DISTANCE -> "Distance"
     MetricKind.CALORIES -> "Calories"
     MetricKind.ACTIVE_MINUTES -> "Active minutes"
+    MetricKind.WATER -> "Water"
+    MetricKind.BMI -> "BMI"
 }
 
 fun metricExplain(kind: MetricKind) = when (kind) {
@@ -141,6 +162,8 @@ fun metricExplain(kind: MetricKind) = when (kind) {
     MetricKind.DISTANCE -> "How far you covered on foot during the day."
     MetricKind.CALORIES -> "Energy burned across the day, as reported by your tracker."
     MetricKind.ACTIVE_MINUTES -> "Minutes spent in recorded exercise sessions."
+    MetricKind.WATER -> "Water you have logged for the day, compared with your daily goal."
+    MetricKind.BMI -> "Your weight divided by your height squared. A general guide only, and it does not describe your health."
 }
 
 const val GENERIC_EXPLAIN = "The daily average of this reading from Health Connect."

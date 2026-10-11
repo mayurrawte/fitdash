@@ -107,4 +107,21 @@ class TodayTest {
         assertEquals(30, t.trend.size)
         assertTrue(TODAY in t.daysWithData)
     }
+
+    @Test fun `water is the total for the selected date`() {
+        val snap = HealthSnapshot(waterDaily = mapOf(TODAY to 1.25, TODAY.minusDays(1) to 2.0))
+        assertEquals(1.25, buildToday(snap, time(20)).waterLiters, 0.0001)
+        assertEquals(2.0, buildToday(snap, time(20), TODAY.minusDays(1)).waterLiters, 0.0001)
+        assertEquals(0.0, buildToday(snap, time(20), TODAY.minusDays(2)).waterLiters, 0.0001)
+        assertEquals(2.5, buildToday(snap, time(20)).waterGoal, 0.0001)
+        assertEquals(3.0, buildToday(snap, time(20), goals = Goals(waterLiters = 3.0)).waterGoal, 0.0001)
+    }
+
+    @Test fun `bmi needs both height and weight`() {
+        assertNull(buildToday(HealthSnapshot(heightMeters = 1.75), time(20)).bmi)
+        assertNull(buildToday(HealthSnapshot(weightKg = 70.0), time(20)).bmiBand)
+        val t = buildToday(HealthSnapshot(heightMeters = 1.75, weightKg = 70.0), time(20))
+        assertEquals(22.86, t.bmi!!, 0.005)
+        assertEquals(BmiBand.HEALTHY, t.bmiBand)
+    }
 }

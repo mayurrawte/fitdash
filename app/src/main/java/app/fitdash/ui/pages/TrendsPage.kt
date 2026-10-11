@@ -2,12 +2,14 @@ package app.fitdash.ui.pages
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.fitdash.health.GenericSeries
 import app.fitdash.metrics.DayTrend
@@ -23,12 +25,16 @@ import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.StatTile
 import app.fitdash.ui.components.TileGrid
 import app.fitdash.ui.components.TrendLine
+import app.fitdash.ui.bmiWord
 import app.fitdash.ui.dayLetter
 import app.fitdash.ui.daysOfData
+import app.fitdash.ui.formatBmi
 import app.fitdash.ui.formatNumber
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.metricName
 import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.Type
+import app.fitdash.ui.theme.bmiColour
 import java.time.ZoneId
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
@@ -87,6 +93,20 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
                     TrendLine("hrv-$range", hrv, Modifier.fillMaxWidth().height(74.dp))
                 }
             }
+        }
+        item(key = "bmi") {
+            val open = opener(MetricKind.BMI)
+            TileGrid(listOf { m ->
+                val bmi = data.bmi
+                val band = data.bmiBand
+                if (bmi == null || band == null) {
+                    StatTile("BMI", "—", null, "Add height in Settings", m, onClick = chrome.onMenu, description = "Add height in Settings") { EmptyTrack() }
+                } else {
+                    StatTile("BMI", formatBmi(bmi), null, "general guide, not medical advice", m, onClick = open, description = "BMI details") {
+                        Text(bmiWord(band), style = Type.tiny.copy(fontWeight = FontWeight.Medium), color = bmiColour(band))
+                    }
+                }
+            })
         }
         if (data.generic.isNotEmpty()) {
             item(key = "other-label") { SectionLabel("OTHER DATA") }

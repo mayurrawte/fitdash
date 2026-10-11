@@ -35,4 +35,7 @@ data class HealthSnapshot(
     val generic: List<GenericSeries> = emptyList(),
     val sources: List<SourceStatus> = emptyList(),
     val estimatedRestingHrDates: Set<LocalDate> = emptySet(),
+    val waterDaily: Map<LocalDate, Double> = emptyMap(),
+    val heightMeters: Double? = null,
+    val weightKg: Double? = null,
 )

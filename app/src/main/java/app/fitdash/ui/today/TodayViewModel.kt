@@ -14,11 +14,14 @@ import app.fitdash.ui.aiSummary
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -50,8 +53,12 @@ class TodayViewModel(
 
     val selectedDate = MutableStateFlow<LocalDate?>(null)
 
+    private val permissionRequests = Channel<Unit>(Channel.CONFLATED)
+    val permissionNeeded: Flow<Unit> = permissionRequests.receiveAsFlow()
+    private var lastWaterId: String? = null
+
     init {
-        viewModelScope.launch { settings.map { Goals(it.stepGoal, it.sleepHours) }.distinctUntilChanged().drop(1).collect { rebuild() } }
+        viewModelScope.launch { settings.map { it.goals() }.distinctUntilChanged().drop(1).collect { rebuild() } }
     }
 
     fun select(date: LocalDate) {
@@ -72,7 +79,9 @@ class TodayViewModel(
         }
     }
 
-    private fun currentGoals() = settings.value.let { Goals(it.stepGoal, it.sleepHours) }
+    private fun currentGoals() = settings.value.goals()
+
+    private fun Settings.goals() = Goals(stepGoal, sleepHours, waterGoalMl / 1000.0)
 
     private fun build(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate, goals: Goals): Pair<TodayData, String> {
         val data = buildToday(snapshot, now, date, goals, augmented = true)
@@ -80,6 +89,33 @@ class TodayViewModel(
     }
 
     val permissions: Set<String> get() = source.allPermissions
+
+    fun addWater(ml: Int) {
+        viewModelScope.launch {
+            val id = source.addWater(ml / 1000.0, clock().toInstant())
+            if (id == null) {
+                permissionRequests.trySend(Unit)
+            } else {
+                lastWaterId = id
+                load()
+            }
+        }
+    }
+
+    fun undoWater() {
+        val id = lastWaterId ?: return
+        lastWaterId = null
+        viewModelScope.launch {
+            source.deleteWater(id)
+            load()
+        }
+    }
+
+    fun setHeight(cm: Int) {
+        viewModelScope.launch {
+            if (source.setHeight(cm / 100.0, clock().toInstant())) load() else permissionRequests.trySend(Unit)
+        }
+    }
 
     fun load() {
         job?.cancel()

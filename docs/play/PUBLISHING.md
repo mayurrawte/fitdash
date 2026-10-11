@@ -85,7 +85,7 @@ Ask AI and Share day. Both build text or an image on the device and open the And
 
 Uncertainty to check: Google defines "collect" as data transmitted off the device by the app, and "share" as transfer to a third party. Google's guidance says a transfer the user starts themselves is not "sharing" in this sense, but it describes this under specific conditions (user-initiated, expected by the user, and so on). Read the current definitions in the Data safety help page and decide whether the account holder is comfortable with "No". If in doubt, the conservative answer is to declare Health and fitness data as shared, optional, user-initiated, purpose App functionality. Also confirm that Health Connect data read only on the device does not count as "collected"; Google's definition says it does not.
 
-The Health Connect read permissions still need their own declaration, below.
+The Health Connect read and write permissions still need their own declaration, below.
 
 ## 8. Health Connect declaration
 
@@ -106,11 +106,15 @@ Activity
 - Total calories burned: shows daily calories on the Activity page.
 - Exercise: adds up exercise session time as Active minutes on the Activity page.
 
+Write permissions (fitdash writes only the water and height you enter yourself, and never changes or deletes any other data)
+- WRITE_HYDRATION: log water you drink from the Today page
+- WRITE_HEIGHT: save your height, entered in Settings, used to calculate BMI
+
 Other data tiles (shown only if you have data, as a tile in the Other data section of Trends, and included in the Ask AI summary)
 - Weight, Body fat, VO2 max, Floors climbed, Active calories: each shown as a tile with its latest value and trend.
 - Height, Body temperature, Hydration, Elevation gained: each shown as a plain tile with its latest value and trend.
 
-The Play build declares exactly these 20 read permissions. `app/src/play/AndroidManifest.xml` removes the other 11 (blood glucose, blood pressure, nutrition, basal body temperature, bone mass, body water mass, lean body mass, basal metabolic rate, wheelchair pushes, power, speed), and the app only requests and shows data types whose permission is declared. The GitHub APK requests all 31.
+The Play build declares exactly these 20 read permissions, plus the two write permissions below. `app/src/play/AndroidManifest.xml` removes the other 11 (blood glucose, blood pressure, nutrition, basal body temperature, bone mass, body water mass, lean body mass, basal metabolic rate, wheelchair pushes, power, speed), and the app only requests and shows data types whose permission is declared. The GitHub APK requests all 31.
 
 Also provide the privacy policy link (step 9) and a short screen recording of the permission prompt if asked.
 

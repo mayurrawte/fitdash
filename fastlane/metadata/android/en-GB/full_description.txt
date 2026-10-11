@@ -23,7 +23,7 @@ PRIVACY
 
 - No internet permission. The release APK requests no INTERNET permission, so fitdash itself cannot connect to the internet. It can open links (GitHub, Buy Me a Coffee and the Play Store page for Health Connect) in your browser or the Play Store; these links carry none of your data.
 - No account, no sign-in, no server.
-- Read-only. fitdash reads from Health Connect and never writes to it.
+- fitdash writes only the water and height you enter yourself. It never changes or deletes any other data. Undo deletes only the water entry you just added.
 - No analytics, advertising, crash reporting or trackers.
 - Data only leaves your phone when you choose to share it. Ask AI and Share day use the standard Android share sheet, and you choose the destination each time. The summary and image contain health metrics, so the app you pick handles them under its own privacy policy.
 - fitdash keeps no copy of your health data, apart from the image Share day creates. It is saved in the app's private cache, replaced the next time you share and cleared when the app starts. Uninstalling removes it.

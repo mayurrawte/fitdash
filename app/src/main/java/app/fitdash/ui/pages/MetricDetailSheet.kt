@@ -20,6 +20,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.fitdash.metrics.DayValue
@@ -37,7 +38,10 @@ import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.StatusText
 import app.fitdash.ui.components.TrendLine
 import app.fitdash.ui.components.ValueText
+import app.fitdash.ui.bmiWord
 import app.fitdash.ui.dayLetter
+import app.fitdash.ui.formatBmi
+import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatNumber
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.metricExplain
@@ -46,6 +50,7 @@ import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
+import app.fitdash.ui.theme.bmiColour
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -92,10 +97,16 @@ private fun unitFor(kind: MetricKind, miles: Boolean) = when (kind) {
     MetricKind.SKIN_TEMP -> "°C"
     MetricKind.DISTANCE -> if (miles) "mi" else "km"
     MetricKind.CALORIES -> "kcal"
+    MetricKind.WATER -> "L"
+    MetricKind.BMI -> ""
 }
 
-private fun format(kind: MetricKind?, v: Double) =
-    if (kind == MetricKind.STEPS || kind == MetricKind.CALORIES) formatSteps(v.roundToLong()) else formatNumber(v)
+private fun format(kind: MetricKind?, v: Double) = when (kind) {
+    MetricKind.STEPS, MetricKind.CALORIES -> formatSteps(v.roundToLong())
+    MetricKind.WATER -> formatLiters(v)
+    MetricKind.BMI -> formatBmi(v)
+    else -> formatNumber(v)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,7 +129,7 @@ fun MetricDetailSheet(ref: MetricRef, data: TodayData, miles: Boolean, onDismiss
     var month by rememberSaveable { mutableStateOf(false) }
     val visible = series.takeLast(if (month) series.size else 7)
     val known = visible.mapNotNull { it.value }
-    val selected = series.lastOrNull()?.value
+    val selected = if (kind == MetricKind.BMI) data.bmi else series.lastOrNull()?.value
     val range = kind?.takeIf { it in LINE_KINDS }?.let { k ->
         normalRange(series.mapNotNull { d -> d.value?.let { d.date to it } }.toMap(), data.date)?.let { it to goodFor(k) }
     }
@@ -138,54 +149,59 @@ fun MetricDetailSheet(ref: MetricRef, data: TodayData, miles: Boolean, onDismiss
                 Text("—", Modifier.padding(horizontal = Space.xl), style = Type.hero.copy(fontSize = 56.sp), color = Palette.Faint)
             }
             if (status != null) StatusText(status, Modifier.padding(horizontal = Space.xl))
+            if (kind == MetricKind.BMI && data.bmiBand != null) {
+                Text(bmiWord(data.bmiBand), Modifier.padding(horizontal = Space.xl), style = Type.tiny.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Medium), color = bmiColour(data.bmiBand))
+            }
             Text(explain, Modifier.padding(horizontal = Space.xl, vertical = Space.m), style = Type.body, color = Palette.Muted)
-            SegmentedControl(listOf("Week", "Month"), if (month) 1 else 0, { month = it == 1 })
-            if (known.size < 2) {
-                Text(
-                    "NOT ENOUGH DATA YET",
-                    Modifier.padding(horizontal = Space.xl, vertical = Space.xxl),
-                    style = Type.label,
-                    color = Palette.Faint,
-                )
-            } else {
-                val key = "detail-${kind ?: name}-${if (month) "month" else "week"}"
-                val chart = Modifier.fillMaxWidth().padding(horizontal = Space.xl, vertical = Space.l)
-                if (kind == null || kind in LINE_KINDS) {
-                    TrendLine(key, known, chart.height(120.dp))
-                } else {
-                    Bars(
-                        key,
-                        visible.map { (it.value ?: 0.0).toFloat() },
-                        chart,
-                        labels = if (month) emptyList() else visible.map { dayLetter(it.date) },
-                        height = 120.dp,
-                        poor = { i ->
-                            val v = visible[i].value
-                            v != null && when (kind) {
-                                MetricKind.RECOVERY, MetricKind.SLEEP_SCORE -> v < 50
-                                MetricKind.STEPS -> v < data.goals.steps * 0.5
-                                else -> false
-                            }
-                        },
+            if (kind != MetricKind.BMI) {
+                SegmentedControl(listOf("Week", "Month"), if (month) 1 else 0, { month = it == 1 })
+                if (known.size < 2) {
+                    Text(
+                        "NOT ENOUGH DATA YET",
+                        Modifier.padding(horizontal = Space.xl, vertical = Space.xxl),
+                        style = Type.label,
+                        color = Palette.Faint,
                     )
-                }
-                Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl), horizontalArrangement = Arrangement.SpaceBetween) {
-                    listOf("MIN" to known.min(), "AVG" to known.average(), "MAX" to known.max()).forEach { (label, v) ->
-                        Column {
-                            Text(label, style = Type.tiny, color = Palette.Muted)
-                            Text(format(kind, v), style = Type.tile, color = Palette.Text)
+                } else {
+                    val key = "detail-${kind ?: name}-${if (month) "month" else "week"}"
+                    val chart = Modifier.fillMaxWidth().padding(horizontal = Space.xl, vertical = Space.l)
+                    if (kind == null || kind in LINE_KINDS) {
+                        TrendLine(key, known, chart.height(120.dp))
+                    } else {
+                        Bars(
+                            key,
+                            visible.map { (it.value ?: 0.0).toFloat() },
+                            chart,
+                            labels = if (month) emptyList() else visible.map { dayLetter(it.date) },
+                            height = 120.dp,
+                            poor = { i ->
+                                val v = visible[i].value
+                                v != null && when (kind) {
+                                    MetricKind.RECOVERY, MetricKind.SLEEP_SCORE -> v < 50
+                                    MetricKind.STEPS -> v < data.goals.steps * 0.5
+                                    else -> false
+                                }
+                            },
+                        )
+                    }
+                    Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl), horizontalArrangement = Arrangement.SpaceBetween) {
+                        listOf("MIN" to known.min(), "AVG" to known.average(), "MAX" to known.max()).forEach { (label, v) ->
+                            Column {
+                                Text(label, style = Type.tiny, color = Palette.Muted)
+                                Text(format(kind, v), style = Type.tile, color = Palette.Text)
+                            }
                         }
                     }
                 }
-            }
-            if (range != null) {
-                Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl, vertical = Space.l), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("NORMAL RANGE", style = Type.tiny, color = Palette.Muted)
-                    Text(
-                        "${formatNumber(range.first.start)} – ${formatNumber(range.first.endInclusive)} $unit".trim(),
-                        style = Type.small,
-                        color = Palette.Text,
-                    )
+                if (range != null) {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl, vertical = Space.l), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("NORMAL RANGE", style = Type.tiny, color = Palette.Muted)
+                        Text(
+                            "${formatNumber(range.first.start)} – ${formatNumber(range.first.endInclusive)} $unit".trim(),
+                            style = Type.small,
+                            color = Palette.Text,
+                        )
+                    }
                 }
             }
         }

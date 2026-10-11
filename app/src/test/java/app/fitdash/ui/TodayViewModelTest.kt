@@ -13,6 +13,8 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -21,6 +23,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 import java.time.ZonedDateTime
 
 private class FakeSource(
@@ -29,8 +32,12 @@ private class FakeSource(
     var snapshot: HealthSnapshot = HealthSnapshot(sources = listOf(SourceStatus("Sleep", true, true, setOf("com.fitbit.FitbitMobile")))),
     var fail: Boolean = false,
     var gate: CompletableDeferred<Unit>? = null,
+    var canWrite: Boolean = true,
 ) : HealthSource {
     var reads = 0
+    val waterAdded = mutableListOf<Double>()
+    val waterDeleted = mutableListOf<String>()
+    val heights = mutableListOf<Double>()
     override val allPermissions = setOf("read")
     override fun availability() = status
     override suspend fun grantedPermissions() = granted
@@ -39,6 +46,16 @@ private class FakeSource(
         gate?.await()
         if (fail) error("read failed")
         return snapshot
+    }
+    override suspend fun addWater(liters: Double, at: Instant): String? {
+        if (!canWrite) return null
+        waterAdded += liters
+        return "water-${waterAdded.size}"
+    }
+    override suspend fun deleteWater(id: String) { waterDeleted += id }
+    override suspend fun setHeight(meters: Double, at: Instant): Boolean {
+        if (canWrite) heights += meters
+        return canWrite
     }
 }
 
@@ -127,5 +144,43 @@ class TodayViewModelTest {
         current = now.plusDays(40)
         vm.load()
         assertEquals(null, vm.selectedDate.value)
+    }
+
+    @Test fun `adding water writes then reads again`() {
+        val source = FakeSource()
+        val vm = load(source)
+        vm.addWater(250)
+        assertEquals(listOf(0.25), source.waterAdded)
+        assertEquals(2, source.reads)
+    }
+
+    @Test fun `undo deletes the entry that was just added`() {
+        val source = FakeSource()
+        val vm = load(source)
+        vm.addWater(500)
+        vm.undoWater()
+        assertEquals(listOf("water-1"), source.waterDeleted)
+        assertEquals(3, source.reads)
+        vm.undoWater()
+        assertEquals(listOf("water-1"), source.waterDeleted)
+    }
+
+    @Test fun `saving height writes metres then reads again`() {
+        val source = FakeSource()
+        val vm = load(source)
+        vm.setHeight(175)
+        assertEquals(listOf(1.75), source.heights)
+        assertEquals(2, source.reads)
+    }
+
+    @Test fun `a write without permission asks for the permission once`() = runBlocking {
+        val source = FakeSource(canWrite = false)
+        val vm = load(source)
+        vm.addWater(250)
+        vm.permissionNeeded.first()
+        vm.setHeight(175)
+        vm.permissionNeeded.first()
+        assertEquals(1, source.reads)
+        assertTrue(source.waterAdded.isEmpty())
     }
 }

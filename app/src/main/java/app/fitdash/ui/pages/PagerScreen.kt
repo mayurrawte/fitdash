@@ -64,7 +64,15 @@ private val NAV = listOf(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -> Unit, onSelectDate: (LocalDate) -> Unit) {
+fun PagerScreen(
+    state: TodayUiState.Ready,
+    store: SettingsStore,
+    onRefresh: () -> Unit,
+    onSelectDate: (LocalDate) -> Unit,
+    onAddWater: (Int) -> Unit,
+    onUndoWater: () -> Unit,
+    onSetHeight: (Int) -> Unit,
+) {
     val data = state.data
     val pager = rememberPagerState { NAV.size }
     val scope = rememberCoroutineScope()
@@ -111,7 +119,7 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
                 ThemedBackground()
                 HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
                     when (page) {
-                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, { sharing = true }, askAi)
+                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, { sharing = true }, askAi, onAddWater, onUndoWater)
                         1 -> SleepPage(data, chrome)
                         2 -> ActivityPage(data, chrome, settings.miles)
                         else -> TrendsPage(data, chrome)
@@ -137,7 +145,7 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
             )
         }
         if (sharing) ShareRender(data, onDone = { sharing = false })
-        if (showSettings) SettingsSheet(store, data.sources, onDismiss = { showSettings = false })
+        if (showSettings) SettingsSheet(store, data.sources, onSetHeight, onDismiss = { showSettings = false })
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
         metric?.let { MetricDetailSheet(it, data, settings.miles, onDismiss = { metric = null }) }
         if (showCalendar) DatePickerSheet(data.date, today, onSelectDate, onDismiss = { showCalendar = false })
@@ -167,7 +175,7 @@ private fun PagePreview(theme: ThemeId, page: Int) {
     FitdashTheme(theme) {
         Box(Modifier.fillMaxSize()) {
             ThemedBackground()
-            if (page == 0) TodayPage(data, chrome, { 0f }, {}, {}, {}, {}) else SleepPage(data, chrome)
+            if (page == 0) TodayPage(data, chrome, { 0f }, {}, {}, {}, {}, {}, {}) else SleepPage(data, chrome)
         }
     }
 }

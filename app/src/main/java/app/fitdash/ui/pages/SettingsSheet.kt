@@ -14,14 +14,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -41,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -54,7 +60,10 @@ import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.SectionCard
 import app.fitdash.ui.components.cardSurface
 import app.fitdash.ui.components.SegmentedControl
+import app.fitdash.ui.formatHeight
+import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatSteps
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.THEMES
@@ -62,6 +71,7 @@ import app.fitdash.ui.theme.ThemeId
 import app.fitdash.ui.theme.ThemeTokens
 import app.fitdash.ui.theme.Type
 import java.util.Locale
+import kotlin.math.roundToInt
 
 private const val GITHUB_URL = "https://github.com/mayurrawte/fitdash"
 private const val WHY =
@@ -69,11 +79,12 @@ private const val WHY =
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onDismiss: () -> Unit) {
+fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onSetHeight: (Int) -> Unit, onDismiss: () -> Unit) {
     val settings by store.flow.collectAsState()
     val uri = LocalUriHandler.current
     val context = LocalContext.current
     var showInfo by remember { mutableStateOf(false) }
+    var showHeight by remember { mutableStateOf(false) }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -92,7 +103,14 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onDismiss: 
                         "Sleep", String.format(Locale.ENGLISH, "%.1f h", settings.sleepHours), settings.sleepHours > 5.0, settings.sleepHours < 10.0,
                         { store.update { it.copy(sleepHours = it.sleepHours - 0.5) } }, { store.update { it.copy(sleepHours = it.sleepHours + 0.5) } },
                     )
+                    Stepper(
+                        "Water", "${formatLiters(settings.waterGoalMl / 1000.0)} L", settings.waterGoalMl > 1000, settings.waterGoalMl < 5000,
+                        { store.update { it.copy(waterGoalMl = it.waterGoalMl - 250) } }, { store.update { it.copy(waterGoalMl = it.waterGoalMl + 250) } },
+                    )
                 }
+            }
+            item {
+                ListRow(NavIcons.walk, "Height", settings.heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set") { showHeight = true }
             }
             item { Label("UNITS") }
             item { SegmentedControl(listOf("km", "miles"), if (settings.miles) 1 else 0, { i -> store.update { it.copy(miles = i == 1) } }) }
@@ -115,6 +133,64 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, onDismiss: 
         }
     }
     if (showInfo) InfoSheet(sources, onDismiss = { showInfo = false })
+    if (showHeight) {
+        HeightDialog(settings.heightCm, settings.miles, onDismiss = { showHeight = false }) { cm ->
+            store.update { it.copy(heightCm = cm) }
+            onSetHeight(cm)
+            showHeight = false
+        }
+    }
+}
+
+@Composable
+private fun HeightDialog(current: Int?, miles: Boolean, onDismiss: () -> Unit, onSave: (Int) -> Unit) {
+    val inches = current?.let { (it / 2.54).roundToInt() }
+    var cm by remember { mutableStateOf(current?.toString().orEmpty()) }
+    var ft by remember { mutableStateOf(inches?.let { (it / 12).toString() }.orEmpty()) }
+    var inch by remember { mutableStateOf(inches?.let { (it % 12).toString() }.orEmpty()) }
+    val value = if (miles) {
+        ft.toIntOrNull()?.let { f -> ((f * 12 + (inch.toIntOrNull() ?: 0)) * 2.54).roundToInt() }
+    } else cm.toIntOrNull()
+    val valid = value != null && value in 50..250
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = LocalTheme.current.bgMid,
+        title = { Text("HEIGHT", style = Type.label, color = Palette.Muted) },
+        text = {
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+                if (miles) {
+                    HeightField(ft, "ft", Modifier.weight(1f)) { ft = it }
+                    HeightField(inch, "in", Modifier.weight(1f)) { inch = it }
+                } else {
+                    HeightField(cm, "cm", Modifier.fillMaxWidth()) { cm = it }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(value!!) }, enabled = valid) { Text("SAVE", style = Type.label, color = if (valid) Palette.Accent else Palette.Faint) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", style = Type.label, color = Palette.Muted) } },
+    )
+}
+
+@Composable
+private fun HeightField(value: String, unit: String, modifier: Modifier, onChange: (String) -> Unit) {
+    OutlinedTextField(
+        value,
+        { onChange(it.filter(Char::isDigit).take(3)) },
+        modifier,
+        suffix = { Text(unit.uppercase(), style = Type.tiny, color = Palette.Muted) },
+        textStyle = Type.body,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedTextColor = Palette.Text,
+            unfocusedTextColor = Palette.Text,
+            focusedBorderColor = Palette.Accent,
+            unfocusedBorderColor = Palette.Divider,
+            cursorColor = Palette.Accent,
+        ),
+    )
 }
 
 @Composable

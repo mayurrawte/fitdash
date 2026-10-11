@@ -42,5 +42,6 @@ object NavIcons {
     val sparkle = lineIcon("sparkle", "M12 4l1.8 5.2L19 11l-5.2 1.8L12 18l-1.8-5.2L5 11l5.2-1.8z")
     val back = lineIcon("back", "m14 6-6 6 6 6")
     val menu = lineIcon("menu", "M5 8h14M5 12h14M5 16h14")
+    val drop = lineIcon("drop", "M12 3.5C9 7.5 6.5 10.5 6.5 14a5.5 5.5 0 0 0 11 0c0-3.5-2.5-6.5-5.5-10.5z")
     val info = lineIcon("info", "M12 11v6M12 7.5v.01")
 }

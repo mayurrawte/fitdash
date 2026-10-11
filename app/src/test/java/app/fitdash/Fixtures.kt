@@ -70,4 +70,7 @@ operator fun HealthSnapshot.plus(o: HealthSnapshot) = HealthSnapshot(
     generic = generic + o.generic,
     sources = sources + o.sources,
     estimatedRestingHrDates = estimatedRestingHrDates + o.estimatedRestingHrDates,
+    waterDaily = waterDaily + o.waterDaily,
+    heightMeters = o.heightMeters ?: heightMeters,
+    weightKg = o.weightKg ?: weightKg,
 )
