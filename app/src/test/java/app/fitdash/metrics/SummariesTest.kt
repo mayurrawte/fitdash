@@ -53,6 +53,10 @@ class SummariesTest {
         assertEquals(60.0, h.restingHrBaseline!!, 0.0)
         assertEquals(11, h.hrvTrend.size)
         assertEquals(46.0, h.hrvTrend.last(), 0.0)
+        assertEquals(11, h.restingHrTrend.size)
+        assertEquals(58.0, h.restingHrTrend.last(), 0.0)
+        assertEquals(40.0..40.0, h.hrvRange)
+        assertEquals(60.0..60.0, h.restingHrRange)
     }
 
     @Test fun `no heart summary without HRV or resting HR`() {
@@ -62,7 +66,7 @@ class SummariesTest {
     @Test fun `vitals show last night against baseline`() {
         val spo2 = (1..5).map { Sample(at(TODAY.minusDays(it.toLong()), 4), 96.0) } + Sample(at(TODAY, 4), 94.0)
         val v = vitals(HealthSnapshot(spo2 = spo2), TODAY, IST)
-        assertEquals(listOf(VitalReading("SpO₂", "%", 94.0, 96.0)), v)
+        assertEquals(listOf(VitalReading("SpO₂", "%", 94.0, 96.0, 96.0..96.0, Good.HIGHER)), v)
     }
 
     @Test fun `vitals are empty when last night has none`() {

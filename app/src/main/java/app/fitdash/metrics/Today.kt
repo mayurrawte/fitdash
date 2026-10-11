@@ -6,71 +6,55 @@ import app.fitdash.health.SourceStatus
 import java.time.LocalDate
 import java.time.ZonedDateTime
 
-enum class HeroMode { READINESS, ACTIVITY }
-
-enum class CardKind { SLEEP, HEART, VITALS, ACTIVITY, READINESS_COMPACT, WEEK, GENERIC, SOURCES }
-
 data class WeekDay(val date: LocalDate, val score: Int?)
 
+data class SleepDay(val date: LocalDate, val hours: Double?, val score: Int?)
+
+data class ActivityDay(val date: LocalDate, val steps: Long?, val distanceKm: Double?, val kcal: Double?)
+
 data class TodayData(
-    val hero: HeroMode,
     val date: LocalDate,
     val readiness: ReadinessResult,
     val sleep: SleepSummary?,
     val heart: HeartSummary?,
     val vitals: List<VitalReading>,
     val activity: ActivitySummary?,
-    val week: List<WeekDay>,
+    val movementScore: Int?,
+    val readinessWeek: List<WeekDay>,
+    val sleepWeek: List<SleepDay>,
+    val activityWeek: List<ActivityDay>,
+    val suggestions: List<Suggestion>,
     val generic: List<GenericSeries>,
     val sources: List<SourceStatus>,
-    val cards: List<CardKind>,
-)
-
-private val MORNING = listOf(
-    CardKind.SLEEP, CardKind.HEART, CardKind.VITALS, CardKind.ACTIVITY, CardKind.WEEK, CardKind.GENERIC, CardKind.SOURCES,
-)
-private val EVENING = listOf(
-    CardKind.ACTIVITY, CardKind.READINESS_COMPACT, CardKind.SLEEP, CardKind.HEART, CardKind.VITALS,
-    CardKind.WEEK, CardKind.GENERIC, CardKind.SOURCES,
 )
 
 fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime): TodayData {
     val zone = now.zone
     val date = now.toLocalDate()
-    val evening = now.hour >= Tuning.EVENING_HOUR
+    val days = (Tuning.WEEK_DAYS - 1 downTo 0L).map { date.minusDays(it) }
     val readiness = readiness(snapshot, date, zone)
     val sleep = summarizeSleep(date, snapshot.sleep, zone)
     val heart = heartSummary(snapshot, date, zone)
-    val vitals = vitals(snapshot, date, zone)
-    val activity = activitySummary(snapshot, if (evening) date else date.minusDays(1), zone)
-    val week = (6L downTo 0L).map { d ->
-        val day = date.minusDays(d)
-        WeekDay(day, (readiness(snapshot, day, zone) as? ReadinessResult.Ready)?.score)
-    }
-    val generic = snapshot.generic.filter { it.points.isNotEmpty() }
-
-    val available = mapOf(
-        CardKind.SLEEP to (sleep != null),
-        CardKind.HEART to (heart != null),
-        CardKind.VITALS to vitals.isNotEmpty(),
-        CardKind.ACTIVITY to (activity != null),
-        CardKind.READINESS_COMPACT to (readiness is ReadinessResult.Ready),
-        CardKind.WEEK to week.any { it.score != null },
-        CardKind.GENERIC to generic.isNotEmpty(),
-        CardKind.SOURCES to true,
-    )
-
+    val activity = activitySummary(snapshot, date, zone)
     return TodayData(
-        hero = if (evening) HeroMode.ACTIVITY else HeroMode.READINESS,
         date = date,
         readiness = readiness,
         sleep = sleep,
         heart = heart,
-        vitals = vitals,
+        vitals = vitals(snapshot, date, zone),
         activity = activity,
-        week = week,
-        generic = generic,
+        movementScore = activity?.goalPercent?.coerceAtMost(100),
+        readinessWeek = days.map { WeekDay(it, (readiness(snapshot, it, zone) as? ReadinessResult.Ready)?.score) },
+        sleepWeek = days.map { d ->
+            val s = summarizeSleep(d, snapshot.sleep, zone)
+            SleepDay(d, s?.asleep?.let { it.seconds / 3600.0 }, s?.score)
+        },
+        activityWeek = days.map { d ->
+            val a = snapshot.dailyActivity.firstOrNull { it.date == d }
+            ActivityDay(d, a?.steps, a?.distanceMeters?.div(1000), a?.kcal)
+        },
+        suggestions = suggestions(readiness, sleep, heart, activity, now.hour),
+        generic = snapshot.generic.filter { it.points.isNotEmpty() },
         sources = snapshot.sources,
-        cards = (if (evening) EVENING else MORNING).filter { available.getValue(it) },
     )
 }
