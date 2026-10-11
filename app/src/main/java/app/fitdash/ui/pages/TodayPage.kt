@@ -108,7 +108,7 @@ fun TodayPage(
                     .semantics(mergeDescendants = true) {},
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Orb(score, Modifier.padding(top = Space.s)) {
+                Orb(score, Modifier.padding(top = Space.s), intro = true) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         if (score != null) CountUpText("orb-score", score.toLong(), Type.hero) else Text("—", style = Type.hero)
                         Text(if (r is ReadinessResult.Calibrating) "CALIBRATING" else if (r is ReadinessResult.NoData) "NO DATA" else "RECOVERY ›", style = Type.label)

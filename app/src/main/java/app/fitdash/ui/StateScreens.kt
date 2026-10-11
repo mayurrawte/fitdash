@@ -21,7 +21,7 @@ import app.fitdash.ui.theme.Type
 
 @Composable
 fun LoadingScreen() {
-    Box(Modifier.fillMaxSize().background(Palette.Background), contentAlignment = Alignment.Center) { Orb(null) {} }
+    Box(Modifier.fillMaxSize().background(Palette.Background), contentAlignment = Alignment.Center) { Orb(null, intro = true) {} }
 }
 
 @Composable

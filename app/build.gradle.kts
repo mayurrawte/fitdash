@@ -34,6 +34,7 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.coroutines.android)
+    implementation(libs.core.splashscreen)
     implementation(libs.health.connect)
     implementation(libs.haze)
     implementation(libs.haze.blur)
