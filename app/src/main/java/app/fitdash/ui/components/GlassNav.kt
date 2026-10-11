@@ -21,9 +21,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Type
@@ -73,7 +75,7 @@ fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSe
                         .size(ItemWidth, ItemHeight)
                         .clip(PillShape)
                         .clickable { onSelect(i) }
-                        .semantics { contentDescription = item.label; this.selected = selected },
+                        .clearAndSetSemantics { contentDescription = item.label; this.selected = selected; role = Role.Tab },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
