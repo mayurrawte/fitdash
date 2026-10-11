@@ -1,7 +1,7 @@
 # fitdash v2 — design
 
 Date: 2026-10-11
-Status: approved in brainstorming, awaiting spec review
+Status: approved in brainstorming (glass bar = option A), awaiting spec review
 Builds on: `2026-10-11-fitdash-design.md` (v1). Everything in v1 stays unless changed here.
 
 ## Goal
@@ -12,7 +12,7 @@ Make fitdash feel closer to Ultrahuman: swipeable pages, three score rings, simp
 
 | Topic | Decision |
 |---|---|
-| Navigation | Four full pages you swipe between: Today → Sleep → Activity → Trends. Page dots top-left. |
+| Navigation | Four full pages you swipe between: Today → Sleep → Activity → Trends, plus a floating frosted-glass bar at the bottom (icons + labels) whose highlight slides with the swipe. |
 | Info | ⓘ top-right on every page opens a bottom sheet: Data sources, privacy note, Support link, version. |
 | Hero | Orb always shows Recovery (the v1 readiness score). The 16:00 switch is removed. |
 | Rings | Recovery, Sleep, Movement under the orb; tapping one jumps to its page (Recovery stays on Today). |
@@ -27,7 +27,7 @@ Out of scope: MCP server (possible v3, opt-in, separate), Pro features, widgets,
 ## Pages
 
 **Every stat is visual, never a plain text row.** Detail stats use one shared **stat tile**: label, value with unit, and a small visual. Tiles sit in a 2-column grid.
-- **Range bar** for values with a baseline (SpO₂, breathing rate, skin temperature, HRV, resting HR): a short track showing your normal range (baseline ± typical variation), with a dot for today, coloured green inside the range and amber outside.
+- **Range bar** for values with a baseline (SpO₂, breathing rate, skin temperature, HRV, resting HR): a short track showing your normal range (baseline ± typical variation), with a dot for today, coloured green inside the range and amber outside it in the unhealthy direction. Each metric knows its good direction: higher HRV is green, lower resting HR is green, SpO₂ below range is amber, and skin temperature or breathing outside the range in either direction is amber.
 - **Mini ring** for values with a goal or share (sleep stages as % of the night, steps / active minutes vs goal).
 - **7-day sparkline** for running totals (distance, calories, generic types).
 
@@ -35,7 +35,11 @@ All pages share the v1 look (dark, orb gradient colours, cards fade up, charts d
 
 ### Top bar (every page)
 
-Left: four page dots, active dot wider. Right: ⓘ button.
+Left: date. Right: ⓘ button (small frosted circle).
+
+### Glass navigation bar
+
+Floating pill, centred, 22 dp above the bottom inset. Four items (icon + label): Today, Sleep, Activity, Trends. A lighter pill highlight slides between items and tracks the pager's scroll offset continuously while swiping (not only on settle). Tapping an item animates the pager to that page. The bar's background is a backdrop blur of the content scrolling under it (via the Haze library), with a faint border and shadow. Page content gets bottom padding so the last card clears the bar. Each page also has a faint coloured glow at the top in its accent colour (Today: score colour, Sleep: violet, Activity: green, Trends: teal).
 
 ### ① Today
 
@@ -125,6 +129,7 @@ Polish is a requirement, not a follow-up. v2 is not done until each item holds o
 - New `metrics/Suggestions.kt`: pure rules above.
 - New `metrics/AiSummary.kt`: pure text builder.
 - `ui/today/` replaced by `ui/pages/`: `PagerScreen` (HorizontalPager + top bar + pull-to-refresh), `TodayPage`, `SleepPage`, `ActivityPage`, `TrendsPage`, `InfoSheet`, `Rings`. Existing cards are reused and the Sources card moves into `InfoSheet`.
+- Dependency: `dev.chrisbanes.haze:haze:2.0.1` for the glass blur.
 - `app/build.gradle.kts`: `buildConfig = true`, `SHOW_SUPPORT` true for debug and release (flip to false for a Play build).
 
 ## Testing
