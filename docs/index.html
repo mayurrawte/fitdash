@@ -64,6 +64,13 @@
   .priv li span { color:var(--muted); }
   .priv li:before { content:""; flex:none; width:7px; height:7px; border-radius:50%; background:var(--accent); transform:translateY(-1px); }
 
+  .tg { display:grid; grid-template-columns:1fr; gap:12px; margin:28px 0 0; }
+  .vfy { margin-top:12px; background:rgba(0,0,0,.25); border:1px solid var(--line); border-radius:18px; padding:20px; }
+  .vfy h3 { font-size:15px; font-weight:500; margin:0 0 6px; }
+  .vfy p { font-size:13.5px; color:var(--muted); margin:0 0 14px; }
+  .vfy pre { margin:0 0 12px; font-size:12.5px; }
+  .fp { display:block; word-break:break-all; font-family:"JetBrains Mono",monospace; font-size:12.5px; line-height:1.7; color:#BFEFE6; padding:14px 16px; border-radius:14px; background:rgba(0,0,0,.35); border:1px solid var(--line); }
+  .links { display:flex; flex-wrap:wrap; gap:12px; margin-top:20px; }
   pre { margin:0 0 16px; padding:18px 18px; border-radius:16px; background:rgba(0,0,0,.35); border:1px solid var(--line); overflow-x:auto; font-family:"JetBrains Mono",monospace; font-size:13px; line-height:1.7; color:#BFEFE6; }
   .note { color:var(--muted); font-size:14px; margin:0 0 6px; }
   .soon { display:inline-block; margin-top:10px; padding:6px 12px; border:1px solid rgba(45,212,191,.35); border-radius:999px; font-size:10.5px; color:var(--accent); }
@@ -73,6 +80,7 @@
 
   @media (min-width:700px) {
     .grid { grid-template-columns:repeat(2,1fr); }
+    .tg { grid-template-columns:repeat(2,1fr); }
     .shots { justify-content:center; }
   }
   @media (min-width:900px) {
@@ -82,6 +90,7 @@
     .hero p { margin-left:0; }
     .btns { justify-content:flex-start; }
     .grid { grid-template-columns:repeat(4,1fr); }
+    .tg { grid-template-columns:repeat(3,1fr); }
     .priv { padding:40px; }
     .shots figure { width:min(200px,18vw); }
     .shots { overflow:visible; justify-content:center; gap:24px; }
@@ -133,16 +142,30 @@
     </div>
   </section>
 
-  <section>
+  <section id="privacy">
     <p class="label mono">Privacy</p>
-    <div class="priv">
-      <h2>Your data stays on your phone</h2>
-      <ul>
-        <li><b>No account.</b><span>Nothing to sign up for.</span></li>
-        <li><b>No cloud.</b><span>Nothing is uploaded or synced.</span></li>
-        <li><b>No internet permission.</b><span>The app cannot send your data anywhere.</span></li>
-        <li><b>Open source.</b><span>GPL-3.0. Read every line.</span></li>
-      </ul>
+    <h2>Private by design. Verifiable by anyone.</h2>
+    <p class="lead">Your health data is read from Health Connect and processed on your phone. It only leaves when you choose to share it from the share sheet.</p>
+    <div class="grid tg">
+      <div class="fc"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg></div><h3>No internet permission</h3><p>The release APK requests no INTERNET permission, so the app cannot send your data anywhere.</p></div>
+      <div class="fc"><div class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="4" width="17" height="6" rx="1.5"/><rect x="3.5" y="14" width="17" height="6" rx="1.5"/><path d="M6 7h.01M6 17h.01M4 3l16 18"/></svg></div><h3>No servers or API</h3><p>There is no backend. Data is read and processed on your phone.</p></div>
+      <div class="fc"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.6 3.5-5.5 7-5.5s6.2 1.9 7 5.5M4 4l16 16"/></svg></div><h3>No account or tracking</h3><p>No sign-up, analytics, crash reporting, ads or trackers.</p></div>
+      <div class="fc"><div class="ic"><svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></div><h3>Read-only Health Connect</h3><p>fitdash only reads. Every health permission it asks for is a READ permission.</p></div>
+      <div class="fc"><div class="ic"><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></div><h3>Open source, GPL-3.0</h3><p>Read every line. Any fork must stay open source too.</p></div>
+      <div class="fc"><div class="ic"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="8" r="2.2"/><path d="M6 8.2v7.6M18 10.2c0 4-6 3-11 6.5"/></svg></div><h3>Built in the open</h3><p>Release APKs are built and signed by GitHub Actions from the public source.</p></div>
+    </div>
+    <div class="vfy">
+      <h3>Verify it yourself</h3>
+      <p>Check the APK you downloaded. The permissions list should show only Health Connect READ permissions and no INTERNET.</p>
+<pre>aapt dump permissions fitdash.apk
+apksigner verify --print-certs fitdash.apk</pre>
+      <p>Signing certificate SHA-256:</p>
+      <code class="fp">15:9A:A2:14:AC:84:59:08:E6:D4:30:90:2D:50:D4:FA:85:AA:9C:E1:92:21:E7:9C:E7:3A:83:CA:B5:9E:55:72</code>
+      <p style="margin:14px 0 0">Or build it yourself with <span style="font-family:'JetBrains Mono',monospace;font-size:12.5px;color:#BFEFE6">./gradlew :app:assembleRelease</span>.</p>
+    </div>
+    <div class="links">
+      <a class="btn pri mono" href="privacy.html">Privacy policy</a>
+      <a class="btn mono" href="https://github.com/mayurrawte/fitdash/blob/main/app/src/main/AndroidManifest.xml">Read the manifest</a>
     </div>
   </section>
 
@@ -158,6 +181,7 @@
 
   <footer class="mono">
     <span>GPL-3.0</span><span>&middot;</span>
+    <a href="privacy.html">Privacy</a><span>&middot;</span>
     <a href="https://buymeacoffee.com/thepsygeek">Buy me a coffee</a><span>&middot;</span>
     <a href="https://github.com/mayurrawte/fitdash">GitHub</a>
   </footer>
