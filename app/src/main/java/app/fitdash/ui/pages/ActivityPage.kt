@@ -9,12 +9,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.Status
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.Tuning
 import app.fitdash.metrics.scoreStatus
 import app.fitdash.ui.components.Bars
+import app.fitdash.ui.components.CardShape
+import app.fitdash.ui.components.tappable
 import app.fitdash.ui.components.EmptyState
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.NumberTile
@@ -27,7 +31,6 @@ import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
-import app.fitdash.ui.theme.scoreColor
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -39,26 +42,24 @@ private fun againstAverage(value: Double, average: Double?): Status? =
 @Composable
 fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean) {
     val a = data.activity
+    @Composable fun opener(kind: MetricKind) = metricOpener(MetricRef.Kind(kind))
     PageColumn(chrome, accent = Palette.Green) {
         if (a == null) {
             item(key = "empty") { EmptyState(if (data.isToday) "No activity yet today" else "No activity recorded", "Sync your Fitbit, then pull down to refresh.") }
         } else {
             item(key = "gauge") {
                 val percent = a.goalPercent.coerceIn(0, 100)
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(Modifier.fillMaxWidth().clip(CardShape).tappable(opener(MetricKind.STEPS), "Steps details"), horizontalAlignment = Alignment.CenterHorizontally) {
                     SemiGauge(percent, "Steps", scoreStatus(percent), value = formatSteps(a.steps), tag = "of ${formatSteps(data.goals.steps.toLong())}")
                 }
             }
             if (a.hourly.sum() > 0L) revealItem("hourly", 0) {
                 SectionCard("STEPS BY HOUR") {
-                    val top = a.hourly.maxOrNull() ?: 0L
-                    val green = Palette.Green
-                    val dimGreen = Palette.DimGreen
                     Bars(
                         "steps-hourly",
                         a.hourly.map { it.toFloat() },
-                        { i -> if (top > 0 && a.hourly[i] * 3 > top * 2) green else dimGreen },
                         height = 46.dp,
+                        highlightLast = false,
                     )
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         listOf("00", "06", "12", "18", "24").forEach { Text(it, style = Type.tiny, color = Palette.Faint) }
@@ -77,6 +78,7 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean) {
                                 "Active", NavIcons.bolt, listOf(a.activeMinutes.toString() to "min"), m,
                                 scoreStatus((a.activeMinutes * 100 / Tuning.ACTIVE_MINUTES_GOAL).toInt().coerceAtMost(100)),
                                 if (left <= 0) "GOAL ${Tuning.ACTIVE_MINUTES_GOAL} MIN DONE" else "$left MIN TO GO",
+                                opener(MetricKind.ACTIVE_MINUTES), "Active minutes details",
                             )
                         },
                         { m ->
@@ -84,6 +86,7 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean) {
                                 "Distance", NavIcons.walk, listOf(formatNumber(a.distanceKm * unitScale) to if (miles) "mi" else "km"), m,
                                 againstAverage(a.distanceKm, distance.takeIf { it.isNotEmpty() }?.average()),
                                 if (distance.isEmpty()) "THIS WEEK" else "7-DAY AVG ${formatNumber(distance.average() * unitScale)} ${if (miles) "MI" else "KM"}",
+                                opener(MetricKind.DISTANCE), "Distance details",
                             )
                         },
                         { m ->
@@ -91,6 +94,7 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean) {
                                 "Calories", NavIcons.heart, listOf(formatSteps(a.kcal.roundToLong()) to "kcal"), m,
                                 againstAverage(a.kcal, kcal.takeIf { it.isNotEmpty() }?.average()),
                                 if (kcal.isEmpty()) "THIS WEEK" else "7-DAY AVG ${formatSteps(kcal.average().roundToLong())}",
+                                opener(MetricKind.CALORIES), "Calories details",
                             )
                         },
                     ),
@@ -100,13 +104,16 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean) {
         if (data.activityWeek.any { it.steps != null }) {
             val known = data.activityWeek.mapNotNull { it.steps }
             revealItem("steps-week", 1) {
-                SectionCard("STEPS · 7 DAYS", trailing = "avg ${formatSteps(known.average().roundToLong())}") {
-                    val divider = Palette.Divider
-                    val dayColors = data.activityWeek.map { d -> d.steps?.let { scoreColor((it * 100.0 / data.goals.steps).roundToInt()) } ?: divider }
+                SectionCard(
+                    "STEPS · 7 DAYS",
+                    trailing = "avg ${formatSteps(known.average().roundToLong())}",
+                    onClick = opener(MetricKind.STEPS),
+                    description = "Steps details",
+                ) {
                     Bars(
                         "steps-week",
                         data.activityWeek.map { (it.steps ?: 0L).toFloat() },
-                        { i -> dayColors[i] },
+                        poor = { i -> (data.activityWeek[i].steps ?: Long.MAX_VALUE) * 2 < data.goals.steps },
                         labels = data.activityWeek.map { dayLetter(it.date) },
                     )
                 }

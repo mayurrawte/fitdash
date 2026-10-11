@@ -141,13 +141,15 @@ fun Hypnogram(key: String, stages: List<SleepStage>, modifier: Modifier = Modifi
 }
 
 @Composable
-fun TrendLine(key: String, values: List<Double>, color: Color, modifier: Modifier = Modifier, baseline: Double? = null) {
+fun TrendLine(key: String, values: List<Double>, modifier: Modifier = Modifier, baseline: Double? = null) {
     if (values.size < 2) {
         Spacer(modifier)
         return
     }
     val progress = rememberDrawProgress(key)
     val faint = Palette.Faint
+    val color = Palette.Accent
+    val fillColor = color.copy(alpha = 0.12f)
     Spacer(
         modifier.drawWithCache {
             val all = values + listOfNotNull(baseline)
@@ -163,14 +165,24 @@ fun TrendLine(key: String, values: List<Double>, color: Color, modifier: Modifie
             }
             val measure = PathMeasure().apply { setPath(path, false) }
             val partial = Path()
+            val fill = Path()
             val stroke = Stroke(Chart.stroke.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
             val dash = PathEffect.dashPathEffect(floatArrayOf(3.dp.toPx(), 4.dp.toPx()))
             onDrawBehind {
                 baseline?.let {
                     drawLine(faint, Offset(0f, y(it)), Offset(size.width, y(it)), 1.dp.toPx(), pathEffect = dash)
                 }
+                val length = measure.length * progress.value
+                if (length <= 0f) return@onDrawBehind
                 partial.reset()
-                measure.getSegment(0f, measure.length * progress.value, partial, true)
+                measure.getSegment(0f, length, partial, true)
+                val end = measure.getPosition(length)
+                fill.reset()
+                fill.addPath(partial)
+                fill.lineTo(end.x, size.height)
+                fill.lineTo(0f, size.height)
+                fill.close()
+                drawPath(fill, fillColor)
                 drawPath(partial, color, style = stroke)
             }
         },
@@ -181,11 +193,15 @@ fun TrendLine(key: String, values: List<Double>, color: Color, modifier: Modifie
 fun Bars(
     key: String,
     values: List<Float>,
-    colorFor: (Int) -> Color,
     modifier: Modifier = Modifier,
     labels: List<String> = emptyList(),
     height: Dp = 56.dp,
+    highlightLast: Boolean = true,
+    poor: (Int) -> Boolean = { false },
 ) {
+    val accent = Palette.Accent
+    val calm = accent.copy(alpha = 0.35f)
+    val bad = Palette.Bad.copy(alpha = 0.45f)
     val progress = rememberDrawProgress(key, Motion.RISE + 300)
     val top = values.maxOrNull()?.takeIf { it > 0 } ?: 1f
     Column(modifier.fillMaxWidth()) {
@@ -196,7 +212,12 @@ fun Bars(
             values.forEachIndexed { i, v ->
                 val h = v / top * size.height * progress.value
                 if (h > 0f) {
-                    drawRoundRect(colorFor(i), Offset(i * w + gap, size.height - h), Size(w - 2 * gap, h), CornerRadius(Chart.corner.toPx()))
+                    val colour = when {
+                        highlightLast && i == values.lastIndex -> accent
+                        poor(i) -> bad
+                        else -> calm
+                    }
+                    drawRoundRect(colour, Offset(i * w + gap, size.height - h), Size(w - 2 * gap, h), CornerRadius(Chart.corner.toPx()))
                 }
             }
         }

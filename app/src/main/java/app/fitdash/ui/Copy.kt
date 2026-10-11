@@ -4,6 +4,7 @@ import app.fitdash.health.SourceStatus
 import app.fitdash.metrics.Band
 import app.fitdash.metrics.Component
 import app.fitdash.metrics.Good
+import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.RangeStatus
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
@@ -103,3 +104,43 @@ fun formatTime12(t: Instant, zone: ZoneId): String = CLOCK_12.format(t.atZone(zo
 fun formatClock(t: Instant, zone: ZoneId): String = CLOCK.format(t.atZone(zone))
 
 fun dayLetter(d: LocalDate): String = d.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.ENGLISH)
+
+fun metricName(kind: MetricKind) = when (kind) {
+    MetricKind.RECOVERY -> "Recovery"
+    MetricKind.SLEEP_SCORE -> "Sleep score"
+    MetricKind.SLEEP_HOURS -> "Sleep"
+    MetricKind.DEEP -> "Deep sleep"
+    MetricKind.REM -> "REM sleep"
+    MetricKind.LIGHT -> "Light sleep"
+    MetricKind.AWAKE -> "Awake"
+    MetricKind.RESTING_HR -> "Resting heart rate"
+    MetricKind.HRV -> "HRV"
+    MetricKind.SPO2 -> "SpO₂"
+    MetricKind.RESPIRATORY -> "Respiratory rate"
+    MetricKind.SKIN_TEMP -> "Skin temperature"
+    MetricKind.STEPS -> "Steps"
+    MetricKind.DISTANCE -> "Distance"
+    MetricKind.CALORIES -> "Calories"
+    MetricKind.ACTIVE_MINUTES -> "Active minutes"
+}
+
+fun metricExplain(kind: MetricKind) = when (kind) {
+    MetricKind.RECOVERY -> "A 0 to 100 blend of your HRV, resting heart rate and sleep compared with your own recent normal."
+    MetricKind.SLEEP_SCORE -> "Mostly time asleep against your goal, adjusted a little for how much deep and REM sleep you got."
+    MetricKind.SLEEP_HOURS -> "Time actually asleep, not counting time spent awake in bed."
+    MetricKind.DEEP -> "The slowest, heaviest stage of sleep, in minutes per night."
+    MetricKind.REM -> "The stage where most dreaming happens, in minutes per night."
+    MetricKind.LIGHT -> "The lighter stage that makes up most of a typical night, in minutes."
+    MetricKind.AWAKE -> "Minutes you were awake during the night after first falling asleep."
+    MetricKind.RESTING_HR -> "Your heart rate at full rest, usually lowest during sleep. Lower than your normal is generally a good sign."
+    MetricKind.HRV -> "The small variation in time between heartbeats. Higher than your normal is generally a good sign."
+    MetricKind.SPO2 -> "The share of oxygen your blood is carrying, as measured by your wearable overnight."
+    MetricKind.RESPIRATORY -> "How many breaths you take per minute while you sleep."
+    MetricKind.SKIN_TEMP -> "How far your skin temperature sat from your own usual level overnight."
+    MetricKind.STEPS -> "Steps counted across the day, compared with your daily goal."
+    MetricKind.DISTANCE -> "How far you covered on foot during the day."
+    MetricKind.CALORIES -> "Energy burned across the day, as reported by your tracker."
+    MetricKind.ACTIVE_MINUTES -> "Minutes spent in recorded exercise sessions."
+}
+
+const val GENERIC_EXPLAIN = "The daily average of this reading from Health Connect."

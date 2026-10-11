@@ -26,6 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.fitdash.metrics.Good
+import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.ReadinessResult
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.TodayData
@@ -85,6 +86,11 @@ fun TodayPage(
     val r = data.readiness
     val score = (r as? ReadinessResult.Ready)?.score
     val zone = ZoneId.systemDefault()
+    val openRecovery = metricOpener(MetricRef.Kind(MetricKind.RECOVERY))
+    val openSleep = metricOpener(MetricRef.Kind(MetricKind.SLEEP_HOURS))
+    val openSteps = metricOpener(MetricRef.Kind(MetricKind.STEPS))
+    val openHrv = metricOpener(MetricRef.Kind(MetricKind.HRV))
+    val openRhr = metricOpener(MetricRef.Kind(MetricKind.RESTING_HR))
     PageColumn(chrome, accent = score?.let { scoreColor(it) } ?: Palette.Calibrating) {
         item(key = "strip") {
             val monday = data.date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -136,7 +142,7 @@ fun TodayPage(
                 HorizontalDivider(color = Palette.Divider)
                 Row(Modifier.fillMaxWidth().padding(top = 18.dp)) {
                     TrioStat("Sleep", data.sleep?.score, data.previous.sleep, Modifier.weight(1f)) { onOpen(1) }
-                    TrioStat("Recovery", score, data.previous.readiness, Modifier.weight(1f), null)
+                    TrioStat("Recovery", score, data.previous.readiness, Modifier.weight(1f), openRecovery)
                     TrioStat("Movement", data.movementScore, data.previous.movement, Modifier.weight(1f)) { onOpen(2) }
                 }
             }
@@ -147,7 +153,7 @@ fun TodayPage(
         }
         data.sleep?.let { s ->
             item(key = "row-sleep") {
-                ListRow(NavIcons.bed, "Sleep", "${formatDuration(s.asleep)} · ${formatTime12(s.start, zone)} – ${formatTime12(s.end, zone)}") { onOpen(1) }
+                ListRow(NavIcons.bed, "Sleep", "${formatDuration(s.asleep)} · ${formatTime12(s.start, zone)} – ${formatTime12(s.end, zone)}", Modifier.semantics { contentDescription = "Sleep details" }) { openSleep() }
             }
         }
         data.naps.forEachIndexed { i, nap ->
@@ -157,7 +163,7 @@ fun TodayPage(
         }
         if (a != null) {
             item(key = "row-steps") {
-                ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%") { onOpen(2) }
+                ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%", Modifier.semantics { contentDescription = "Steps details" }) { openSteps() }
             }
         }
         val h = data.heart
@@ -168,6 +174,8 @@ fun TodayPage(
                         "HRV", v.roundToInt().toString(), "ms", rangeNote(v, h.hrvRange, Good.HIGHER), m,
                         status = h.hrvRange?.let { rangeWord(rangeStatus(v, it, Good.HIGHER)) },
                         icon = NavIcons.activity,
+                        onClick = openHrv,
+                        description = "HRV details",
                     ) { h.hrvRange?.let { RangeBar("today-hrv", v, it, Good.HIGHER) } ?: EmptyTrack() }
                 }
             }
@@ -178,6 +186,8 @@ fun TodayPage(
                         status = h.restingHrRange?.let { rangeWord(rangeStatus(v, it, Good.LOWER)) },
                         icon = NavIcons.heart,
                         labelTag = if (data.restingHrEstimated) "EST." else null,
+                        onClick = openRhr,
+                        description = "Resting heart rate details",
                     ) { h.restingHrRange?.let { RangeBar("today-rhr", v, it, Good.LOWER) } ?: EmptyTrack() }
                 }
             }
