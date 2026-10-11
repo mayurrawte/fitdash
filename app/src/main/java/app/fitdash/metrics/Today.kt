@@ -51,7 +51,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime): TodayData {
         },
         activityWeek = days.map { d ->
             val a = snapshot.dailyActivity.firstOrNull { it.date == d }
-            ActivityDay(d, a?.steps, a?.distanceMeters?.div(1000), a?.kcal)
+            ActivityDay(d, stepsOn(snapshot, d, zone), a?.distanceMeters?.div(1000), a?.kcal)
         },
         suggestions = suggestions(readiness, sleep, heart, activity, now.hour),
         generic = snapshot.generic.filter { it.points.isNotEmpty() },

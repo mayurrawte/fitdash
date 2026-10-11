@@ -8,6 +8,7 @@ import app.fitdash.history
 import app.fitdash.plus
 import app.fitdash.health.GenericSeries
 import app.fitdash.health.HealthSnapshot
+import app.fitdash.health.HourBucket
 import app.fitdash.health.Sample
 import app.fitdash.metrics.buildToday
 import org.junit.Assert.assertEquals
@@ -35,6 +36,13 @@ class AiSummaryTest {
         assertTrue(text.contains("\n2026-09-12, , , , , \n"))
         assertTrue(text.contains("\n2026-10-10, 79, 8.0, 40, 60, \n"))
         assertTrue(text.contains("\n2026-10-11, 73, 6.4, 40, 60, \n"))
+    }
+
+    @Test fun `hourly-only steps fill today's row`() {
+        val s = HealthSnapshot(hourlySteps = listOf(HourBucket(at(TODAY, 9), 1000), HourBucket(at(TODAY, 10), 2000)))
+        val t = aiSummary(s, buildToday(s, now), now)
+        assertTrue(t.contains("steps so far 3,000."))
+        assertTrue(t.contains("\n2026-10-11, , , , , 3000"))
     }
 
     @Test fun `other data line`() {
