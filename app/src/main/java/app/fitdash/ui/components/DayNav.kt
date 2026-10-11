@@ -34,16 +34,18 @@ import java.time.format.TextStyle
 import java.util.Locale
 
 @Composable
-fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate>, onSelect: (LocalDate) -> Unit, modifier: Modifier = Modifier) {
+fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate>, onSelect: (LocalDate) -> Unit, modifier: Modifier = Modifier, enabled: (LocalDate) -> Boolean = { true }) {
     Row(modifier.fillMaxWidth().padding(horizontal = Space.l)) {
         days.forEach { day ->
             val on = day == selected
+            val active = enabled(day)
             Column(
                 Modifier
                     .weight(1f)
+                    .alpha(if (active) 1f else 0.3f)
                     .clip(RoundedCornerShape(14.dp))
                     .background(if (on) Palette.ChipStrong else Color.Transparent)
-                    .clickable(role = Role.Button) { onSelect(day) }
+                    .clickable(enabled = active, role = Role.Button) { onSelect(day) }
                     .padding(vertical = Space.s),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

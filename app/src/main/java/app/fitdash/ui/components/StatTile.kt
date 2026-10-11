@@ -33,6 +33,7 @@ fun StatTile(
     modifier: Modifier = Modifier,
     status: Status? = null,
     icon: ImageVector? = null,
+    labelTag: String? = null,
     visual: @Composable () -> Unit,
 ) {
     Column(
@@ -44,12 +45,38 @@ fun StatTile(
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (icon != null) Icon(icon, null, Modifier.padding(end = 6.dp).size(13.dp), tint = Palette.Muted)
             Text(label, style = Type.small.copy(fontSize = 11.sp), color = Palette.Muted)
+            if (labelTag != null) Text(labelTag.uppercase(), Modifier.padding(start = 4.dp), style = Type.tiny, color = Palette.Muted)
         }
         ValueText(value, unit, Modifier.padding(top = Space.xs, bottom = if (status == null) Space.s else 2.dp), style = Type.tile)
         if (status != null) StatusText(status, Modifier.padding(bottom = Space.s))
         Spacer(Modifier.weight(1f))
         visual()
         Text(note, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s))
+    }
+}
+
+@Composable
+fun NumberTile(
+    label: String,
+    icon: ImageVector,
+    parts: List<Pair<String, String>>,
+    modifier: Modifier = Modifier,
+    status: Status? = null,
+    note: String? = null,
+) {
+    Column(
+        modifier
+            .cardSurface()
+            .padding(Space.m)
+            .semantics(mergeDescendants = true) {},
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, Modifier.padding(end = 6.dp).size(13.dp), tint = Palette.Muted)
+            Text(label, style = Type.small.copy(fontSize = 11.sp), color = Palette.Muted)
+        }
+        NumberWithUnits(parts, Modifier.padding(top = Space.s, bottom = 6.dp))
+        if (status != null) StatusText(status)
+        if (note != null) Text(note, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
     }
 }
 

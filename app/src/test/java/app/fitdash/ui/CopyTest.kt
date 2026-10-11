@@ -31,6 +31,12 @@ class CopyTest {
         assertEquals("no access", sourceLine(SourceStatus("Weight", false, false, emptySet())))
         assertEquals("no data", sourceLine(SourceStatus("Weight", true, false, emptySet())))
         assertEquals("✓ Fitbit", sourceLine(SourceStatus("Sleep", true, true, setOf("com.fitbit.FitbitMobile"))))
+        assertEquals("✓ Phone", sourceLine(SourceStatus("Steps", true, true, setOf("com.android.healthconnect.phone", "com.android.healthconnect.phone.steps"))))
+    }
+
+    @Test fun `days of data`() {
+        assertEquals("1 day of data", daysOfData(1))
+        assertEquals("12 days of data", daysOfData(12))
     }
 
     @Test fun `suggestion texts`() {
