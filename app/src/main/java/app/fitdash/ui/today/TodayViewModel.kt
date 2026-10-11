@@ -47,7 +47,7 @@ class TodayViewModel(
     }
 
     fun select(date: LocalDate) {
-        selectedDate.value = date.takeUnless { it == clock().toLocalDate() }
+        selectedDate.value = date.takeUnless { it == (lastNow ?: clock()).toLocalDate() }
         rebuild()
     }
 
@@ -56,7 +56,8 @@ class TodayViewModel(
         val now = lastNow ?: return
         val s = settings.value
         val data = buildToday(snapshot, now, selectedDate.value ?: now.toLocalDate(), Goals(s.stepGoal, s.sleepHours))
-        _state.value = TodayUiState.Ready(data, aiSummary(snapshot, data, now))
+        val prev = _state.value as? TodayUiState.Ready
+        _state.value = TodayUiState.Ready(data, aiSummary(snapshot, data, now), prev?.refreshing ?: false, prev?.error ?: false)
     }
 
     val permissions: Set<String> get() = source.allPermissions
@@ -76,6 +77,7 @@ class TodayViewModel(
                 Availability.AVAILABLE -> Unit
             }
             val now = clock()
+            if (selectedDate.value?.isBefore(now.toLocalDate().minusDays(29)) == true) selectedDate.value = null
             val previous = _state.value as? TodayUiState.Ready
             if (previous != null) _state.value = previous.copy(refreshing = true)
             _state.value = try {

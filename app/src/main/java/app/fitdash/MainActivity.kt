@@ -10,7 +10,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.health.connect.client.PermissionController
@@ -32,7 +31,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val store = remember { SettingsStore(applicationContext) }
+            val store = SettingsStore.get(this@MainActivity)
             val settings by store.flow.collectAsStateWithLifecycle()
             val light = THEMES.getValue(settings.theme).lightSystemBars
             LaunchedEffect(settings.theme) {
