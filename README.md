@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/logo.png" alt="fitdash" width="420"></p>
+
 # fitdash
 
 A calm, animated Health Connect dashboard for Android. Readiness, sleep and activity on one page, from whatever your watch or ring writes to Health Connect.
