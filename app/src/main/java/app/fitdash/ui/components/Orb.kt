@@ -44,30 +44,33 @@ import kotlin.math.sin
 private const val BLOB_TURN_MILLIS = 40_000
 
 @Composable
-fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, content: @Composable () -> Unit) {
+fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, frozen: Boolean = false, content: @Composable () -> Unit) {
     val t = LocalTheme.current
     val desaturate = remember { Animatable(if (score == null) 0.7f else 0f) }
     LaunchedEffect(score == null) { desaturate.animateTo(if (score == null) 0.7f else 0f, tween(Motion.COLOUR, easing = Motion.ease)) }
     val transition = rememberInfiniteTransition(label = "orb")
     val breath = breathMillis(score ?: 50)
-    val scale by transition.animateFloat(
+    val animatedScale by transition.animateFloat(
         initialValue = 0.95f,
         targetValue = 1.05f,
         animationSpec = infiniteRepeatable(tween(breath / 2, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "breathe",
     )
-    val phase by transition.animateFloat(
+    val animatedPhase by transition.animateFloat(
         initialValue = 0f,
         targetValue = (2 * PI).toFloat(),
         animationSpec = infiniteRepeatable(tween(9000, easing = LinearEasing)),
         label = "morph",
     )
-    val turn by transition.animateFloat(
+    val animatedTurn by transition.animateFloat(
         initialValue = 0f,
         targetValue = (2 * PI).toFloat(),
         animationSpec = infiniteRepeatable(tween(BLOB_TURN_MILLIS, easing = LinearEasing)),
         label = "turn",
     )
+    val scale = if (frozen) 1f else animatedScale
+    val phase = if (frozen) 1f else animatedPhase
+    val turn = if (frozen) 0.6f else animatedTurn
 
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
         Box(Modifier.size(diameter).blur(40.dp).background(t.glow, CircleShape))

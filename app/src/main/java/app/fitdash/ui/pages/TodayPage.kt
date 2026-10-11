@@ -201,7 +201,7 @@ fun TodayPage(
 }
 
 @Composable
-private fun TrioStat(label: String, value: Int?, previous: Int?, modifier: Modifier, onClick: (() -> Unit)? = null) {
+internal fun TrioStat(label: String, value: Int?, previous: Int?, modifier: Modifier, onClick: (() -> Unit)? = null) {
     val delta = if (value != null && previous != null && value != previous) value - previous else null
     Column(
         modifier
