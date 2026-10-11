@@ -46,6 +46,7 @@ import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.ThemeId
+import app.fitdash.ui.share.ShareRender
 import app.fitdash.ui.theme.ThemedBackground
 import app.fitdash.ui.today.TodayUiState
 import dev.chrisbanes.haze.hazeSource
@@ -72,6 +73,8 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     var showInfo by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
+    var sharing by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
     val settings by store.flow.collectAsState()
     val today = if (data.isToday) data.date else LocalDate.now()
@@ -92,7 +95,7 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
         onPrev = { onSelectDate(data.date.minusDays(1)) },
         onNext = { onSelectDate(data.date.plusDays(1)) },
         onPickDate = { showCalendar = true },
-        onMenu = {},
+        onMenu = { showSettings = true },
         onInfo = { showInfo = true },
         onRetry = onRefresh,
     )
@@ -107,7 +110,7 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
                 ThemedBackground()
                 HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
                     when (page) {
-                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, {}, askAi)
+                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, { sharing = true }, askAi)
                         1 -> SleepPage(data, chrome)
                         2 -> ActivityPage(data, chrome, settings.miles)
                         else -> TrendsPage(data, chrome)
@@ -132,6 +135,8 @@ fun PagerScreen(state: TodayUiState.Ready, store: SettingsStore, onRefresh: () -
                 modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 22.dp),
             )
         }
+        if (sharing) ShareRender(data, onDone = { sharing = false })
+        if (showSettings) SettingsSheet(store, data.sources, onDismiss = { showSettings = false })
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
         if (showCalendar) DatePickerSheet(data.date, today, onSelectDate, onDismiss = { showCalendar = false })
     }
