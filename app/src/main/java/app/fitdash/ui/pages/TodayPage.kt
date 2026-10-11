@@ -149,14 +149,14 @@ fun TodayPage(
                 ListRow(NavIcons.bed, "Sleep", "${formatDuration(s.asleep)} · ${formatTime12(s.start, zone)} – ${formatTime12(s.end, zone)}") { onOpen(1) }
             }
         }
+        if (a != null) {
+            item(key = "row-steps") {
+                ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%") { onOpen(2) }
+            }
+        }
         data.naps.forEachIndexed { i, nap ->
             item(key = "row-nap-$i") {
                 ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${formatTime12(nap.start, zone)} – ${formatTime12(nap.end, zone)}") { onOpen(1) }
-            }
-        }
-        a?.let {
-            item(key = "row-steps") {
-                ListRow(NavIcons.walk, "Steps", "${formatSteps(it.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${it.goalPercent}%") { onOpen(2) }
             }
         }
         val h = data.heart
