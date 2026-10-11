@@ -73,7 +73,7 @@ fun stepsOn(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): Long? {
     return if (buckets.isEmpty()) null else buckets.sumOf { it.steps }
 }
 
-fun activitySummary(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): ActivitySummary? {
+fun activitySummary(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId, stepGoal: Int = Tuning.STEP_GOAL): ActivitySummary? {
     val day = snapshot.dailyActivity.firstOrNull { it.date == date }
     val buckets = snapshot.hourlySteps.filter { it.start.atZone(zone).toLocalDate() == date }
     if (day == null && buckets.isEmpty()) return null
@@ -85,7 +85,7 @@ fun activitySummary(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): Ac
     return ActivitySummary(
         date = date,
         steps = steps,
-        goalPercent = (steps * 100.0 / Tuning.STEP_GOAL).roundToInt(),
+        goalPercent = (steps * 100.0 / stepGoal).roundToInt(),
         hourly = hourly,
         activeMinutes = active,
         distanceKm = (day?.distanceMeters ?: 0.0) / 1000,

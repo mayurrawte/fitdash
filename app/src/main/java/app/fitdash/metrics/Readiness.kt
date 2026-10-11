@@ -5,6 +5,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.roundToInt
 
+data class Goals(val steps: Int = Tuning.STEP_GOAL, val sleepHours: Double = Tuning.SLEEP_TARGET_HOURS)
+
 enum class Band { RECOVER, STEADY, PRIMED }
 
 enum class Component { HRV, RESTING_HR, SLEEP }
@@ -41,7 +43,7 @@ private val WEIGHTS = mapOf(
     Component.SLEEP to Tuning.WEIGHT_SLEEP,
 )
 
-fun readiness(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): ReadinessResult {
+fun readiness(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId, goals: Goals = Goals()): ReadinessResult {
     val hrv = dailyMean(snapshot.hrv, zone)
     val rhr = dailyLast(snapshot.restingHr, zone)
     val night = nightEnding(date, snapshot.sleep, zone)
@@ -60,7 +62,7 @@ fun readiness(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): Readines
         val rhrToday = rhr[date]
         val rhrBase = baseline(rhr, date)
         if (rhrToday != null && rhrBase != null) put(Component.RESTING_HR, rhrComponent(rhrToday, rhrBase))
-        if (night != null) put(Component.SLEEP, sleepScore(night, baselineDeepRemShare(date, snapshot.sleep, zone)).toDouble())
+        if (night != null) put(Component.SLEEP, sleepScore(night, baselineDeepRemShare(date, snapshot.sleep, zone), goals.sleepHours).toDouble())
     }
     if (parts.isEmpty()) return ReadinessResult.NoData
 

@@ -6,6 +6,7 @@ import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.DistanceRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
+import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.Record
@@ -120,6 +121,7 @@ class HealthReader(private val context: Context) : HealthSource {
                 },
                 hrv = records.of<HeartRateVariabilityRmssdRecord>().map { Sample(it.time, it.heartRateVariabilityMillis) },
                 restingHr = records.of<RestingHeartRateRecord>().map { Sample(it.time, it.beatsPerMinute.toDouble()) },
+                heartRate = records.of<HeartRateRecord>().flatMap { r -> r.samples.map { Sample(it.time, it.beatsPerMinute.toDouble()) } },
                 spo2 = records.of<OxygenSaturationRecord>().map { Sample(it.time, it.percentage.value) },
                 respiratoryRate = records.of<RespiratoryRateRecord>().map { Sample(it.time, it.rate) },
                 skinTempDelta = records.of<SkinTemperatureRecord>().flatMap { r -> r.deltas.map { Sample(it.time, it.delta.inCelsius) } },

@@ -1,0 +1,24 @@
+package app.fitdash.metrics
+
+enum class Status { OPTIMAL, GOOD, FAIR, ATTENTION }
+
+val TYPICAL_DEEP = 0.13..0.23
+val TYPICAL_LIGHT = 0.45..0.60
+val TYPICAL_REM = 0.20..0.25
+val TYPICAL_AWAKE = 0.0..0.05
+
+fun scoreStatus(score: Int): Status = when {
+    score >= 85 -> Status.OPTIMAL
+    score >= 70 -> Status.GOOD
+    score >= 50 -> Status.FAIR
+    else -> Status.ATTENTION
+}
+
+fun rangeWord(status: RangeStatus): Status = when (status) {
+    RangeStatus.GOOD_SIDE -> Status.OPTIMAL
+    RangeStatus.IN -> Status.GOOD
+    RangeStatus.BAD_SIDE -> Status.ATTENTION
+}
+
+fun shareStatus(share: Double, typical: ClosedFloatingPointRange<Double>): Status =
+    if (share in typical) Status.OPTIMAL else Status.FAIR

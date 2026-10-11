@@ -11,7 +11,9 @@ import app.fitdash.health.GenericSeries
 import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.HourBucket
 import app.fitdash.health.Sample
+import app.fitdash.health.SleepSession
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -76,5 +78,33 @@ class TodayTest {
         assertTrue(t.readinessWeek.all { it.score == null })
         assertTrue(t.sleepWeek.all { it.hours == null })
         assertTrue(t.activityWeek.all { it.steps == null })
+    }
+
+
+    @Test fun `a past date shows that day without suggestions`() {
+        val t = buildToday(full, time(21, 30), date = TODAY.minusDays(1))
+        assertEquals(TODAY.minusDays(1), t.date)
+        assertFalse(t.isToday)
+        assertEquals(5760L, t.activity!!.steps)
+        assertTrue(t.suggestions.isEmpty())
+        assertEquals(TODAY.minusDays(1), t.trend.last().date)
+    }
+
+    @Test fun `previous day scores for deltas`() {
+        val t = buildToday(full, time(8))
+        assertEquals(64, t.previous.movement)
+        assertEquals(t.trend[t.trend.size - 2].recovery, t.previous.readiness)
+    }
+
+    @Test fun `goals feed movement`() {
+        assertEquals(100, buildToday(full, time(8), goals = Goals(steps = 5000)).movementScore)
+    }
+
+    @Test fun `naps are listed and the trend covers 30 days`() {
+        val nap = SleepSession(at(TODAY, 14), at(TODAY, 14, 40), emptyList())
+        val t = buildToday(full + HealthSnapshot(sleep = listOf(nap)), time(18))
+        assertEquals(listOf(nap), t.naps)
+        assertEquals(30, t.trend.size)
+        assertTrue(TODAY in t.daysWithData)
     }
 }

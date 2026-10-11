@@ -10,6 +10,7 @@ import app.fitdash.metrics.dailyMean
 import app.fitdash.metrics.nightEnding
 import app.fitdash.metrics.readiness
 import app.fitdash.metrics.stepsOn
+import app.fitdash.metrics.withEstimatedRestingHr
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -18,6 +19,7 @@ import kotlin.math.roundToInt
 private val STAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.ENGLISH)
 
 fun aiSummary(snapshot: HealthSnapshot, data: TodayData, now: ZonedDateTime): String {
+    val snapshot = withEstimatedRestingHr(snapshot, now.zone, now.toLocalDate())
     val zone = now.zone
     val date = now.toLocalDate()
     val hrv = dailyMean(snapshot.hrv, zone)

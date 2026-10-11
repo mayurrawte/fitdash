@@ -3,7 +3,9 @@ package app.fitdash.metrics
 import app.fitdash.health.SleepSession
 import app.fitdash.health.SleepStage
 import app.fitdash.health.StageType
+import app.fitdash.health.Sample
 import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.min
@@ -18,6 +20,11 @@ data class SleepSummary(
     val hasStages: Boolean,
     val score: Int,
     val stages: List<SleepStage>,
+    val start: Instant,
+    val end: Instant,
+    val timeInBed: Duration,
+    val restorative: Double?,
+    val overnightHr: Double?,
 )
 
 fun nightEnding(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): SleepSession? =
@@ -45,9 +52,9 @@ fun deepRemShare(night: SleepSession): Double? {
 fun baselineDeepRemShare(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): Double? =
     median((1..Tuning.BASELINE_DAYS).mapNotNull { nightEnding(date.minusDays(it), sessions, zone)?.let(::deepRemShare) })
 
-fun sleepScore(night: SleepSession, baselineShare: Double?): Int {
+fun sleepScore(night: SleepSession, baselineShare: Double?, targetHours: Double = Tuning.SLEEP_TARGET_HOURS): Int {
     val hours = asleepDuration(night).seconds / 3600.0
-    var score = min(hours / Tuning.SLEEP_TARGET_HOURS, 1.0) * 100
+    var score = min(hours / targetHours, 1.0) * 100
     val share = deepRemShare(night)
     if (share != null && baselineShare != null) {
         score += ((share - baselineShare) * 100).coerceIn(-Tuning.STAGE_ADJUST_MAX, Tuning.STAGE_ADJUST_MAX)
@@ -55,7 +62,18 @@ fun sleepScore(night: SleepSession, baselineShare: Double?): Int {
     return score.roundToInt().coerceIn(0, 100)
 }
 
-fun summarizeSleep(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): SleepSummary? {
+fun napsEnding(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): List<SleepSession> =
+    sessions
+        .filter { it.end.atZone(zone).toLocalDate() == date && Duration.between(it.start, it.end).seconds < Tuning.MIN_NIGHT_HOURS * 3600 }
+        .sortedBy { it.start }
+
+fun summarizeSleep(
+    date: LocalDate,
+    sessions: List<SleepSession>,
+    zone: ZoneId,
+    targetHours: Double = Tuning.SLEEP_TARGET_HOURS,
+    heartRate: List<Sample> = emptyList(),
+): SleepSummary? {
     val night = nightEnding(date, sessions, zone) ?: return null
     return SleepSummary(
         asleep = asleepDuration(night),
@@ -64,7 +82,12 @@ fun summarizeSleep(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId):
         light = night.total(StageType.LIGHT),
         awake = night.total(StageType.AWAKE),
         hasStages = night.hasStages(),
-        score = sleepScore(night, baselineDeepRemShare(date, sessions, zone)),
+        score = sleepScore(night, baselineDeepRemShare(date, sessions, zone), targetHours),
         stages = night.stages,
+        start = night.start,
+        end = night.end,
+        timeInBed = Duration.between(night.start, night.end),
+        restorative = deepRemShare(night),
+        overnightHr = lowestRollingMean(heartRate.filter { !it.time.isBefore(night.start) && !it.time.isAfter(night.end) }, Duration.ofMinutes(Tuning.RHR_WINDOW_MINUTES)),
     )
 }

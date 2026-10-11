@@ -10,6 +10,7 @@ fun suggestions(
     heart: HeartSummary?,
     activity: ActivitySummary?,
     hour: Int,
+    stepGoal: Int = Tuning.STEP_GOAL,
 ): List<Suggestion> = buildList {
     if (readiness is ReadinessResult.Ready) {
         add(
@@ -26,7 +27,7 @@ fun suggestions(
     val hrv = heart?.hrv
     val base = heart?.hrvBaseline
     if (hrv != null && base != null && hrv <= base * (1 - Tuning.SUGGEST_HRV_DROP)) add(Suggestion(SuggestionKind.EASY_ON_STIMULANTS))
-    if (hour >= Tuning.EVENING_HOUR && activity != null && activity.steps < Tuning.STEP_GOAL) {
-        add(Suggestion(SuggestionKind.WALK, Tuning.STEP_GOAL - activity.steps))
+    if (hour >= Tuning.EVENING_HOUR && activity != null && activity.steps < stepGoal) {
+        add(Suggestion(SuggestionKind.WALK, stepGoal - activity.steps))
     }
 }.take(3)

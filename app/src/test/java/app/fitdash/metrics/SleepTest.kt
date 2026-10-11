@@ -4,6 +4,7 @@ import app.fitdash.IST
 import app.fitdash.TODAY
 import app.fitdash.at
 import app.fitdash.night
+import app.fitdash.health.Sample
 import app.fitdash.health.SleepSession
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -69,5 +70,15 @@ class SleepTest {
         assertFalse(s.hasStages)
         assertEquals(90, s.score)
         assertNull(summarizeSleep(TODAY.minusDays(3), listOf(night(TODAY, 7.2)), IST))
+    }
+
+
+    @Test fun `summary carries bed times and overnight HR`() {
+        val n = night(TODAY, 7.0)
+        val hr = (0 until 60 step 5).map { Sample(at(TODAY, 2).plusSeconds(it * 60L), 54.0) }
+        val s = summarizeSleep(TODAY, listOf(n), IST, heartRate = hr)!!
+        assertEquals(Duration.ofHours(7), s.timeInBed)
+        assertEquals(n.start, s.start)
+        assertEquals(54.0, s.overnightHr!!, 1e-9)
     }
 }
