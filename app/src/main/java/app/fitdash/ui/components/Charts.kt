@@ -35,8 +35,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -213,7 +215,7 @@ fun RangeBar(key: String, value: Double, range: ClosedFloatingPointRange<Double>
             Size(max(x(range.endInclusive) - x(range.start), th), th),
             r,
         )
-        val dx = x(value) * progress.value
+        val dx = max(x(value) * progress.value, 7.dp.toPx())
         drawCircle(Palette.Card, 7.dp.toPx(), Offset(dx, cy))
         drawCircle(dot, 5.dp.toPx(), Offset(dx, cy))
     }
@@ -250,7 +252,7 @@ fun ScoreRing(key: String, label: String, score: Int?, index: Int, onClick: () -
                 onClick()
             }
             .padding(Space.s)
-            .semantics(mergeDescendants = true) { contentDescription = "$label ${score ?: "no data"}" },
+            .clearAndSetSemantics { contentDescription = "$label ${score ?: "no data"}"; role = Role.Button },
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         MiniRing(

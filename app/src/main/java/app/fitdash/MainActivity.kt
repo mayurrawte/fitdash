@@ -18,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.fitdash.health.HealthReader
 import app.fitdash.ui.LoadingScreen
 import app.fitdash.ui.MessageScreen
+import app.fitdash.ui.pages.PagerScreen
 import app.fitdash.ui.theme.FitdashTheme
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
@@ -76,6 +77,6 @@ private fun App() {
             action = "Retry",
             onAction = vm::load,
         )
-        is TodayUiState.Ready -> LoadingScreen()
+        is TodayUiState.Ready -> PagerScreen(s, onRefresh = vm::load)
     }
 }
