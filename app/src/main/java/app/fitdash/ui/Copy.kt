@@ -1,6 +1,8 @@
 package app.fitdash.ui
 
 import app.fitdash.health.SourceStatus
+import app.fitdash.health.Workout
+import app.fitdash.metrics.ExerciseType
 import app.fitdash.metrics.Band
 import app.fitdash.metrics.BmiBand
 import app.fitdash.metrics.Component
@@ -15,6 +17,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
@@ -81,10 +84,12 @@ private val APP_NAMES = mapOf(
     "com.sec.android.app.shealth" to "Samsung Health",
 )
 
+fun sourceAppName(pkg: String): String = APP_NAMES[pkg] ?: if (pkg.startsWith("com.android.healthconnect.phone")) "Phone" else pkg
+
 fun sourceLine(s: SourceStatus): String = when {
     !s.granted -> "no access"
     !s.hasData -> "no data"
-    else -> "✓ " + s.apps.map { APP_NAMES[it] ?: if (it.startsWith("com.android.healthconnect.phone")) "Phone" else it }.distinct().joinToString(", ")
+    else -> "✓ " + s.apps.map(::sourceAppName).distinct().joinToString(", ")
 }
 
 fun suggestionText(s: Suggestion): String = when (s.kind) {
@@ -120,6 +125,21 @@ private val CLOCK_12 = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
 
 fun formatTime12(t: Instant, zone: ZoneId): String = CLOCK_12.format(t.atZone(zone))
 
+fun formatTime(t: Instant, zone: ZoneId, clock24: Boolean): String = if (clock24) CLOCK.format(t.atZone(zone)) else CLOCK_12.format(t.atZone(zone))
+
+// The user's settings, for composables that format times, units or decide what to show.
+val LocalPrefs = androidx.compose.runtime.staticCompositionLocalOf { app.fitdash.settings.Settings() }
+
+@androidx.compose.runtime.Composable
+@androidx.compose.runtime.ReadOnlyComposable
+fun clock(t: Instant, zone: ZoneId): String = formatTime(t, zone, LocalPrefs.current.clock24)
+
+fun formatWeight(kg: Double, lb: Boolean): String = if (lb) "${formatNumber(kg * 2.20462)} lb" else "${formatNumber(kg)} kg"
+
+// Delta temperatures scale only; absolute ones also shift.
+fun formatTempDelta(c: Double, f: Boolean): String = formatNumber(if (f) c * 1.8 else c)
+fun formatTemp(c: Double, f: Boolean): String = formatNumber(if (f) c * 1.8 + 32 else c)
+
 fun formatClock(t: Instant, zone: ZoneId): String = CLOCK.format(t.atZone(zone))
 
 fun dayLetter(d: LocalDate): String = d.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.ENGLISH)
@@ -132,8 +152,11 @@ fun metricName(kind: MetricKind) = when (kind) {
     MetricKind.REM -> "REM sleep"
     MetricKind.LIGHT -> "Light sleep"
     MetricKind.AWAKE -> "Awake"
+    MetricKind.EFFICIENCY -> "Sleep efficiency"
+    MetricKind.AWAKENINGS -> "Awakenings"
     MetricKind.RESTING_HR -> "Resting heart rate"
     MetricKind.HRV -> "HRV"
+    MetricKind.HEART_RATE -> "Heart rate"
     MetricKind.SPO2 -> "SpO₂"
     MetricKind.RESPIRATORY -> "Respiratory rate"
     MetricKind.SKIN_TEMP -> "Skin temperature"
@@ -147,12 +170,15 @@ fun metricName(kind: MetricKind) = when (kind) {
 
 fun metricExplain(kind: MetricKind) = when (kind) {
     MetricKind.RECOVERY -> "A 0 to 100 blend of your HRV, resting heart rate and sleep compared with your own recent normal."
-    MetricKind.SLEEP_SCORE -> "Mostly time asleep against your goal, adjusted a little for how much deep and REM sleep you got."
+    MetricKind.SLEEP_SCORE -> "Half from time asleep against your goal. The rest from efficiency, deep and REM share, and how restless the night was. Without sleep stages it is duration alone."
     MetricKind.SLEEP_HOURS -> "Time actually asleep, not counting time spent awake in bed."
     MetricKind.DEEP -> "The slowest, heaviest stage of sleep, in minutes per night."
     MetricKind.REM -> "The stage where most dreaming happens, in minutes per night."
     MetricKind.LIGHT -> "The lighter stage that makes up most of a typical night, in minutes."
     MetricKind.AWAKE -> "Minutes you were awake during the night after first falling asleep."
+    MetricKind.EFFICIENCY -> "The share of your time in bed that you were actually asleep. Above 85% is typical for a good night."
+    MetricKind.AWAKENINGS -> "How many times you woke after first falling asleep. A couple a night is normal."
+    MetricKind.HEART_RATE -> "Your heart rate through the day. The line is 5-minute averages from your wearable."
     MetricKind.RESTING_HR -> "Your heart rate at full rest, usually lowest during sleep. Lower than your normal is generally a good sign."
     MetricKind.HRV -> "The small variation in time between heartbeats. Higher than your normal is generally a good sign."
     MetricKind.SPO2 -> "The share of oxygen your blood is carrying, as measured by your wearable overnight."
@@ -161,9 +187,127 @@ fun metricExplain(kind: MetricKind) = when (kind) {
     MetricKind.STEPS -> "Steps counted across the day, compared with your daily goal."
     MetricKind.DISTANCE -> "How far you covered on foot during the day."
     MetricKind.CALORIES -> "Energy burned across the day, as reported by your tracker."
-    MetricKind.ACTIVE_MINUTES -> "Minutes spent in recorded exercise sessions."
+    MetricKind.ACTIVE_MINUTES -> "Minutes spent in recorded workouts, compared with your daily goal."
     MetricKind.WATER -> "Water you have logged for the day, compared with your daily goal."
     MetricKind.BMI -> "Your weight divided by your height squared. A general guide only, and it does not describe your health."
 }
 
 const val GENERIC_EXPLAIN = "The daily average of this reading from Health Connect."
+
+fun workoutName(type: Int): String = when (type) {
+    ExerciseType.RUNNING -> "Running"
+    ExerciseType.RUNNING_TREADMILL -> "Treadmill"
+    ExerciseType.WALKING -> "Walking"
+    ExerciseType.HIKING -> "Hiking"
+    ExerciseType.BIKING -> "Cycling"
+    ExerciseType.BIKING_STATIONARY -> "Indoor cycling"
+    ExerciseType.SWIMMING_POOL -> "Swimming"
+    ExerciseType.SWIMMING_OPEN_WATER -> "Open water swim"
+    ExerciseType.STRENGTH_TRAINING -> "Strength"
+    ExerciseType.WEIGHTLIFTING -> "Weightlifting"
+    ExerciseType.HIIT -> "HIIT"
+    ExerciseType.BOOT_CAMP -> "Boot camp"
+    ExerciseType.YOGA -> "Yoga"
+    ExerciseType.PILATES -> "Pilates"
+    ExerciseType.STRETCHING -> "Stretching"
+    ExerciseType.GUIDED_BREATHING -> "Breathing"
+    ExerciseType.ELLIPTICAL -> "Elliptical"
+    ExerciseType.ROWING -> "Rowing"
+    ExerciseType.ROWING_MACHINE -> "Rowing machine"
+    ExerciseType.STAIR_CLIMBING, ExerciseType.STAIR_CLIMBING_MACHINE -> "Stair climbing"
+    ExerciseType.DANCING -> "Dancing"
+    ExerciseType.SOCCER -> "Football"
+    ExerciseType.FOOTBALL_AMERICAN -> "American football"
+    ExerciseType.FOOTBALL_AUSTRALIAN -> "Australian football"
+    ExerciseType.BASKETBALL -> "Basketball"
+    ExerciseType.TENNIS -> "Tennis"
+    ExerciseType.TABLE_TENNIS -> "Table tennis"
+    ExerciseType.BADMINTON -> "Badminton"
+    ExerciseType.SQUASH -> "Squash"
+    ExerciseType.RACQUETBALL -> "Racquetball"
+    ExerciseType.VOLLEYBALL -> "Volleyball"
+    ExerciseType.CRICKET -> "Cricket"
+    ExerciseType.BASEBALL -> "Baseball"
+    ExerciseType.SOFTBALL -> "Softball"
+    ExerciseType.RUGBY -> "Rugby"
+    ExerciseType.HANDBALL -> "Handball"
+    ExerciseType.ICE_HOCKEY -> "Ice hockey"
+    ExerciseType.ROLLER_HOCKEY -> "Roller hockey"
+    ExerciseType.BOXING -> "Boxing"
+    ExerciseType.MARTIAL_ARTS -> "Martial arts"
+    ExerciseType.FENCING -> "Fencing"
+    ExerciseType.GYMNASTICS -> "Gymnastics"
+    ExerciseType.CALISTHENICS -> "Calisthenics"
+    ExerciseType.EXERCISE_CLASS -> "Exercise class"
+    ExerciseType.SKIING -> "Skiing"
+    ExerciseType.SNOWBOARDING -> "Snowboarding"
+    ExerciseType.SNOWSHOEING -> "Snowshoeing"
+    ExerciseType.SKATING, ExerciseType.ICE_SKATING -> "Skating"
+    ExerciseType.ROCK_CLIMBING -> "Climbing"
+    ExerciseType.GOLF -> "Golf"
+    ExerciseType.PADDLING -> "Paddling"
+    ExerciseType.SAILING -> "Sailing"
+    ExerciseType.SURFING -> "Surfing"
+    ExerciseType.SCUBA_DIVING -> "Scuba diving"
+    ExerciseType.WATER_POLO -> "Water polo"
+    ExerciseType.PARAGLIDING -> "Paragliding"
+    ExerciseType.FRISBEE_DISC -> "Frisbee"
+    ExerciseType.WHEELCHAIR -> "Wheelchair"
+    else -> "Workout"
+}
+
+// The session's own title when it says more than the type, else the type name.
+fun workoutTitle(w: Workout): String {
+    val name = workoutName(w.type)
+    val t = w.title ?: return name
+    return if (t.equals(name, ignoreCase = true) || t.equals("Workout", ignoreCase = true)) name else t
+}
+
+fun formatKm(km: Double, miles: Boolean): String =
+    if (miles) "${formatNumber(km * 0.621371)} mi" else "${formatNumber(km)} km"
+
+// "5:12 /km" or "8:22 /mi".
+fun formatPace(secondsPerKm: Double, miles: Boolean): String {
+    val perUnit = if (miles) secondsPerKm / 0.621371 else secondsPerKm
+    val total = perUnit.roundToInt()
+    return String.format(Locale.ENGLISH, "%d:%02d /%s", total / 60, total % 60, if (miles) "mi" else "km")
+}
+
+// "32m · 5.1 km · 7:12 AM": distance when present, else calories, else just the time.
+fun workoutLine(w: Workout, zone: ZoneId, miles: Boolean, clock24: Boolean = false): String {
+    val extra = w.distanceMeters?.let { formatKm(it / 1000, miles) } ?: w.kcal?.let { "${formatSteps(it.roundToLong())} kcal" }
+    return listOfNotNull(formatDuration(w.duration), extra, formatTime(w.start, zone, clock24)).joinToString(" · ")
+}
+
+fun formatBloodPressure(systolic: Double, diastolic: Double): String = "${systolic.roundToInt()}/${diastolic.roundToInt()}"
+
+const val GITHUB_REPO_URL = "https://github.com/mayurrawte/fitdash"
+
+// A GitHub "new issue" link with the title, label and a body that carries only device and version facts, never health data.
+fun issueUrl(bug: Boolean, version: String, device: String, android: String): String {
+    val title = if (bug) "Bug: " else "Feature request: "
+    val body = buildString {
+        if (bug) {
+            append("**What happened**\n\n\n**What I expected**\n\n\n**Steps to reproduce**\n1. \n2. \n\n")
+        } else {
+            append("**What would you like fitdash to do?**\n\n\n**Why it would help**\n\n\n")
+        }
+        append("---\nfitdash $version · $device · Android $android\n")
+    }
+    fun enc(v: String) = java.net.URLEncoder.encode(v, "UTF-8").replace("+", "%20")
+    return "$GITHUB_REPO_URL/issues/new?title=${enc(title)}&labels=${if (bug) "bug" else "enhancement"}&body=${enc(body)}"
+}
+
+// "DATA UP TO 9:43 PM" / "DATA UP TO YESTERDAY 11:10 PM" / "DATA UP TO 9 OCT".
+fun dataUpTo(latest: Instant, now: ZonedDateTime, clock24: Boolean): String {
+    val z = latest.atZone(now.zone)
+    val today = now.toLocalDate()
+    return when (z.toLocalDate()) {
+        today -> "Data up to ${formatTime(latest, now.zone, clock24)}"
+        today.minusDays(1) -> "Data up to yesterday ${formatTime(latest, now.zone, clock24)}"
+        else -> "Data up to ${DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH).format(z)}"
+    }
+}
+
+// The wearable has not written for a while: suggest a sync.
+fun syncStale(latest: Instant?, now: ZonedDateTime): Boolean = latest == null || Duration.between(latest, now.toInstant()) > Duration.ofHours(Tuning.SYNC_STALE_HOURS)

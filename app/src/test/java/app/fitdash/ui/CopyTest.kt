@@ -7,6 +7,7 @@ import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Duration
 import java.time.Instant
@@ -66,5 +67,16 @@ class CopyTest {
         assertEquals("23:10", formatClock(Instant.parse("2026-10-10T17:40:00Z"), ZoneId.of("Asia/Kolkata")))
         assertEquals("S", dayLetter(LocalDate.of(2026, 10, 11)))
         assertEquals("M", dayLetter(LocalDate.of(2026, 10, 12)))
+    }
+}
+
+class IssueUrlTest {
+    @Test fun `issue links carry title, label and device line but no health data`() {
+        val bug = issueUrl(true, "0.5.0", "Google Pixel 8", "16")
+        assertTrue(bug.startsWith("https://github.com/mayurrawte/fitdash/issues/new?title=Bug%3A%20&labels=bug&body="))
+        assertTrue(bug.contains("fitdash%200.5.0%20%C2%B7%20Google%20Pixel%208%20%C2%B7%20Android%2016"))
+        val idea = issueUrl(false, "0.5.0", "Google Pixel 8", "16")
+        assertTrue(idea.contains("labels=enhancement"))
+        assertTrue(idea.contains("title=Feature%20request%3A%20"))
     }
 }

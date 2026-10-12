@@ -19,6 +19,7 @@ import app.fitdash.health.SourceStatus
 import app.fitdash.ui.components.ListRow
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.sourceLine
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
@@ -29,7 +30,7 @@ const val SUPPORT_URL = "https://buymeacoffee.com/thepsygeek"
 @Composable
 fun InfoSheet(sources: List<SourceStatus>, onDismiss: () -> Unit) {
     val uri = LocalUriHandler.current
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Palette.Background) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = LocalTheme.current.bgMid) {
         LazyColumn(contentPadding = PaddingValues(start = Space.xl, end = Space.xl, bottom = Space.xxl)) {
             item {
                 Text("About your data", style = Type.value, color = Palette.Text)

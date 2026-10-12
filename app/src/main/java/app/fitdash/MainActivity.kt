@@ -4,6 +4,7 @@ import android.content.Intent
 import app.fitdash.ui.share.clearShareCache
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.os.SystemClock
 import android.view.animation.DecelerateInterpolator
 import androidx.activity.viewModels
@@ -36,6 +37,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.graphics.Color.TRANSPARENT
 import app.fitdash.health.HealthReader
+import androidx.health.connect.client.HealthConnectClient
+import app.fitdash.health.SnapshotCache
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.LoadingScreen
 import app.fitdash.ui.MessageScreen
@@ -43,6 +46,13 @@ import app.fitdash.ui.pages.PagerScreen
 import app.fitdash.ui.theme.FitdashTheme
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.CompositionLocalProvider
+import app.fitdash.ui.theme.LocalNumbersFont
+import app.fitdash.ui.theme.LocalReduceMotion
+import app.fitdash.ui.theme.Motion
+import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.theme.THEMES
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
@@ -57,26 +67,32 @@ class MainActivity : ComponentActivity() {
         val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
         clearShareCache(applicationContext)
-        val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow) } } }
+        val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) }, store = SnapshotCache(applicationContext)) } } }
         splash.setKeepOnScreenCondition { vm.state.value == TodayUiState.Loading && SystemClock.uptimeMillis() - splashStart < SPLASH_MAX_MILLIS }
         splash.setOnExitAnimationListener { provider ->
             val view = provider.view
-            val icon = provider.iconView
-            view.animate().alpha(0f).setDuration(SPLASH_EXIT_MILLIS).setInterpolator(DecelerateInterpolator()).start()
-            icon.animate().scaleX(1.35f).scaleY(1.35f).alpha(0f).setDuration(SPLASH_EXIT_MILLIS).setInterpolator(DecelerateInterpolator())
-                .withEndAction { provider.remove() }.start()
+            // The system splash can arrive without an icon view (seen on Pixel when relaunched from recents); the library then throws.
+            val icon = runCatching { provider.iconView }.getOrNull()
+            view.animate().alpha(0f).setDuration(SPLASH_EXIT_MILLIS).setInterpolator(DecelerateInterpolator())
+                .withEndAction { if (icon == null) provider.remove() }.start()
+            icon?.animate()?.scaleX(1.35f)?.scaleY(1.35f)?.alpha(0f)?.setDuration(SPLASH_EXIT_MILLIS)?.setInterpolator(DecelerateInterpolator())
+                ?.withEndAction { provider.remove() }?.start()
         }
         setContent {
             val store = SettingsStore.get(this@MainActivity)
             val settings by store.flow.collectAsStateWithLifecycle()
-            val light = THEMES.getValue(settings.theme).lightSystemBars
-            LaunchedEffect(settings.theme) {
+            LaunchedEffect(Unit) {
                 (this@MainActivity as ComponentActivity).enableEdgeToEdge(
-                    statusBarStyle = if (light) SystemBarStyle.light(TRANSPARENT, TRANSPARENT) else SystemBarStyle.dark(TRANSPARENT),
-                    navigationBarStyle = if (light) SystemBarStyle.light(TRANSPARENT, TRANSPARENT) else SystemBarStyle.dark(TRANSPARENT),
+                    statusBarStyle = SystemBarStyle.dark(TRANSPARENT),
+                    navigationBarStyle = SystemBarStyle.dark(TRANSPARENT),
                 )
             }
-            FitdashTheme(settings.theme) { App(store) }
+            // Theme changes fade rather than snap.
+            Crossfade(settings.theme, animationSpec = tween(Motion.COLOUR / 2), label = "theme") { theme ->
+                FitdashTheme(theme) {
+                    CompositionLocalProvider(LocalPrefs provides settings, LocalReduceMotion provides settings.reduceMotion, LocalNumbersFont provides settings.numbersFont) { App(store) }
+                }
+            }
         }
     }
 }
@@ -87,7 +103,7 @@ private const val HEALTH_CONNECT_STORE =
 @Composable
 private fun App(store: SettingsStore) {
     val context = LocalContext.current
-    val vm: TodayViewModel = viewModel { TodayViewModel(HealthReader(context.applicationContext), settings = store.flow) }
+    val vm: TodayViewModel = viewModel { TodayViewModel(HealthReader(context.applicationContext), settings = store.flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) }, store = SnapshotCache(context.applicationContext)) }
     val state by vm.state.collectAsStateWithLifecycle()
     val askPermissions = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { vm.load() }
 
@@ -96,13 +112,13 @@ private fun App(store: SettingsStore) {
     LaunchedEffect(vm) { vm.permissionNeeded.collect { askPermissions.launch(vm.permissions) } }
 
     LifecycleResumeEffect(Unit) {
-        vm.load()
+        vm.load(force = false)
         onPauseOrDispose { }
     }
 
     Box(Modifier.fillMaxSize()) {
         when (val s = state) {
-            TodayUiState.Loading -> LoadingScreen()
+            TodayUiState.Loading -> LoadingScreen(firstRun = true)
             is TodayUiState.NeedsHealthConnect -> MessageScreen(
                 title = if (s.update) "Update Health Connect" else "Install Health Connect",
                 body = "fitdash reads your Fitbit data through Health Connect.",
@@ -129,7 +145,25 @@ private fun App(store: SettingsStore) {
                 action = "Retry",
                 onAction = vm::load,
             )
-            is TodayUiState.Ready -> PagerScreen(s, store, onRefresh = vm::load, onSelectDate = vm::select, onAddWater = vm::addWater, onUndoWater = vm::undoWater, onSetHeight = vm::setHeight)
+            is TodayUiState.Ready -> PagerScreen(
+                s, store,
+                onRefresh = { vm.load() },
+                onSelectDate = vm::select,
+                onAddWater = vm::addWater,
+                onUndoWater = vm::undoWater,
+                onSetHeight = vm::setHeight,
+                onAskHistory = { askPermissions.launch(vm.permissions) },
+                onSync = { pkg ->
+                    // Open the wearable's app so it pushes to Health Connect; we read again when the user comes back.
+                    val intent = context.packageManager.getLaunchIntentForPackage(pkg)
+                    if (intent != null) {
+                        vm.syncRequested()
+                        context.startActivity(intent)
+                    } else {
+                        context.startActivity(HealthConnectClient.getHealthConnectManageDataIntent(context).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                },
+            )
         }
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 90.dp)) {
             Snackbar(it, containerColor = LocalTheme.current.bgMid, contentColor = Palette.Text)

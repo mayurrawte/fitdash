@@ -10,6 +10,7 @@ import app.fitdash.health.DayActivity
 import app.fitdash.health.GenericSeries
 import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.HourBucket
+import app.fitdash.health.Workout
 import app.fitdash.health.Sample
 import app.fitdash.health.SleepSession
 import org.junit.Assert.assertEquals
@@ -94,6 +95,38 @@ class TodayTest {
         val t = buildToday(full, time(8))
         assertEquals(64, t.previous.movement)
         assertEquals(t.trend[t.trend.size - 2].recovery, t.previous.readiness)
+    }
+
+    @Test fun `movement delta on today compares with yesterday at the same hour`() {
+        val y = TODAY.minusDays(1)
+        val hourly = listOf(HourBucket(at(y, 7), 1000), HourBucket(at(y, 8), 1000), HourBucket(at(y, 12), 3000), HourBucket(at(TODAY, 8), 2500))
+        val snap = HealthSnapshot(hourlySteps = hourly, dailyActivity = listOf(DayActivity(y, 5000, 0.0, 0.0), DayActivity(TODAY, 2500, 0.0, 0.0)))
+        assertEquals(22, buildToday(snap, time(8, 10)).previous.movement) // 2,000 of 9,000 by 08:xx yesterday
+        assertEquals(56, buildToday(snap, time(23)).previous.movement) // all of yesterday by 23:xx
+    }
+
+    @Test fun `past day movement delta uses the full previous day`() {
+        val y = TODAY.minusDays(1)
+        val snap = HealthSnapshot(
+            hourlySteps = listOf(HourBucket(at(y.minusDays(1), 7), 1000), HourBucket(at(y.minusDays(1), 20), 8000)),
+            dailyActivity = listOf(DayActivity(y.minusDays(1), 9000, 0.0, 0.0), DayActivity(y, 5000, 0.0, 0.0)),
+        )
+        assertEquals(100, buildToday(snap, time(8), date = y).previous.movement)
+    }
+
+    @Test fun `workouts heart day and window reach TodayData`() {
+        val w = Workout(at(TODAY, 18), at(TODAY, 18, 46), ExerciseType.RUNNING, distanceMeters = 5100.0)
+        val hr = (0 until 60).map { Sample(at(TODAY, 9).plusSeconds(it * 60L), 70.0 + it % 5) }
+        val t = buildToday(full + HealthSnapshot(workouts = listOf(w), heartRate = hr), time(20))
+        assertEquals(listOf(w), t.workouts)
+        assertEquals(46L, t.activity!!.activeMinutes)
+        assertEquals(WeekWorkouts(1, 46), t.weekWorkouts)
+        assertEquals(74, t.heartDay!!.max)
+        assertEquals(29L, t.daysBack)
+        val long = buildToday(full.copy(windowDays = 180), time(20))
+        assertEquals(179L, long.daysBack)
+        assertEquals(180, long.trend.size)
+        assertEquals(180, long.series.getValue(MetricKind.STEPS).size)
     }
 
     @Test fun `goals feed movement`() {

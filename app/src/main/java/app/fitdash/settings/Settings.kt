@@ -1,12 +1,32 @@
 package app.fitdash.settings
 
 import android.content.Context
+import app.fitdash.ui.theme.NumbersFont
 import app.fitdash.ui.theme.ThemeId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.roundToInt
 
-data class Settings(val theme: ThemeId = ThemeId.TEAL, val stepGoal: Int = 9000, val sleepHours: Double = 8.0, val miles: Boolean = false, val waterGoalMl: Int = 2500, val heightCm: Int? = null)
+data class Settings(
+    val theme: ThemeId = ThemeId.TEAL,
+    val stepGoal: Int = 9000,
+    val sleepHours: Double = 8.0,
+    val miles: Boolean = false,
+    val waterGoalMl: Int = 2500,
+    val heightCm: Int? = null,
+    val activeGoal: Int = 30,
+    val clock24: Boolean = false,
+    val weightLb: Boolean = false,
+    val fahrenheit: Boolean = false,
+    val reduceMotion: Boolean = false,
+    val haptics: Boolean = true,
+    val showWater: Boolean = true,
+    val showWorkouts: Boolean = true,
+    val showHeartRate: Boolean = true,
+    val showSuggestions: Boolean = true,
+    val showBody: Boolean = true,
+    val numbersFont: NumbersFont = NumbersFont.INTER,
+)
 
 class SettingsStore(context: Context) {
     private val prefs = context.getSharedPreferences("fitdash", Context.MODE_PRIVATE)
@@ -20,13 +40,30 @@ class SettingsStore(context: Context) {
         miles = prefs.getBoolean("miles", false),
         waterGoalMl = prefs.getInt("waterGoalMl", 2500),
         heightCm = prefs.getInt("heightCm", 0).takeIf { it > 0 },
+        activeGoal = prefs.getInt("activeGoal", 30),
+        clock24 = prefs.getBoolean("clock24", false),
+        weightLb = prefs.getBoolean("weightLb", false),
+        fahrenheit = prefs.getBoolean("fahrenheit", false),
+        reduceMotion = prefs.getBoolean("reduceMotion", false),
+        haptics = prefs.getBoolean("haptics", true),
+        showWater = prefs.getBoolean("showWater", true),
+        showWorkouts = prefs.getBoolean("showWorkouts", true),
+        showHeartRate = prefs.getBoolean("showHeartRate", true),
+        showSuggestions = prefs.getBoolean("showSuggestions", true),
+        showBody = prefs.getBoolean("showBody", true),
+        numbersFont = runCatching { NumbersFont.valueOf(prefs.getString("numbersFont", null) ?: "INTER") }.getOrDefault(NumbersFont.INTER),
     )
 
     fun update(change: (Settings) -> Settings) {
         val s = change(_flow.value)
         prefs.edit().putString("theme", s.theme.name).putInt("stepGoal", s.stepGoal)
             .putInt("sleepTenths", (s.sleepHours * 10).roundToInt()).putBoolean("miles", s.miles)
-            .putInt("waterGoalMl", s.waterGoalMl).putInt("heightCm", s.heightCm ?: 0).apply()
+            .putInt("waterGoalMl", s.waterGoalMl).putInt("heightCm", s.heightCm ?: 0).putInt("activeGoal", s.activeGoal)
+            .putBoolean("clock24", s.clock24).putBoolean("weightLb", s.weightLb).putBoolean("fahrenheit", s.fahrenheit)
+            .putBoolean("reduceMotion", s.reduceMotion).putBoolean("haptics", s.haptics)
+            .putBoolean("showWater", s.showWater).putBoolean("showWorkouts", s.showWorkouts).putBoolean("showHeartRate", s.showHeartRate)
+            .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody)
+            .putString("numbersFont", s.numbersFont.name).apply()
         _flow.value = s
     }
 

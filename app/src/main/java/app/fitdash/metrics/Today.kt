@@ -4,6 +4,10 @@ import app.fitdash.health.GenericSeries
 import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.SleepSession
 import app.fitdash.health.SourceStatus
+import app.fitdash.health.Workout
+import app.fitdash.health.latestDataTime
+import app.fitdash.health.syncApp
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZonedDateTime
 
@@ -42,6 +46,16 @@ data class TodayData(
     val heightMeters: Double?,
     val bmi: Double?,
     val bmiBand: BmiBand?,
+    val heartDay: HeartDay? = null,
+    val workouts: List<Workout> = emptyList(),
+    val weekWorkouts: WeekWorkouts = WeekWorkouts(0, 0),
+    // Heart rate inside each of the day's workouts, 30-second means, keyed by the workout's start.
+    val workoutHr: Map<Instant, List<Double>> = emptyMap(),
+    // How far back the day picker and trends may go: 29 days, or 179 with the history permission.
+    val daysBack: Long = Tuning.BASELINE_DAYS - 1,
+    // When the wearable last wrote anything, and which app to open to make it sync.
+    val latestData: Instant? = null,
+    val syncApp: String? = null,
 )
 
 data class DayScores(val sleep: Int?, val readiness: Int?, val movement: Int?)
@@ -58,7 +72,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
     val activity = activitySummary(snap, date, zone, goals.steps)
     val hrvDaily = dailyMean(snap.hrv, zone)
     val rhrDaily = dailyLast(snap.restingHr, zone)
-    val trend = (Tuning.BASELINE_DAYS - 1 downTo 0L).map { date.minusDays(it) }.map { d ->
+    val trend = window(date, snap.windowDays).map { d ->
         DayTrend(
             date = d,
             recovery = (readiness(snap, d, zone, goals) as? ReadinessResult.Ready)?.score,
@@ -68,7 +82,12 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
             hrv = hrvDaily[d],
         )
     }
+    val dayWorkouts = activity?.workouts ?: workoutsOn(snap, date, zone)
     val prev = date.minusDays(1)
+    val prevActivity = activitySummary(snap, prev, zone, goals.steps)
+    // On today, compare steps so far with yesterday up to the same hour; a full day against a partial one always reads as a drop.
+    val prevMovement = (if (isToday) movementAtHour(snap, prev, zone, now.hour, goals.steps) else null)
+        ?: prevActivity?.goalPercent?.coerceAtMost(100)
     val week = trend.takeLast(Tuning.WEEK_DAYS.toInt())
     val bmiValue = snap.weightKg?.let { w -> snap.heightMeters?.let { h -> bmi(w, h) } }
     return TodayData(
@@ -97,7 +116,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         previous = DayScores(
             summarizeSleep(prev, snap.sleep, zone, goals.sleepHours)?.score,
             trend.getOrNull(trend.size - 2)?.recovery,
-            activitySummary(snap, prev, zone, goals.steps)?.goalPercent?.coerceAtMost(100),
+            prevMovement,
         ),
         restingHrEstimated = date in snap.estimatedRestingHrDates,
         trend = trend,
@@ -106,11 +125,18 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
             snap.hourlySteps.filter { it.steps > 0 }.map { it.start.atZone(zone).toLocalDate() }).toSet(),
         estimatedRestingHrDates = snap.estimatedRestingHrDates,
         series = MetricKind.entries.associateWith { metricSeries(snap, it, date, zone, goals) },
-        genericDaily = snap.generic.filter { it.points.isNotEmpty() }.associate { it.label to genericDailySeries(it.points, date, zone) },
+        genericDaily = snap.generic.filter { it.points.isNotEmpty() }.associate { it.label to genericDailySeries(it.points, date, zone, snap.windowDays) },
         waterLiters = snap.waterDaily[date] ?: 0.0,
         waterGoal = goals.waterLiters,
         heightMeters = snap.heightMeters,
         bmi = bmiValue,
         bmiBand = bmiValue?.let(::bmiBand),
+        heartDay = heartDay(snap, date, zone),
+        workouts = dayWorkouts,
+        workoutHr = dayWorkouts.associate { it.start to spanLine(snap.heartRate, it.start, it.end) },
+        weekWorkouts = weekWorkouts(snap, date, zone),
+        daysBack = snap.windowDays - 1,
+        latestData = snap.latestDataTime(),
+        syncApp = snap.syncApp(),
     )
 }

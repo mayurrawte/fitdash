@@ -22,3 +22,17 @@ fun rangeWord(status: RangeStatus): Status = when (status) {
 
 fun shareStatus(share: Double, typical: ClosedFloatingPointRange<Double>): Status =
     if (share in typical) Status.OPTIMAL else Status.FAIR
+
+fun efficiencyStatus(efficiency: Double): Status = when {
+    efficiency >= 0.90 -> Status.OPTIMAL
+    efficiency >= 0.85 -> Status.GOOD
+    efficiency >= 0.75 -> Status.FAIR
+    else -> Status.ATTENTION
+}
+
+fun awakeningsStatus(count: Int): Status = when {
+    count <= 2 -> Status.OPTIMAL
+    count <= 4 -> Status.GOOD
+    count <= 6 -> Status.FAIR
+    else -> Status.ATTENTION
+}

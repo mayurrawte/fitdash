@@ -9,12 +9,12 @@ Four swipeable pages:
 - Today: a recovery score in a single glance, with sleep, recovery and movement shown against your own recent baseline. HRV, resting heart rate and overnight vitals are shown against your normal range, with a short suggestion for the day.
 - Sleep: last night's score, total time asleep, time in bed, stages and overnight heart rate.
 - Activity: steps against your goal, an hourly steps chart, distance, calories and active minutes.
-- Trends: seven-day and thirty-day views of recovery, sleep, steps, resting heart rate and HRV, plus an Other data section for anything else Health Connect holds for you, such as weight or VO2 max.
+- Trends: week, month and six-month views of recovery, sleep, steps, resting heart rate and HRV, plus Body and Heart sections for anything else Health Connect holds for you, such as weight, blood pressure or VO2 max.
 
 Also included:
 
 - Day picker: look back at any recent day.
-- Five themes: Midnight Teal, Pastel, Techno, Graphite and Sunrise.
+- Two themes: Midnight Teal and Graphite.
 - Share day: turn the day into an image and send it wherever you choose.
 - Ask AI: build a plain-text summary of your recent data and hand it to the AI app of your choice. You pick the app; fitdash makes no network connections and hands the text or image to it.
 - Data sources: see which Health Connect data types fitdash can read and which apps supplied them.

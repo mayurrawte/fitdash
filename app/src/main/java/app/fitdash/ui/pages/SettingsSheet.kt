@@ -49,6 +49,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.runtime.CompositionLocalProvider
+import app.fitdash.ui.components.CardShape
+import app.fitdash.ui.components.tappable
+import app.fitdash.ui.theme.LocalNumbersFont
+import app.fitdash.ui.theme.NumbersFont
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.health.connect.client.HealthConnectClient
@@ -60,8 +65,12 @@ import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.SectionCard
 import app.fitdash.ui.components.cardSurface
 import app.fitdash.ui.components.SegmentedControl
+import app.fitdash.ui.components.ToggleRow
 import app.fitdash.ui.formatHeight
 import app.fitdash.ui.formatLiters
+import android.os.Build
+import app.fitdash.ui.GITHUB_REPO_URL
+import app.fitdash.ui.issueUrl
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
@@ -73,13 +82,21 @@ import app.fitdash.ui.theme.Type
 import java.util.Locale
 import kotlin.math.roundToInt
 
-private const val GITHUB_URL = "https://github.com/mayurrawte/fitdash"
+private const val GITHUB_URL = GITHUB_REPO_URL
 private const val WHY =
     "Google Fit and Health Connect hold your data but show it plainly. fitdash is a calm, private dashboard on top of them: no account, no cloud, no internet access."
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, heightMeters: Double?, onSetHeight: (Int) -> Unit, onDismiss: () -> Unit) {
+fun SettingsSheet(
+    store: SettingsStore,
+    sources: List<SourceStatus>,
+    heightMeters: Double?,
+    onSetHeight: (Int) -> Unit,
+    canAskHistory: Boolean = false,
+    onAskHistory: () -> Unit = {},
+    onDismiss: () -> Unit,
+) {
     val settings by store.flow.collectAsState()
     val uri = LocalUriHandler.current
     val context = LocalContext.current
@@ -89,11 +106,13 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, heightMeter
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Palette.Background,
+        containerColor = LocalTheme.current.bgMid,
     ) {
         LazyColumn(contentPadding = PaddingValues(bottom = Space.xxl), verticalArrangement = Arrangement.spacedBy(Space.l)) {
             item { Label("THEME") }
             item { ThemeRow(settings.theme) { id -> store.update { it.copy(theme = id) } } }
+            item { Label("NUMBERS") }
+            item { FontRow(settings.numbersFont) { f -> store.update { it.copy(numbersFont = f) } } }
             item {
                 SectionCard("Goals") {
                     Stepper(
@@ -108,6 +127,10 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, heightMeter
                         "Water", "${formatLiters(settings.waterGoalMl / 1000.0)} L", settings.waterGoalMl > 1000, settings.waterGoalMl < 5000,
                         { store.update { it.copy(waterGoalMl = it.waterGoalMl - 250) } }, { store.update { it.copy(waterGoalMl = it.waterGoalMl + 250) } },
                     )
+                    Stepper(
+                        "Active minutes", "${settings.activeGoal} min", settings.activeGoal > 10, settings.activeGoal < 120,
+                        { store.update { it.copy(activeGoal = it.activeGoal - 5) } }, { store.update { it.copy(activeGoal = it.activeGoal + 5) } },
+                    )
                 }
             }
             item {
@@ -115,8 +138,23 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, heightMeter
             }
             item { Label("UNITS") }
             item { SegmentedControl(listOf("km", "miles"), if (settings.miles) 1 else 0, { i -> store.update { it.copy(miles = i == 1) } }) }
+            item { SegmentedControl(listOf("kg", "lb"), if (settings.weightLb) 1 else 0, { i -> store.update { it.copy(weightLb = i == 1) } }) }
+            item { SegmentedControl(listOf("°C", "°F"), if (settings.fahrenheit) 1 else 0, { i -> store.update { it.copy(fahrenheit = i == 1) } }) }
+            item { SegmentedControl(listOf("12-hour", "24-hour"), if (settings.clock24) 1 else 0, { i -> store.update { it.copy(clock24 = i == 1) } }) }
+            item { Label("SHOW ON TODAY") }
+            item { ToggleRow("Water", settings.showWater, { v -> store.update { it.copy(showWater = v) } }) }
+            item { ToggleRow("Workouts", settings.showWorkouts, { v -> store.update { it.copy(showWorkouts = v) } }) }
+            item { ToggleRow("Heart rate", settings.showHeartRate, { v -> store.update { it.copy(showHeartRate = v) } }) }
+            item { ToggleRow("Suggestions", settings.showSuggestions, { v -> store.update { it.copy(showSuggestions = v) } }, "Do this today") }
+            item { ToggleRow("Body on Trends", settings.showBody, { v -> store.update { it.copy(showBody = v) } }, "BMI, weight and body composition") }
+            item { Label("FEEL") }
+            item { ToggleRow("Haptics", settings.haptics, { v -> store.update { it.copy(haptics = v) } }, "A light tick on taps") }
+            item { ToggleRow("Reduce motion", settings.reduceMotion, { v -> store.update { it.copy(reduceMotion = v) } }, "No draw-in or count-up animations, still orb") }
             item { Label("DATA") }
             item { ListRow(NavIcons.info, "Data sources", null) { showInfo = true } }
+            if (canAskHistory) {
+                item { ListRow(NavIcons.trends, "Read older data", "Up to 6 months of history instead of 30 days") { onAskHistory() } }
+            }
             item {
                 ListRow(NavIcons.heart, "Open Health Connect", null) {
                     context.startActivity(HealthConnectClient.getHealthConnectManageDataIntent(context).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -125,6 +163,17 @@ fun SettingsSheet(store: SettingsStore, sources: List<SourceStatus>, heightMeter
             if (BuildConfig.SHOW_SUPPORT) {
                 item { Label("SUPPORT") }
                 item { ListRow(NavIcons.cup, "Buy me a coffee", null) { uri.openUri(SUPPORT_URL) } }
+            }
+            item { Label("FEEDBACK") }
+            item {
+                ListRow(NavIcons.info, "Report a problem", "Opens a GitHub issue with your device and version filled in") {
+                    uri.openUri(issueUrl(true, BuildConfig.VERSION_NAME, "${Build.MANUFACTURER} ${Build.MODEL}", Build.VERSION.RELEASE))
+                }
+            }
+            item {
+                ListRow(NavIcons.sparkle, "Request a feature", "Tell us what fitdash should do next") {
+                    uri.openUri(issueUrl(false, BuildConfig.VERSION_NAME, "${Build.MANUFACTURER} ${Build.MODEL}", Build.VERSION.RELEASE))
+                }
             }
             item { Label("ABOUT") }
             item { Text(WHY, Modifier.padding(horizontal = Space.xl), style = Type.body, color = Palette.Muted) }
@@ -215,14 +264,14 @@ private fun ThemeRow(selected: ThemeId, onSelect: (ThemeId) -> Unit) {
             MiniOrb(current, 22.dp)
             Text("Theme", Modifier.weight(1f).padding(horizontal = Space.m), style = Type.body.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
             Text(selected.label, style = Type.body.copy(fontSize = 13.5.sp), color = Palette.Muted)
-            Text("▾", Modifier.padding(start = Space.s), style = Type.body, color = Palette.Faint)
+            Icon(NavIcons.chevronDown, null, Modifier.padding(start = Space.s).size(14.dp), tint = Palette.Faint)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = current.bgMid) {
             THEMES.values.forEach { t ->
                 DropdownMenuItem(
                     text = { Text(t.id.label, style = Type.body, color = Palette.Text) },
                     leadingIcon = { MiniOrb(t, 16.dp) },
-                    trailingIcon = { if (t.id == selected) Text("✓", style = Type.body, color = Palette.Accent) },
+                    trailingIcon = { if (t.id == selected) Icon(NavIcons.check, null, Modifier.size(16.dp), tint = Palette.Accent) },
                     onClick = { open = false; onSelect(t.id) },
                 )
             }
@@ -256,11 +305,39 @@ private fun Stepper(label: String, value: String, canDec: Boolean, canInc: Boole
 private fun StepButton(text: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(36.dp)
+            .size(48.dp)
             .alpha(if (enabled) 1f else 0.35f)
             .clip(CircleShape)
-            .background(Palette.Chip)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
-    ) { Text(text, style = Type.value, color = Palette.Text) }
+    ) {
+        Box(Modifier.size(38.dp).clip(CircleShape).background(Palette.Chip), contentAlignment = Alignment.Center) {
+            Text(text, style = Type.value, color = Palette.Text)
+        }
+    }
+}
+
+// Three typefaces for the big numbers, each previewed in its own face.
+@Composable
+private fun FontRow(selected: NumbersFont, onSelect: (NumbersFont) -> Unit) {
+    Row(Modifier.padding(horizontal = Space.l).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+        NumbersFont.entries.forEach { f ->
+            val on = f == selected
+            Column(
+                Modifier
+                    .weight(1f)
+                    .clip(CardShape)
+                    .background(if (on) Palette.ChipStrong else Palette.Card)
+                    .then(if (on) Modifier.border(1.dp, Palette.Accent.copy(alpha = 0.6f), CardShape) else Modifier)
+                    .tappable({ onSelect(f) }, "${f.label} numbers")
+                    .padding(vertical = Space.m),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                CompositionLocalProvider(LocalNumbersFont provides f) {
+                    Text("79", style = Type.title, color = Palette.Text)
+                }
+                Text(f.sample.uppercase(), Modifier.padding(top = Space.xs), style = Type.tiny, color = if (on) Palette.Accent else Palette.Muted)
+            }
+        }
+    }
 }

@@ -19,9 +19,20 @@ import app.fitdash.ui.components.Orb
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Type
 
+// Only a first run (no cached snapshot) waits here, and that read can take a while with weeks of minute-level data.
 @Composable
-fun LoadingScreen() {
-    Box(Modifier.fillMaxSize().background(Palette.Background), contentAlignment = Alignment.Center) { Orb(null, intro = true) {} }
+fun LoadingScreen(firstRun: Boolean = false) {
+    Column(Modifier.fillMaxSize().background(Palette.Background), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+        Orb(null, intro = true) {}
+        if (firstRun) {
+            Text("READING HEALTH CONNECT", style = Type.label, color = Palette.Muted, modifier = Modifier.padding(top = 32.dp))
+            Text(
+                "The first read goes through everything your watch has written. After this, fitdash opens instantly.",
+                style = Type.body, color = Palette.Muted, textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 10.dp, start = 40.dp, end = 40.dp),
+            )
+        }
+    }
 }
 
 @Composable

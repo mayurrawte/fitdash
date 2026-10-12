@@ -24,6 +24,16 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import app.fitdash.ui.LocalPrefs
+import app.fitdash.ui.theme.Motion
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.fitdash.ui.theme.Palette
@@ -33,19 +43,30 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 
+// The seven days ending on the selected day, so no cell is ever a future day. The selection highlight and number colour animate.
 @Composable
 fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate>, onSelect: (LocalDate) -> Unit, modifier: Modifier = Modifier, enabled: (LocalDate) -> Boolean = { true }) {
+    val haptic = LocalHapticFeedback.current
+    val haptics = LocalPrefs.current.haptics
     Row(modifier.fillMaxWidth().padding(horizontal = Space.l)) {
         days.forEach { day ->
             val on = day == selected
             val active = enabled(day)
+            val bg by animateColorAsState(if (on) Palette.ChipStrong else Color.Transparent, tween(Motion.PAGE), label = "strip-bg")
+            val fg by animateColorAsState(if (on) Palette.Accent else Palette.Text, tween(Motion.PAGE), label = "strip-fg")
+            val interaction = remember { MutableInteractionSource() }
             Column(
                 Modifier
                     .weight(1f)
                     .alpha(if (active) 1f else 0.3f)
+                    .pressScale(interaction, 0.92f)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(if (on) Palette.ChipStrong else Color.Transparent)
-                    .clickable(enabled = active, role = Role.Button) { onSelect(day) }
+                    .background(bg)
+                    .clickable(interactionSource = interaction, indication = null, enabled = active, role = Role.Button) {
+                        if (haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onSelect(day)
+                    }
+                    .heightIn(min = 48.dp)
                     .padding(vertical = Space.s),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -54,7 +75,7 @@ fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate
                     day.dayOfMonth.toString(),
                     Modifier.padding(vertical = 3.dp),
                     style = Type.small.copy(fontSize = 15.sp),
-                    color = if (on) Palette.Accent else Palette.Text,
+                    color = fg,
                 )
                 Box(Modifier.size(4.dp).clip(CircleShape).background(if (day in hasData) Palette.Accent else Color.Transparent))
             }
@@ -62,18 +83,35 @@ fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate
     }
 }
 
+// 48 dp tap target around a 38 dp visible circle.
 @Composable
 private fun CircleButton(icon: ImageVector, description: String, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(36.dp)
+            .size(48.dp)
             .clip(CircleShape)
-            .background(Palette.Chip)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, Modifier.size(16.dp), tint = Palette.Text)
+        Box(Modifier.size(38.dp).clip(CircleShape).background(Palette.Chip), contentAlignment = Alignment.Center) {
+            Icon(icon, null, Modifier.size(17.dp), tint = Palette.Text)
+        }
+    }
+}
+
+@Composable
+private fun ArrowButton(icon: ImageVector, description: String, enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(44.dp)
+            .alpha(if (enabled) 1f else 0.3f)
+            .clip(CircleShape)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(icon, null, Modifier.size(16.dp), tint = Palette.Muted)
     }
 }
 
@@ -92,17 +130,17 @@ fun TopBar(
     Row(modifier.fillMaxWidth().padding(horizontal = Space.l), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         CircleButton(NavIcons.menu, "Menu", onMenu)
         Row(verticalAlignment = Alignment.CenterVertically) {
+            ArrowButton(NavIcons.chevronLeft, "Previous day", canPrev, onPrev)
             Text(
-                "‹",
-                Modifier.alpha(if (canPrev) 1f else 0.3f).clickable(enabled = canPrev, role = Role.Button, onClick = onPrev).padding(horizontal = Space.m, vertical = Space.s),
-                style = Type.label, color = Palette.Muted, textAlign = TextAlign.Center,
+                dateText.uppercase(),
+                Modifier
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(role = Role.Button, onClick = onDate)
+                    .semantics { contentDescription = "Pick a date" }
+                    .padding(horizontal = Space.s, vertical = Space.m),
+                style = Type.label, color = Palette.Muted,
             )
-            Text(dateText.uppercase(), Modifier.clickable(onClick = onDate), style = Type.label, color = Palette.Muted)
-            Text(
-                "›",
-                Modifier.alpha(if (canNext) 1f else 0.3f).clickable(enabled = canNext, role = Role.Button, onClick = onNext).padding(horizontal = Space.m, vertical = Space.s),
-                style = Type.label, color = Palette.Muted, textAlign = TextAlign.Center,
-            )
+            ArrowButton(NavIcons.chevronRight, "Next day", canNext, onNext)
         }
         CircleButton(NavIcons.info, "Info", onInfo)
     }

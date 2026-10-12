@@ -47,10 +47,14 @@ class GenericType<T : Record>(
     val unit: String,
     val type: KClass<T>,
     val dailyTotal: DailyTotal<*>? = null,
+    private val extractSecond: ((T) -> Sample?)? = null,
     private val extract: (T) -> Sample? = { null },
 ) {
     @Suppress("UNCHECKED_CAST")
     fun sample(record: Record): Sample? = extract(record as T)
+
+    @Suppress("UNCHECKED_CAST")
+    fun second(record: Record): Sample? = extractSecond?.invoke(record as T)
 }
 
 val DESIGNED_TYPES = listOf(
@@ -64,12 +68,11 @@ val DESIGNED_TYPES = listOf(
     TypeInfo("Distance", DistanceRecord::class),
     TypeInfo("Total calories", TotalCaloriesBurnedRecord::class),
     TypeInfo("Exercise", ExerciseSessionRecord::class),
+    TypeInfo("Heart rate", HeartRateRecord::class),
+    TypeInfo("Hydration", HydrationRecord::class),
 )
 
 val GENERIC_TYPES: List<GenericType<*>> = listOf(
-    GenericType("Heart rate", "bpm", HeartRateRecord::class) { r ->
-        r.samples.takeIf { it.isNotEmpty() }?.let { s -> Sample(r.startTime, s.map { it.beatsPerMinute }.average()) }
-    },
     GenericType("Weight", "kg", WeightRecord::class) { Sample(it.time, it.weight.inKilograms) },
     GenericType("Height", "m", HeightRecord::class) { Sample(it.time, it.height.inMeters) },
     GenericType("Body fat", "%", BodyFatRecord::class) { Sample(it.time, it.percentage.value) },
@@ -80,15 +83,15 @@ val GENERIC_TYPES: List<GenericType<*>> = listOf(
         Sample(it.time, it.basalMetabolicRate.inKilocaloriesPerDay)
     },
     GenericType("VO₂ max", "ml/kg/min", Vo2MaxRecord::class) { Sample(it.time, it.vo2MillilitersPerMinuteKilogram) },
-    GenericType("Blood pressure (systolic)", "mmHg", BloodPressureRecord::class) {
-        Sample(it.time, it.systolic.inMillimetersOfMercury)
-    },
+    GenericType(
+        "Blood pressure", "mmHg", BloodPressureRecord::class,
+        extractSecond = { Sample(it.time, it.diastolic.inMillimetersOfMercury) },
+    ) { Sample(it.time, it.systolic.inMillimetersOfMercury) },
     GenericType("Blood glucose", "mmol/L", BloodGlucoseRecord::class) { Sample(it.time, it.level.inMillimolesPerLiter) },
     GenericType("Body temperature", "°C", BodyTemperatureRecord::class) { Sample(it.time, it.temperature.inCelsius) },
     GenericType("Basal body temperature", "°C", BasalBodyTemperatureRecord::class) {
         Sample(it.time, it.temperature.inCelsius)
     },
-    GenericType("Hydration", "L", HydrationRecord::class, DailyTotal(HydrationRecord.VOLUME_TOTAL) { it.inLiters }),
     GenericType("Nutrition", "kcal", NutritionRecord::class, DailyTotal(NutritionRecord.ENERGY_TOTAL) { it.inKilocalories }),
     GenericType("Floors climbed", "floors", FloorsClimbedRecord::class, DailyTotal(FloorsClimbedRecord.FLOORS_CLIMBED_TOTAL) { it }),
     GenericType("Elevation gained", "m", ElevationGainedRecord::class, DailyTotal(ElevationGainedRecord.ELEVATION_GAINED_TOTAL) { it.inMeters }),

@@ -48,10 +48,10 @@ private fun WeekSample() = WeekStrip((5..11).map { SunDay.withDayOfMonth(it) }, 
 private fun TopBarSample() = TopBar("Sun · 11 Oct", canNext = false, onPrev = {}, onNext = {}, onDate = {}, onMenu = {}, onInfo = {})
 
 @Preview(showBackground = true) @Composable private fun OrbTeal() = ThemePreview(ThemeId.TEAL) { OrbSample() }
-@Preview(showBackground = true) @Composable private fun OrbPastel() = ThemePreview(ThemeId.PASTEL) { OrbSample() }
+@Preview(showBackground = true) @Composable private fun OrbGraphite() = ThemePreview(ThemeId.GRAPHITE) { OrbSample() }
 @Preview(showBackground = true) @Composable private fun GaugeTeal() = ThemePreview(ThemeId.TEAL) { GaugeSample() }
-@Preview(showBackground = true) @Composable private fun GaugePastel() = ThemePreview(ThemeId.PASTEL) { GaugeSample() }
+@Preview(showBackground = true) @Composable private fun GaugeGraphite() = ThemePreview(ThemeId.GRAPHITE) { GaugeSample() }
 @Preview(showBackground = true) @Composable private fun WeekTeal() = ThemePreview(ThemeId.TEAL) { WeekSample() }
-@Preview(showBackground = true) @Composable private fun WeekPastel() = ThemePreview(ThemeId.PASTEL) { WeekSample() }
+@Preview(showBackground = true) @Composable private fun WeekGraphite() = ThemePreview(ThemeId.GRAPHITE) { WeekSample() }
 @Preview(showBackground = true) @Composable private fun TopBarTeal() = ThemePreview(ThemeId.TEAL) { TopBarSample() }
-@Preview(showBackground = true) @Composable private fun TopBarPastel() = ThemePreview(ThemeId.PASTEL) { TopBarSample() }
+@Preview(showBackground = true) @Composable private fun TopBarGraphite() = ThemePreview(ThemeId.GRAPHITE) { TopBarSample() }

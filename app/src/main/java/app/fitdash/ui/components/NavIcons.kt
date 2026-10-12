@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
+import app.fitdash.metrics.WorkoutIcon
 import androidx.compose.ui.unit.dp
 
 private fun lineIcon(name: String, vararg strokes: String, fills: List<String> = emptyList()): ImageVector =
@@ -44,4 +45,29 @@ object NavIcons {
     val menu = lineIcon("menu", "M5 8h14M5 12h14M5 16h14")
     val drop = lineIcon("drop", "M12 3.5C9 7.5 6.5 10.5 6.5 14a5.5 5.5 0 0 0 11 0c0-3.5-2.5-6.5-5.5-10.5z")
     val info = lineIcon("info", "M12 11v6M12 7.5v.01")
+    val chevronLeft = lineIcon("chevronLeft", "m14.5 6-6 6 6 6")
+    val chevronRight = lineIcon("chevronRight", "m9.5 6 6 6-6 6")
+    val chevronDown = lineIcon("chevronDown", "m6 9.5 6 6 6-6")
+    val check = lineIcon("check", "m5 12.5 4.5 4.5L19 7.5")
+    val sun = lineIcon(
+        "sun",
+        "M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0 -8z",
+        "M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4",
+    )
+    val run = lineIcon("run", "M14 3.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0 -3z", "M6 21l4-6 3 2 1-5-3-3-4 3M11 9l3-1 2 3 3 1M14 15l3 6")
+    val bike = lineIcon("bike", "M5.5 17.5a3 3 0 1 0 0-6a3 3 0 1 0 0 6zM18.5 17.5a3 3 0 1 0 0-6a3 3 0 1 0 0 6z", "M5.5 14.5 9 8h5l4.5 6.5M12 14.5 9 8M14 8l-1-3h2.5")
+    val swim = lineIcon("swim", "M3 17c2 0 2 1.5 4.5 1.5S10 17 12 17s2 1.5 4.5 1.5S19 17 21 17", "M3 12.5c2 0 2 1.5 4.5 1.5S10 12.5 12 12.5", "M16 7.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0 -3z", "M6 12 10 6l5 3")
+    val strength = lineIcon("strength", "M4 10v4M20 10v4M6.5 8v8M17.5 8v8M9 12h6M6.5 12h-2.5M17.5 12h2.5")
+    val yoga = lineIcon("yoga", "M12 3.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0 -3z", "M12 8v6M5 20c3-1 5-2 7-5 2 3 4 4 7 5M4 12l8 2 8-2")
+    val flame = lineIcon("flame", "M12 3c1 3 4 5 4 9.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.2-3.5.3 1 .8 1.8 1.8 2.2C11 8 10.5 5.5 12 3z")
+}
+
+fun workoutIconVector(icon: WorkoutIcon): ImageVector = when (icon) {
+    WorkoutIcon.RUN -> NavIcons.run
+    WorkoutIcon.WALK -> NavIcons.walk
+    WorkoutIcon.BIKE -> NavIcons.bike
+    WorkoutIcon.SWIM -> NavIcons.swim
+    WorkoutIcon.STRENGTH -> NavIcons.strength
+    WorkoutIcon.YOGA -> NavIcons.yoga
+    WorkoutIcon.GENERIC -> NavIcons.flame
 }

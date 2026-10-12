@@ -4,9 +4,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -58,27 +58,52 @@ val Mono = FontFamily(
     Font(R.font.jetbrains_mono_medium, FontWeight.Medium),
 )
 
+// Optional typefaces for the big numbers only; labels stay mono and body stays Inter.
+val SpaceGrotesk = FontFamily(Font(R.font.space_grotesk_light, FontWeight.Light), Font(R.font.space_grotesk_light, FontWeight.ExtraLight))
+val InstrumentSerif = FontFamily(Font(R.font.instrument_serif_regular, FontWeight.Normal), Font(R.font.instrument_serif_regular, FontWeight.Light), Font(R.font.instrument_serif_regular, FontWeight.ExtraLight))
+
+enum class NumbersFont(val label: String, val sample: String) { INTER("Inter", "Clean"), GROTESK("Space Grotesk", "Geometric"), SERIF("Instrument Serif", "Editorial") }
+
+val LocalNumbersFont = staticCompositionLocalOf { NumbersFont.INTER }
+
+@Composable
+@ReadOnlyComposable
+fun displayFamily(): FontFamily = when (LocalNumbersFont.current) {
+    NumbersFont.INTER -> Inter
+    NumbersFont.GROTESK -> SpaceGrotesk
+    NumbersFont.SERIF -> InstrumentSerif
+}
+
 object Type {
-    private val bodyFamily: FontFamily @Composable @ReadOnlyComposable get() = if (LocalTheme.current.monoEverywhere) Mono else Inter
+    private val bodyFamily: FontFamily @Composable @ReadOnlyComposable get() = Inter
+    // The serif has no light weight and sits wider, so numbers in it are set regular and a touch tighter.
+    private val serif: Boolean @Composable @ReadOnlyComposable get() = LocalNumbersFont.current == NumbersFont.SERIF
+    private val displayWeight: FontWeight @Composable @ReadOnlyComposable get() = if (serif) FontWeight.Normal else FontWeight.Light
+    private val heroWeight: FontWeight @Composable @ReadOnlyComposable get() = if (serif) FontWeight.Normal else FontWeight.ExtraLight
 
     val hero: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = bodyFamily, fontSize = 72.sp, fontWeight = FontWeight.ExtraLight, letterSpacing = (-0.03).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = displayFamily(), fontSize = 68.sp, fontWeight = heroWeight, letterSpacing = (-0.03).em, fontFeatureSettings = "tnum")
     val title: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = bodyFamily, fontSize = 30.sp, fontWeight = FontWeight.Light, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = displayFamily(), fontSize = 30.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
     val value: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = bodyFamily, fontSize = 26.sp, fontWeight = FontWeight.Light, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = displayFamily(), fontSize = 26.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
     val tile: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = bodyFamily, fontSize = 24.sp, fontWeight = FontWeight.Light, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = displayFamily(), fontSize = 24.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
     val body: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = bodyFamily, fontSize = 14.sp, fontWeight = FontWeight.Light, lineHeight = 21.sp)
     val small: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = bodyFamily, fontSize = 12.sp, fontWeight = FontWeight.Normal)
+    // 11 sp is the floor for mono labels: anything smaller is unreadable on a phone at 1.0x.
     val label: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
     val tiny: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
     val unit: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Mono, fontSize = 9.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
+    val status: TextStyle @Composable @ReadOnlyComposable get() =
+        TextStyle(fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
+    val secondary: TextStyle @Composable @ReadOnlyComposable get() =
+        TextStyle(fontFamily = bodyFamily, fontSize = 12.sp, fontWeight = FontWeight.Normal)
 }
 
 object Space {
@@ -93,11 +118,7 @@ object Space {
 @Composable
 fun FitdashTheme(themeId: ThemeId = ThemeId.TEAL, content: @Composable () -> Unit) {
     val t = THEMES.getValue(themeId)
-    val scheme = if (t.lightSystemBars) {
-        lightColorScheme(primary = t.accent, background = t.bgBottom, surface = t.bgMid, onBackground = t.text, onSurface = t.text)
-    } else {
-        darkColorScheme(primary = t.accent, background = t.bgBottom, surface = t.bgMid, onBackground = t.text, onSurface = t.text)
-    }
+    val scheme = darkColorScheme(primary = t.accent, background = t.bgBottom, surface = t.bgMid, onBackground = t.text, onSurface = t.text)
     CompositionLocalProvider(LocalTheme provides t) {
         MaterialTheme(colorScheme = scheme, content = content)
     }
@@ -108,18 +129,8 @@ fun ThemedBackground(modifier: Modifier = Modifier) {
     val t = LocalTheme.current
     Canvas(modifier.fillMaxSize()) {
         drawRect(Brush.verticalGradient(listOf(t.bgTop, t.bgMid, t.bgBottom)))
-        if (t.grid) {
-            val step = 22.dp.toPx()
-            var x = 0f
-            while (x <= size.width) {
-                drawLine(t.hairline, Offset(x, 0f), Offset(x, size.height), 1f)
-                x += step
-            }
-            var y = 0f
-            while (y <= size.height) {
-                drawLine(t.hairline, Offset(0f, y), Offset(size.width, y), 1f)
-                y += step
-            }
-        }
     }
 }
+
+// Accessibility: when on, draw-in, count-up and reveal animations finish immediately and the orb holds still.
+val LocalReduceMotion = staticCompositionLocalOf { false }

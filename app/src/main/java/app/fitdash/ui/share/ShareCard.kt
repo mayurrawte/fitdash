@@ -36,7 +36,7 @@ import app.fitdash.ui.components.Orb
 import app.fitdash.ui.formatDate
 import app.fitdash.ui.formatDuration
 import app.fitdash.ui.formatSteps
-import app.fitdash.ui.formatTime12
+import app.fitdash.ui.clock
 import app.fitdash.ui.pages.TrioStat
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
@@ -126,7 +126,7 @@ fun ShareCard(data: TodayData) {
             }
             Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
                 data.sleep?.let {
-                    ListRow(NavIcons.bed, "Sleep", "${formatDuration(it.asleep)} · ${formatTime12(it.start, zone)} – ${formatTime12(it.end, zone)}")
+                    ListRow(NavIcons.bed, "Sleep", "${formatDuration(it.asleep)} · ${clock(it.start, zone)} – ${clock(it.end, zone)}")
                 }
                 data.activity?.let {
                     ListRow(NavIcons.walk, "Steps", "${formatSteps(it.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${it.goalPercent}%")

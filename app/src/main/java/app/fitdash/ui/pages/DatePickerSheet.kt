@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.graphics.Color
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
@@ -30,8 +31,8 @@ private fun Long.toUtcDate() = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DatePickerSheet(selected: LocalDate, today: LocalDate, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
-    val earliest = today.minusDays(DAYS_BACK)
+fun DatePickerSheet(selected: LocalDate, today: LocalDate, daysBack: Long, onPick: (LocalDate) -> Unit, onDismiss: () -> Unit) {
+    val earliest = today.minusDays(daysBack)
     val state = rememberDatePickerState(
         initialSelectedDateMillis = selected.toUtcMillis(),
         initialDisplayedMonthMillis = selected.toUtcMillis(),
@@ -49,7 +50,7 @@ fun DatePickerSheet(selected: LocalDate, today: LocalDate, onPick: (LocalDate) -
             }
         }
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Palette.Background) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = LocalTheme.current.bgMid) {
         DatePicker(
             state,
             title = null,

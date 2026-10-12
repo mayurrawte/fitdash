@@ -4,6 +4,8 @@ import app.fitdash.IST
 import app.fitdash.TODAY
 import app.fitdash.health.Availability
 import app.fitdash.health.HealthSnapshot
+import app.fitdash.health.SnapshotStore
+import app.fitdash.health.CachedSnapshot
 import app.fitdash.health.HealthSource
 import app.fitdash.health.SourceStatus
 import app.fitdash.settings.Settings
@@ -22,6 +24,8 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import app.fitdash.metrics.Tuning
+import org.junit.Assert.assertFalse
 import org.junit.Test
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -35,14 +39,18 @@ private class FakeSource(
     var canWrite: Boolean = true,
 ) : HealthSource {
     var reads = 0
+    val sinces = mutableListOf<Instant?>()
     val waterAdded = mutableListOf<Double>()
     val waterDeleted = mutableListOf<String>()
     val heights = mutableListOf<Double>()
+    var history: String? = null
     override val allPermissions = setOf("read", "x.WRITE_water")
+    override val historyPermission: String? get() = history
     override fun availability() = status
     override suspend fun grantedPermissions() = granted
-    override suspend fun read(now: ZonedDateTime): HealthSnapshot {
+    override suspend fun read(now: ZonedDateTime, since: Instant?): HealthSnapshot {
         reads++
+        sinces += since
         gate?.await()
         if (fail) error("read failed")
         return snapshot
@@ -144,6 +152,106 @@ class TodayViewModelTest {
         current = now.plusDays(40)
         vm.load()
         assertEquals(null, vm.selectedDate.value)
+    }
+
+    @Test fun `resuming soon after a read does not read again, but refresh does`() {
+        var current = now
+        val source = FakeSource()
+        val vm = TodayViewModel(source, { current }, work = Dispatchers.Main).also { it.load() }
+        assertEquals(1, source.reads)
+        vm.load(force = false)
+        assertEquals(1, source.reads)
+        current = now.plusSeconds(Tuning.RELOAD_SECONDS + 1)
+        vm.load(force = false)
+        assertEquals(2, source.reads)
+        vm.load()
+        assertEquals(3, source.reads)
+    }
+
+    @Test fun `a resume before any read still reads`() {
+        val source = FakeSource()
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main)
+        vm.load(force = false)
+        assertEquals(1, source.reads)
+    }
+
+    @Test fun `selecting today after midnight still means today`() {
+        var current = now
+        val vm = TodayViewModel(FakeSource(), { current }, work = Dispatchers.Main).also { it.load() }
+        current = now.plusDays(1).withHour(0).withMinute(30)
+        vm.select(current.toLocalDate())
+        val s = vm.state.value as TodayUiState.Ready
+        assertTrue(s.data.isToday)
+        assertEquals(current.toLocalDate(), s.data.date)
+    }
+
+    @Test fun `history flag is set only when declared and not granted`() {
+        assertFalse((load(FakeSource()).state.value as TodayUiState.Ready).canAskHistory)
+        val declared = FakeSource().apply { history = "x.HISTORY" }
+        assertTrue((load(declared).state.value as TodayUiState.Ready).canAskHistory)
+        val granted = FakeSource(granted = setOf("read", "x.HISTORY")).apply { history = "x.HISTORY" }
+        assertFalse((load(granted).state.value as TodayUiState.Ready).canAskHistory)
+    }
+
+    @Test fun `a selected date inside a long window survives the load`() {
+        val source = FakeSource(snapshot = HealthSnapshot(sources = listOf(SourceStatus("Sleep", true, true, setOf("app"))), windowDays = 180))
+        val vm = load(source)
+        vm.select(TODAY.minusDays(100))
+        vm.load()
+        assertEquals(TODAY.minusDays(100), vm.selectedDate.value)
+        assertEquals(179L, (vm.state.value as TodayUiState.Ready).data.daysBack)
+    }
+
+    private class MemoryStore(var cached: CachedSnapshot? = null) : SnapshotStore {
+        var saves = 0
+        override fun load() = cached
+        override fun save(cached: CachedSnapshot) { this.cached = cached; saves++ }
+        override fun clear() { cached = null }
+    }
+
+    private val withData = HealthSnapshot(sources = listOf(SourceStatus("Sleep", true, true, setOf("com.fitbit.FitbitMobile"))))
+
+    @Test fun `a cold start shows the cache at once, then reads since two days before the last read`() {
+        val yesterday = now.minusDays(1).toInstant()
+        val store = MemoryStore(CachedSnapshot(withData, yesterday, yesterday))
+        val source = FakeSource(gate = CompletableDeferred())
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main, store = store)
+        vm.load()
+        val shown = vm.state.value as TodayUiState.Ready
+        assertTrue(shown.refreshing)
+        source.gate!!.complete(Unit)
+        assertEquals(false, (vm.state.value as TodayUiState.Ready).refreshing)
+        assertEquals(listOf(TODAY.minusDays(3).atStartOfDay(IST).toInstant()), source.sinces)
+        assertEquals(1, store.saves)
+        assertEquals(now.toInstant(), store.cached!!.readAt)
+    }
+
+    @Test fun `without a cache the first read is full and is saved`() {
+        val store = MemoryStore()
+        val source = FakeSource()
+        TodayViewModel(source, { now }, work = Dispatchers.Main, store = store).load()
+        assertEquals(listOf<Instant?>(null), source.sinces)
+        assertEquals(now.toInstant(), store.cached!!.fullReadAt)
+    }
+
+    @Test fun `a full read is due again after a day`() {
+        val old = now.minusHours(30).toInstant()
+        val store = MemoryStore(CachedSnapshot(withData, old, old))
+        val source = FakeSource()
+        TodayViewModel(source, { now }, work = Dispatchers.Main, store = store).load()
+        assertEquals(listOf<Instant?>(null), source.sinces)
+    }
+
+    @Test fun `a sync request makes the next resume read`() {
+        val source = FakeSource()
+        val vm = load(source)
+        vm.load(force = false)
+        assertEquals(1, source.reads)
+        vm.syncRequested()
+        vm.load(force = false)
+        assertEquals(2, source.reads)
+        vm.load(force = false)
+        assertEquals(2, source.reads)
     }
 
     @Test fun `adding water writes then reads again`() {

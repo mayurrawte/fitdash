@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.fitdash.ui.theme.Motion
+import app.fitdash.ui.theme.LocalReduceMotion
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.breathMillis
 import kotlin.math.PI
@@ -68,9 +69,10 @@ fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, froze
         animationSpec = infiniteRepeatable(tween(BLOB_TURN_MILLIS, easing = LinearEasing)),
         label = "turn",
     )
-    val scale = if (frozen) 1f else animatedScale
-    val phase = if (frozen) 1f else animatedPhase
-    val turn = if (frozen) 0.6f else animatedTurn
+    val still = frozen || LocalReduceMotion.current
+    val scale = if (still) 1f else animatedScale
+    val phase = if (still) 1f else animatedPhase
+    val turn = if (still) 0.6f else animatedTurn
 
     Box(
         modifier
@@ -80,7 +82,7 @@ fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, froze
                 val glowAlpha = 1f - 0.6f * dim.value / DIM
                 drawRect(
                     Brush.radialGradient(
-                        listOf(t.glow.copy(alpha = t.glow.alpha * glowAlpha), Color.Transparent),
+                        listOf(t.glow.copy(alpha = t.glow.alpha * glowAlpha), t.glow.copy(alpha = 0f)),
                         center = center,
                         radius = size.minDimension * 0.75f,
                     ),
@@ -111,7 +113,7 @@ fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, froze
                 drawRect(blob(c1, centre(0.3f, 0.3f), m * 0.35f))
                 drawRect(
                     Brush.radialGradient(
-                        0.55f to Color.Transparent,
+                        0.55f to Color.Black.copy(alpha = 0f),
                         1f to Color.Black.copy(alpha = 0.45f),
                         center = Offset(size.width * 0.4f, size.height * 0.4f),
                         radius = m * 0.7f,
@@ -119,7 +121,7 @@ fun Orb(score: Int?, modifier: Modifier = Modifier, diameter: Dp = 220.dp, froze
                 )
                 drawRect(
                     Brush.radialGradient(
-                        listOf(Color.White.copy(alpha = 0.18f), Color.Transparent),
+                        listOf(Color.White.copy(alpha = 0.18f), Color.White.copy(alpha = 0f)),
                         center = Offset(size.width * 0.32f, size.height * 0.28f),
                         radius = m * 0.3f,
                     ),

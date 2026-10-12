@@ -43,8 +43,17 @@ fun aiSummary(snapshot: HealthSnapshot, data: TodayData, now: ZonedDateTime): St
         append("Please help me understand it. Baselines are my 30-day medians.\n\n")
         val label = if (data.isToday) "Today" else DAY.format(data.date)
         val stepsLabel = if (data.isToday) "steps so far" else "steps"
-        append("$label: recovery $recovery, sleep $sleep, HRV $hrvPart, resting HR $rhrPart, $stepsLabel $steps.\n\n")
-        append("Last 30 days (date, recovery, sleep_hours, hrv_ms, resting_hr, steps):\n")
+        append("$label: recovery $recovery, sleep $sleep, HRV $hrvPart, resting HR $rhrPart, $stepsLabel $steps.\n")
+        if (data.workouts.isNotEmpty()) {
+            append("Workouts: " + data.workouts.joinToString(", ") { w ->
+                workoutTitle(w) + " " + formatDuration(w.duration) +
+                    (w.distanceMeters?.let { " ${formatNumber(it / 1000)} km" } ?: "") +
+                    (w.avgHr?.let { " avg HR ${it.roundToInt()}" } ?: "")
+            } + ".\n")
+        }
+        data.heartDay?.let { append("Heart rate: min ${it.min}, avg ${it.avg}, max ${it.max} bpm.\n") }
+        append("\n")
+        append("Last ${data.trend.size} days (date, recovery, sleep_hours, hrv_ms, resting_hr, steps):\n")
         append(rows)
         append("\n")
         if (other.isNotEmpty()) append("\nOther data (latest): $other")

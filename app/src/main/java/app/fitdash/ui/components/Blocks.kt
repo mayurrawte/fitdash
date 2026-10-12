@@ -32,6 +32,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.unit.Dp
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import app.fitdash.ui.LocalPrefs
+import app.fitdash.ui.theme.LocalReduceMotion
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
@@ -42,14 +58,63 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 
-val CardShape = RoundedCornerShape(18.dp)
+val CardShape = RoundedCornerShape(20.dp)
 
+// Section cards: faint fill with a hairline. Tiles: a slightly stronger fill and no line, so a grid of them reads as one calm block.
 @Composable
 fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card).border(1.dp, Palette.Divider, CardShape)
 
-fun Modifier.tappable(onClick: (() -> Unit)?, description: String?): Modifier =
-    if (onClick == null) this
-    else clickable(role = Role.Button, onClick = onClick).semantics { if (description != null) contentDescription = description }
+@Composable
+fun Modifier.tileSurface(): Modifier = clip(CardShape).background(Palette.Card)
+
+// Every tappable surface: a soft press scale, a light tick when haptics are on, and an accessibility label.
+@Composable
+fun Modifier.tappable(onClick: (() -> Unit)?, description: String?): Modifier {
+    if (onClick == null) return this
+    val interaction = remember { MutableInteractionSource() }
+    val haptic = LocalHapticFeedback.current
+    val haptics = LocalPrefs.current.haptics
+    return this
+        .pressScale(interaction)
+        .clickable(interactionSource = interaction, indication = null, role = Role.Button) {
+            if (haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            onClick()
+        }
+        .semantics { if (description != null) contentDescription = description }
+}
+
+@Composable
+fun Modifier.pressScale(interaction: MutableInteractionSource, pressed: Float = 0.97f): Modifier {
+    val isPressed by interaction.collectIsPressedAsState()
+    val reduce = LocalReduceMotion.current
+    val scale by animateFloatAsState(if (isPressed && !reduce) pressed else 1f, spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.6f), label = "press")
+    return graphicsLayer { scaleX = scale; scaleY = scale }
+}
+
+@Composable
+fun ToggleRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit, subtitle: String? = null, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .padding(horizontal = Space.l)
+            .fillMaxWidth()
+            .cardSurface()
+            .clickable(role = Role.Switch) { onChange(!checked) }
+            .padding(horizontal = Space.l, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = Space.m)) {
+            Text(title, style = Type.body.copy(fontSize = 14.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
+            if (subtitle != null) Text(subtitle, style = Type.secondary, color = Palette.Muted, modifier = Modifier.padding(top = 2.dp))
+        }
+        Switch(
+            checked, onChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Palette.Background, checkedTrackColor = Palette.Accent,
+                uncheckedThumbColor = Palette.Muted, uncheckedTrackColor = Palette.Chip, uncheckedBorderColor = Palette.Divider,
+            ),
+        )
+    }
+}
 
 @Composable
 fun SectionCard(
@@ -88,7 +153,7 @@ fun ValueText(value: String, unit: String?, modifier: Modifier = Modifier, style
     Text(
         buildAnnotatedString {
             append(value)
-            if (!unit.isNullOrEmpty()) withStyle(SpanStyle(fontFamily = Mono, fontSize = 9.sp, letterSpacing = 0.08.em, color = Palette.Muted)) { append(" ${unit.uppercase()}") }
+            if (!unit.isNullOrEmpty()) withStyle(SpanStyle(fontFamily = Mono, fontSize = 10.sp, letterSpacing = 0.08.em, color = Palette.Muted)) { append(" ${unit.uppercase()}") }
         },
         modifier,
         style = style,
@@ -134,7 +199,7 @@ fun StatusText(status: Status, modifier: Modifier = Modifier) {
         Status.FAIR -> Palette.Warn
         Status.ATTENTION -> Palette.Bad
     }
-    Text(statusWord(status), modifier, style = Type.tiny.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Medium), color = colour)
+    Text(statusWord(status), modifier, style = Type.status, color = colour)
 }
 
 @Composable
@@ -169,7 +234,7 @@ fun ListRow(icon: ImageVector, title: String, subtitle: String?, modifier: Modif
             .padding(horizontal = Space.l)
             .fillMaxWidth()
             .cardSurface()
-            .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
+            .tappable(onClick, null)
             .padding(horizontal = Space.l, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -177,10 +242,24 @@ fun ListRow(icon: ImageVector, title: String, subtitle: String?, modifier: Modif
             Icon(icon, null, Modifier.size(16.dp), tint = Palette.Accent)
         }
         Column(Modifier.weight(1f).padding(horizontal = Space.m)) {
-            Text(title, style = Type.body.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
-            if (subtitle != null) Text(subtitle, style = Type.small.copy(fontSize = 11.sp), color = Palette.Muted, modifier = Modifier.padding(top = 2.dp))
+            Text(title, style = Type.body.copy(fontSize = 14.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
+            if (subtitle != null) Text(subtitle, style = Type.secondary, color = Palette.Muted, modifier = Modifier.padding(top = 2.dp))
         }
-        if (onClick != null) Text("›", style = Type.body, color = Palette.Faint)
+        if (onClick != null) Icon(NavIcons.chevronRight, null, Modifier.size(16.dp), tint = Palette.Faint)
+    }
+}
+
+// A small up or down triangle for deltas, drawn so it looks the same on every device font.
+@Composable
+fun DeltaArrow(up: Boolean, modifier: Modifier = Modifier, size: Dp = 7.dp) {
+    val colour = if (up) Palette.Good else Palette.Bad
+    Canvas(modifier.size(size)) {
+        val path = Path().apply {
+            if (up) { moveTo(0f, this@Canvas.size.height); lineTo(this@Canvas.size.width / 2, 0f); lineTo(this@Canvas.size.width, this@Canvas.size.height) }
+            else { moveTo(0f, 0f); lineTo(this@Canvas.size.width, 0f); lineTo(this@Canvas.size.width / 2, this@Canvas.size.height) }
+            close()
+        }
+        drawPath(path, colour)
     }
 }
 
@@ -197,7 +276,7 @@ fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Un
                     .clip(RoundedCornerShape(10.dp))
                     .background(if (on) Palette.ChipStrong else Color.Transparent)
                     .clickable(role = Role.Tab) { onSelect(i) }
-                    .padding(vertical = Space.s),
+                    .padding(vertical = 11.dp),
                 style = Type.label,
                 color = if (on) Palette.Text else Palette.Muted,
                 textAlign = TextAlign.Center,

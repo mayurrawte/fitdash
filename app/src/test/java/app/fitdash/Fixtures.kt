@@ -66,11 +66,12 @@ operator fun HealthSnapshot.plus(o: HealthSnapshot) = HealthSnapshot(
     skinTempDelta = skinTempDelta + o.skinTempDelta,
     hourlySteps = hourlySteps + o.hourlySteps,
     dailyActivity = dailyActivity + o.dailyActivity,
-    exercise = exercise + o.exercise,
+    workouts = workouts + o.workouts,
     generic = generic + o.generic,
     sources = sources + o.sources,
     estimatedRestingHrDates = estimatedRestingHrDates + o.estimatedRestingHrDates,
     waterDaily = waterDaily + o.waterDaily,
     heightMeters = o.heightMeters ?: heightMeters,
     weightKg = o.weightKg ?: weightKg,
+    windowDays = maxOf(windowDays, o.windowDays),
 )

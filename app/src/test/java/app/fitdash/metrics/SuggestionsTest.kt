@@ -14,6 +14,7 @@ class SuggestionsTest {
         deep = Duration.ZERO, rem = Duration.ZERO, light = Duration.ZERO, awake = Duration.ZERO,
         hasStages = false, score = 80, stages = emptyList(),
         start = Instant.EPOCH, end = Instant.EPOCH, timeInBed = Duration.ZERO, restorative = null, overnightHr = null,
+        efficiency = 1.0, awakenings = null, latency = null,
     )
 
     private fun heart(hrv: Double, base: Double) = HeartSummary(hrv, base, 60.0, 60.0, emptyList(), emptyList(), null, null)

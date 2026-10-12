@@ -9,7 +9,7 @@ import app.fitdash.plus
 import app.fitdash.health.DayActivity
 import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.HourBucket
-import app.fitdash.health.Interval
+import app.fitdash.health.Workout
 import app.fitdash.health.Sample
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -24,7 +24,7 @@ class SummariesTest {
             HourBucket(at(TODAY, 9), 3000),
             HourBucket(at(TODAY, 18), 5240),
         ),
-        exercise = listOf(Interval(at(TODAY, 18), at(TODAY, 18, 46))),
+        workouts = listOf(Workout(at(TODAY, 18), at(TODAY, 18, 46), ExerciseType.RUNNING)),
     )
 
     @Test fun `activity summary for a day`() {

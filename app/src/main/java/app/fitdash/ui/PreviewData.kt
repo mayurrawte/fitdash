@@ -4,7 +4,8 @@ import app.fitdash.health.DayActivity
 import app.fitdash.health.GenericSeries
 import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.HourBucket
-import app.fitdash.health.Interval
+import app.fitdash.health.Workout
+import app.fitdash.metrics.ExerciseType
 import app.fitdash.health.Sample
 import app.fitdash.health.SleepSession
 import app.fitdash.health.SleepStage
@@ -47,7 +48,8 @@ object PreviewData {
                 DayActivity(today.minusDays(1), 5760, 4300.0, 1820.0),
                 DayActivity(today, 8240, 6100.0, 2140.0),
             ),
-            exercise = listOf(Interval(at(today, 18), at(today, 18, 46))),
+            workouts = listOf(Workout(at(today, 18), at(today, 18, 46), ExerciseType.RUNNING, distanceMeters = 5100.0, kcal = 312.0, avgHr = 148.0, maxHr = 171.0, app = "com.fitbit.FitbitMobile")),
+            heartRate = (0 until 24 * 12).map { i -> Sample(at(today, 0).plusSeconds(i * 300L), if (i < 108) 56.0 + (i % 7) else if (i in 216..225) 140.0 + (i % 9) * 3 else 72.0 + (i % 11)) }.filter { it.time.isBefore(at(today, 21, 30)) },
             generic = listOf(GenericSeries("Weight", "kg", days.reversed().mapIndexed { i, d -> Sample(at(d, 8), 72.4 - i * 0.05) })),
             sources = listOf(
                 SourceStatus("Sleep", true, true, setOf("com.fitbit.FitbitMobile")),

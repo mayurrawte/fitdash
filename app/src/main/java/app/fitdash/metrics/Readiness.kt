@@ -5,7 +5,12 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.roundToInt
 
-data class Goals(val steps: Int = Tuning.STEP_GOAL, val sleepHours: Double = Tuning.SLEEP_TARGET_HOURS, val waterLiters: Double = 2.5)
+data class Goals(
+    val steps: Int = Tuning.STEP_GOAL,
+    val sleepHours: Double = Tuning.SLEEP_TARGET_HOURS,
+    val waterLiters: Double = 2.5,
+    val activeMinutes: Int = Tuning.ACTIVE_MINUTES_GOAL,
+)
 
 enum class Band { RECOVER, STEADY, PRIMED }
 
@@ -62,7 +67,7 @@ fun readiness(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId, goals: Go
         val rhrToday = rhr[date]
         val rhrBase = baseline(rhr, date)
         if (rhrToday != null && rhrBase != null) put(Component.RESTING_HR, rhrComponent(rhrToday, rhrBase))
-        if (night != null) put(Component.SLEEP, sleepScore(night, baselineDeepRemShare(date, snapshot.sleep, zone), goals.sleepHours).toDouble())
+        if (night != null) put(Component.SLEEP, sleepScore(night, goals.sleepHours).toDouble())
     }
     if (parts.isEmpty()) return ReadinessResult.NoData
 

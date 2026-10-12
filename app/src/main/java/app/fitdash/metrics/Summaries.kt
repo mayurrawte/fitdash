@@ -2,7 +2,7 @@ package app.fitdash.metrics
 
 import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.Sample
-import java.time.Duration
+import app.fitdash.health.Workout
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.roundToInt
@@ -35,6 +35,7 @@ data class ActivitySummary(
     val activeMinutes: Long,
     val distanceKm: Double,
     val kcal: Double,
+    val workouts: List<Workout> = emptyList(),
 )
 
 fun heartSummary(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): HeartSummary? {
@@ -79,16 +80,23 @@ fun activitySummary(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId, ste
     if (day == null && buckets.isEmpty()) return null
     val hourly = List(24) { h -> buckets.filter { it.start.atZone(zone).hour == h }.sumOf { it.steps } }
     val steps = stepsOn(snapshot, date, zone)!!
-    val active = snapshot.exercise
-        .filter { it.start.atZone(zone).toLocalDate() == date }
-        .sumOf { Duration.between(it.start, it.end).toMinutes() }
+    val workouts = workoutsOn(snapshot, date, zone)
     return ActivitySummary(
         date = date,
         steps = steps,
         goalPercent = (steps * 100.0 / stepGoal).roundToInt(),
         hourly = hourly,
-        activeMinutes = active,
+        activeMinutes = activeMinutes(workouts),
         distanceKm = (day?.distanceMeters ?: 0.0) / 1000,
         kcal = day?.kcal ?: 0.0,
+        workouts = workouts,
     )
+}
+
+// Steps on `date` counted only up to and including `hour`, as a percentage of the goal. Null when the day has no hourly buckets.
+fun movementAtHour(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId, hour: Int, stepGoal: Int): Int? {
+    val buckets = snapshot.hourlySteps.filter { it.start.atZone(zone).toLocalDate() == date }
+    if (buckets.isEmpty()) return null
+    val steps = buckets.filter { it.start.atZone(zone).hour <= hour }.sumOf { it.steps }
+    return (steps * 100.0 / stepGoal).roundToInt().coerceAtMost(100)
 }

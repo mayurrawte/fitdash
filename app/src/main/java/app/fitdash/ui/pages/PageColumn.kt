@@ -31,12 +31,11 @@ import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 import java.time.LocalDate
 
-const val DAYS_BACK = 29L
-
 data class PageChrome(
     val date: LocalDate,
     val today: LocalDate,
     val error: Boolean,
+    val daysBack: Long,
     val onPrev: () -> Unit,
     val onNext: () -> Unit,
     val onPickDate: () -> Unit,
@@ -76,7 +75,7 @@ fun PageColumn(chrome: PageChrome, accent: Color, content: LazyListScope.() -> U
                     onDate = chrome.onPickDate,
                     onMenu = chrome.onMenu,
                     onInfo = chrome.onInfo,
-                    canPrev = chrome.date > chrome.today.minusDays(DAYS_BACK),
+                    canPrev = chrome.date > chrome.today.minusDays(chrome.daysBack),
                 )
             }
             if (chrome.error) item(key = "error") { ErrorBanner(chrome.onRetry) }

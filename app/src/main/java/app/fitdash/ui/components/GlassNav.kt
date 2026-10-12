@@ -38,8 +38,8 @@ import dev.chrisbanes.haze.blur.hazeBlur
 
 data class NavItem(val label: String, val icon: ImageVector)
 
-private val ItemWidth = 68.dp
-private val ItemHeight = 46.dp
+private val ItemWidth = 74.dp
+private val ItemHeight = 48.dp
 private val BarShape = RoundedCornerShape(26.dp)
 private val PillShape = RoundedCornerShape(20.dp)
 
@@ -86,7 +86,7 @@ fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSe
                 ) {
                     val tint = if (selected) Palette.Text else Palette.Muted
                     Icon(item.icon, null, Modifier.size(18.dp), tint = tint)
-                    Text(item.label.uppercase(), style = Type.tiny.copy(fontSize = 8.5.sp), color = tint, modifier = Modifier.padding(top = 2.dp))
+                    Text(item.label.uppercase(), style = Type.tiny.copy(fontSize = 10.sp), color = tint, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }

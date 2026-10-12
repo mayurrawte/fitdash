@@ -25,6 +25,10 @@ data class SleepSummary(
     val timeInBed: Duration,
     val restorative: Double?,
     val overnightHr: Double?,
+    val efficiency: Double,
+    val awakenings: Int?,
+    val latency: Duration?,
+    val parts: SleepScoreParts? = null,
 )
 
 fun nightEnding(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): SleepSession? =
@@ -49,17 +53,64 @@ fun deepRemShare(night: SleepSession): Double? {
     return night.total(StageType.DEEP, StageType.REM).seconds / asleep
 }
 
-fun baselineDeepRemShare(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): Double? =
-    median((1..Tuning.BASELINE_DAYS).mapNotNull { nightEnding(date.minusDays(it), sessions, zone)?.let(::deepRemShare) })
-
-fun sleepScore(night: SleepSession, baselineShare: Double?, targetHours: Double = Tuning.SLEEP_TARGET_HOURS): Int {
+// Four parts, so a long but broken night cannot score 100:
+//   duration 50 (asleep against the goal), efficiency 15 (asleep ÷ in bed, 70% → 0, 90% → full),
+//   restoration 20 (deep + REM share, 25% → 0, 40% → full), restfulness 15 (awake share and awakenings).
+// Without stages only duration is known, so the score is duration alone and says so in the sheet.
+fun sleepScore(night: SleepSession, targetHours: Double = Tuning.SLEEP_TARGET_HOURS): Int {
     val hours = asleepDuration(night).seconds / 3600.0
-    var score = min(hours / targetHours, 1.0) * 100
-    val share = deepRemShare(night)
-    if (share != null && baselineShare != null) {
-        score += ((share - baselineShare) * 100).coerceIn(-Tuning.STAGE_ADJUST_MAX, Tuning.STAGE_ADJUST_MAX)
-    }
-    return score.roundToInt().coerceIn(0, 100)
+    val durationFrac = min(hours / targetHours, 1.0)
+    if (!night.hasStages()) return (durationFrac * 100).roundToInt().coerceIn(0, 100)
+    val duration = durationFrac * Tuning.SLEEP_W_DURATION
+    val efficiency = ((sleepEfficiency(night) - 0.70) / 0.20).coerceIn(0.0, 1.0) * Tuning.SLEEP_W_EFFICIENCY
+    val restoration = (((deepRemShare(night) ?: 0.0) - 0.25) / 0.15).coerceIn(0.0, 1.0) * Tuning.SLEEP_W_RESTORATION
+    val inBed = Duration.between(night.start, night.end).seconds.toDouble().coerceAtLeast(1.0)
+    val awakeShare = night.total(StageType.AWAKE).seconds / inBed
+    val awakePart = (1 - (awakeShare - 0.05) / 0.10).coerceIn(0.0, 1.0)
+    val wakePart = (1 - ((awakenings(night) ?: 0) - 2).coerceAtLeast(0) * 0.2).coerceIn(0.0, 1.0)
+    val restfulness = min(awakePart, wakePart) * Tuning.SLEEP_W_RESTFULNESS
+    return (duration + efficiency + restoration + restfulness).roundToInt().coerceIn(0, 100)
+}
+
+// The four parts separately, for the sleep sheet. Null without stages.
+data class SleepScoreParts(val duration: Int, val efficiency: Int, val restoration: Int, val restfulness: Int)
+
+fun sleepScoreParts(night: SleepSession, targetHours: Double = Tuning.SLEEP_TARGET_HOURS): SleepScoreParts? {
+    if (!night.hasStages()) return null
+    val hours = asleepDuration(night).seconds / 3600.0
+    val inBed = Duration.between(night.start, night.end).seconds.toDouble().coerceAtLeast(1.0)
+    val awakeShare = night.total(StageType.AWAKE).seconds / inBed
+    val awakePart = (1 - (awakeShare - 0.05) / 0.10).coerceIn(0.0, 1.0)
+    val wakePart = (1 - ((awakenings(night) ?: 0) - 2).coerceAtLeast(0) * 0.2).coerceIn(0.0, 1.0)
+    return SleepScoreParts(
+        (min(hours / targetHours, 1.0) * Tuning.SLEEP_W_DURATION).roundToInt(),
+        (((sleepEfficiency(night) - 0.70) / 0.20).coerceIn(0.0, 1.0) * Tuning.SLEEP_W_EFFICIENCY).roundToInt(),
+        ((((deepRemShare(night) ?: 0.0) - 0.25) / 0.15).coerceIn(0.0, 1.0) * Tuning.SLEEP_W_RESTORATION).roundToInt(),
+        (min(awakePart, wakePart) * Tuning.SLEEP_W_RESTFULNESS).roundToInt(),
+    )
+}
+
+// Awake stages between first falling asleep and the last sleep stage. Null without stages.
+fun awakenings(night: SleepSession): Int? {
+    if (!night.hasStages()) return null
+    val sorted = night.stages.sortedBy { it.start }
+    val first = sorted.indexOfFirst { it.type != StageType.AWAKE }
+    val last = sorted.indexOfLast { it.type != StageType.AWAKE }
+    if (first < 0) return 0
+    return sorted.subList(first, last + 1).count { it.type == StageType.AWAKE }
+}
+
+// Time from getting into bed to the first sleep stage. Null without stages.
+fun sleepLatency(night: SleepSession): Duration? {
+    if (!night.hasStages()) return null
+    val firstSleep = night.stages.filter { it.type != StageType.AWAKE }.minOfOrNull { it.start } ?: return null
+    return Duration.between(night.start, firstSleep).coerceAtLeast(Duration.ZERO)
+}
+
+fun sleepEfficiency(night: SleepSession): Double {
+    val inBed = Duration.between(night.start, night.end).seconds.toDouble()
+    if (inBed <= 0) return 0.0
+    return (asleepDuration(night).seconds / inBed).coerceIn(0.0, 1.0)
 }
 
 fun napsEnding(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): List<SleepSession> =
@@ -82,12 +133,16 @@ fun summarizeSleep(
         light = night.total(StageType.LIGHT),
         awake = night.total(StageType.AWAKE),
         hasStages = night.hasStages(),
-        score = sleepScore(night, baselineDeepRemShare(date, sessions, zone), targetHours),
+        score = sleepScore(night, targetHours),
         stages = night.stages,
         start = night.start,
         end = night.end,
         timeInBed = Duration.between(night.start, night.end),
         restorative = deepRemShare(night),
         overnightHr = lowestRollingMean(heartRate.filter { !it.time.isBefore(night.start) && !it.time.isAfter(night.end) }, Duration.ofMinutes(Tuning.RHR_WINDOW_MINUTES)),
+        efficiency = sleepEfficiency(night),
+        awakenings = awakenings(night),
+        latency = sleepLatency(night),
+        parts = sleepScoreParts(night, targetHours),
     )
 }

@@ -10,13 +10,26 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.mutableIntStateOf
+import app.fitdash.metrics.DayValue
+import app.fitdash.metrics.weeklyAverages
+import app.fitdash.ui.components.GapLine
+import app.fitdash.ui.components.monthLabels
+import app.fitdash.ui.components.sparseLabels
+import app.fitdash.ui.LocalPrefs
+import app.fitdash.ui.formatBloodPressure
+import app.fitdash.ui.formatDate
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.text.style.TextAlign
+import app.fitdash.ui.theme.Space
 import androidx.compose.ui.unit.dp
 import app.fitdash.health.GenericSeries
 import app.fitdash.metrics.DayTrend
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.dailyMean
-import app.fitdash.ui.components.Bars
+import app.fitdash.ui.components.SmoothArea
 import app.fitdash.ui.components.EmptyState
 import app.fitdash.ui.components.EmptyTrack
 import app.fitdash.ui.components.SectionCard
@@ -24,7 +37,6 @@ import app.fitdash.ui.components.SectionLabel
 import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.StatTile
 import app.fitdash.ui.components.TileGrid
-import app.fitdash.ui.components.TrendLine
 import app.fitdash.ui.bmiWord
 import app.fitdash.ui.dayLetter
 import app.fitdash.ui.daysOfData
@@ -41,88 +53,139 @@ import kotlin.math.roundToLong
 
 @Composable
 fun TrendsPage(data: TodayData, chrome: PageChrome) {
-    var month by rememberSaveable { mutableStateOf(false) }
-    val range = if (month) "month" else "week"
-    val days = data.trend.takeLast(if (month) data.trend.size else 7)
+    var segment by rememberSaveable { mutableIntStateOf(0) }
+    val showBody = LocalPrefs.current.showBody
+    val history = data.daysBack > 30
+    if (!history && segment > 1) segment = 1
+    val month = segment == 1
+    val sixMonths = segment == 2
+    val range = listOf("week", "month", "6m")[segment]
+    val days = when (segment) {
+        0 -> data.trend.takeLast(7)
+        1 -> data.trend.takeLast(30)
+        else -> data.trend
+    }
+    // In 6M every chart plots weekly averages.
+    fun weekly(pick: (DayTrend) -> Double?): List<Double?> = weeklyAverages(days.map { DayValue(it.date, pick(it)) }).map { it.value }
+    val weekStarts = weeklyAverages(days.map { DayValue(it.date, null) }).map { it.start }
     val hasTrend = data.trend.any { it.recovery != null || it.sleepScore != null || it.steps != null || it.restingHr != null || it.hrv != null }
     PageColumn(chrome, accent = Palette.Hrv) {
         if (!hasTrend && data.generic.isEmpty()) {
             item(key = "empty") { EmptyState("No trends yet", "A few days of data from your Fitbit and your trends will build up here.") }
             return@PageColumn
         }
-        item(key = "toggle") { SegmentedControl(listOf("Week", "Month"), if (month) 1 else 0, { month = it == 1 }) }
-        val letters = if (month) emptyList() else days.map { dayLetter(it.date) }
+        item(key = "toggle") { SegmentedControl(if (history) listOf("Week", "Month", "6M") else listOf("Week", "Month"), segment, { segment = it }) }
+        val letters = if (sixMonths) monthLabels(weekStarts) else sparseLabels(days.map { it.date }, month)
         @Composable fun opener(kind: MetricKind) = metricOpener(MetricRef.Kind(kind))
         fun scoreBars(key: String, label: String, kind: MetricKind, pick: (DayTrend) -> Int?, index: Int) {
-            val values = days.map(pick)
+            val values = if (sixMonths) weekly { pick(it)?.toDouble() } else days.map { pick(it)?.toDouble() }
             if (values.all { it == null }) return
             revealItem("$key-$range", index) {
                 SectionCard(label, trailing = "avg ${values.filterNotNull().average().roundToInt()}", onClick = opener(kind), description = "${metricName(kind)} details") {
-                    Bars("$key-$range", values.map { (it ?: 0).toFloat() }, labels = letters, poor = { i -> (values[i] ?: 100) < 50 })
+                    SmoothArea(
+                        "$key-$range", values, labels = letters, poor = { i -> (values[i] ?: 100.0) < 50 },
+                        readout = { i -> (if (sixMonths) "Week of ${formatDate(weekStarts[i])}" else formatDate(days[i].date)) + " · " + (values[i]?.roundToInt()?.toString() ?: "—") },
+                    )
                 }
             }
         }
         scoreBars("recovery", "RECOVERY", MetricKind.RECOVERY, { it.recovery }, 0)
         scoreBars("sleep-score", "SLEEP SCORE", MetricKind.SLEEP_SCORE, { it.sleepScore }, 1)
-        if (days.any { it.steps != null }) {
-            val known = days.mapNotNull { it.steps }
+        val steps = if (sixMonths) weekly { it.steps?.toDouble() } else days.map { it.steps?.toDouble() }
+        if (steps.any { it != null }) {
+            val known = steps.filterNotNull()
             revealItem("steps-$range", 2) {
                 SectionCard("STEPS", trailing = "avg ${formatSteps(known.average().roundToLong())}", onClick = opener(MetricKind.STEPS), description = "Steps details") {
-                    Bars(
+                    SmoothArea(
                         "steps-$range",
-                        days.map { (it.steps ?: 0L).toFloat() },
+                        steps,
                         labels = letters,
-                        poor = { i -> (days[i].steps ?: Long.MAX_VALUE) * 2 < data.goals.steps },
+                        poor = { i -> (steps[i] ?: Double.MAX_VALUE) * 2 < data.goals.steps },
+                        readout = { i -> (if (sixMonths) "Week of ${formatDate(weekStarts[i])}" else formatDate(days[i].date)) + " · " + (steps[i]?.let { formatSteps(it.roundToLong()) } ?: "—") },
+                        baseline = data.goals.steps.toDouble(),
                     )
                 }
             }
         }
-        val rhr = days.filter { it.restingHr != null }
-        if (rhr.size >= 2) {
-            val estimated = rhr.any { it.date in data.estimatedRestingHrDates }
+        // Lines keep their gaps: a day without a reading is a break, not a collapsed point.
+        val rhr = if (sixMonths) weekly { it.restingHr } else days.map { it.restingHr }
+        if (rhr.count { it != null } >= 2) {
+            val estimated = days.any { it.restingHr != null && it.date in data.estimatedRestingHrDates }
             revealItem("rhr-$range", 3) {
-                SectionCard("RESTING HR", trailing = "avg ${rhr.mapNotNull { it.restingHr }.average().roundToInt()} bpm" + if (estimated) " · est." else "", onClick = opener(MetricKind.RESTING_HR), description = "Resting heart rate details") {
-                    TrendLine("rhr-$range", rhr.mapNotNull { it.restingHr }, Modifier.fillMaxWidth().height(74.dp))
+                SectionCard("RESTING HR", trailing = "avg ${rhr.filterNotNull().average().roundToInt()} bpm" + if (estimated) " · est." else "", onClick = opener(MetricKind.RESTING_HR), description = "Resting heart rate details") {
+                    GapLine("rhr-$range", rhr, Modifier.fillMaxWidth().height(74.dp))
+                    AxisRow(letters)
                 }
             }
         }
-        val hrv = days.mapNotNull { it.hrv }
-        if (hrv.size >= 2) {
+        val hrv = if (sixMonths) weekly { it.hrv } else days.map { it.hrv }
+        if (hrv.count { it != null } >= 2) {
             revealItem("hrv-$range", 4) {
-                SectionCard("HRV", trailing = "avg ${hrv.average().roundToInt()} ms", onClick = opener(MetricKind.HRV), description = "HRV details") {
-                    TrendLine("hrv-$range", hrv, Modifier.fillMaxWidth().height(74.dp))
+                SectionCard("HRV", trailing = "avg ${hrv.filterNotNull().average().roundToInt()} ms", onClick = opener(MetricKind.HRV), description = "HRV details") {
+                    GapLine("hrv-$range", hrv, Modifier.fillMaxWidth().height(74.dp))
+                    AxisRow(letters)
                 }
             }
         }
-        item(key = "bmi") {
+        // Generic types grouped: Body (with BMI), Heart, then whatever is left.
+        val byLabel = data.generic.associateBy { it.label }
+        val body = listOf("Weight", "Body fat", "Lean body mass", "Bone mass", "Body water mass", "Basal metabolic rate", "Height")
+        val heartLabels = listOf("Blood pressure", "VO₂ max", "Blood glucose", "Body temperature", "Basal body temperature")
+        val bmiTile: @Composable (Modifier) -> Unit = { m ->
             val open = opener(MetricKind.BMI)
-            TileGrid(listOf { m ->
-                val bmi = data.bmi
-                val band = data.bmiBand
-                if (bmi == null || band == null) {
-                    StatTile("BMI", "—", null, "Add height in Settings", m, onClick = chrome.onMenu, description = "Add height in Settings") { EmptyTrack() }
-                } else {
-                    StatTile("BMI", formatBmi(bmi), null, "general guide, not medical advice", m, onClick = open, description = "BMI details") {
-                        Text(bmiWord(band), style = Type.tiny.copy(fontWeight = FontWeight.Medium), color = bmiColour(band))
-                    }
+            val bmi = data.bmi
+            val band = data.bmiBand
+            if (bmi == null || band == null) {
+                StatTile("BMI", "—", null, "Add height in Settings", m, onClick = chrome.onMenu, description = "Add height in Settings") { EmptyTrack() }
+            } else {
+                StatTile("BMI", formatBmi(bmi), null, "general guide, not medical advice", m, onClick = open, description = "BMI details") {
+                    Text(bmiWord(band), style = Type.tiny.copy(fontWeight = FontWeight.Medium), color = bmiColour(band))
                 }
-            })
-        }
-        if (data.generic.isNotEmpty()) {
-            item(key = "other-label") { SectionLabel("OTHER DATA") }
-            item(key = "other") {
-                TileGrid(
-                    data.generic.map<GenericSeries, @Composable (Modifier) -> Unit> { g ->
-                        { m ->
-                            val daily = dailyMean(g.points, ZoneId.systemDefault()).toSortedMap().values.toList()
-                            val ref = MetricRef.Generic(g.label, g.unit)
-                            StatTile(g.label, formatNumber(daily.last()), g.unit, daysOfData(daily.size), m, onClick = metricOpener(ref), description = metricDescription(ref)) {
-                                if (daily.size >= 2) TrendLine("generic-${g.label}", daily, Modifier.fillMaxWidth().height(28.dp)) else EmptyTrack()
-                            }
-                        }
-                    },
-                )
             }
         }
+        fun tile(g: GenericSeries): @Composable (Modifier) -> Unit = { m ->
+            val prefs = LocalPrefs.current
+            val miles = prefs.weightLb
+            val zone = ZoneId.systemDefault()
+            val daily = dailyMean(g.points, zone).toSortedMap().values.toList()
+            val ref = MetricRef.Generic(g.label, g.unit)
+            val last = g.points.last()
+            val secondLast = g.second.lastOrNull()
+            val isBp = g.label == "Blood pressure"
+            val isWeight = g.label == "Weight" && miles
+            val value = when {
+                isBp && secondLast != null -> formatBloodPressure(last.value, secondLast.value)
+                isWeight -> formatNumber(daily.last() * 2.20462)
+                else -> formatNumber(daily.last())
+            }
+            val unit = if (isWeight) "lb" else g.unit
+            StatTile(g.label, value, unit, daysOfData(daily.size), m, onClick = metricOpener(ref), description = metricDescription(ref)) {
+                if (daily.size >= 2) GapLine("generic-${g.label}", daily, Modifier.fillMaxWidth().height(28.dp), showMinMax = false) else EmptyTrack()
+            }
+        }
+        val bodyTiles = listOf(bmiTile) + body.mapNotNull { byLabel[it] }.map(::tile)
+        if (showBody) {
+            item(key = "body-label") { SectionLabel("BODY") }
+            item(key = "body") { TileGrid(bodyTiles) }
+        }
+        val heartTiles = heartLabels.mapNotNull { byLabel[it] }.map(::tile)
+        if (heartTiles.isNotEmpty()) {
+            item(key = "heart-label") { SectionLabel("HEART") }
+            item(key = "heart") { TileGrid(heartTiles) }
+        }
+        val rest = data.generic.filter { it.label !in body && it.label !in heartLabels }.map(::tile)
+        if (rest.isNotEmpty()) {
+            item(key = "other-label") { SectionLabel("OTHER DATA") }
+            item(key = "other") { TileGrid(rest) }
+        }
+    }
+}
+
+// Axis labels under a line chart, aligned with the GapLine's plot width (it reserves 34 dp on the right for min and max).
+@Composable
+private fun AxisRow(labels: List<String>) {
+    if (labels.isEmpty()) return
+    Row(Modifier.fillMaxWidth().padding(top = Space.xs, end = 34.dp)) {
+        labels.forEach { Text(it, Modifier.weight(1f), style = Type.tiny, color = Palette.Faint, textAlign = TextAlign.Center, maxLines = 1, softWrap = false) }
     }
 }

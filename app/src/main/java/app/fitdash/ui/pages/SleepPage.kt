@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import app.fitdash.ui.components.cardSurface
 import androidx.compose.ui.unit.dp
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.Status
@@ -23,9 +24,11 @@ import app.fitdash.metrics.VitalReading
 import app.fitdash.metrics.asleepDuration
 import app.fitdash.metrics.rangeStatus
 import app.fitdash.metrics.rangeWord
+import app.fitdash.metrics.efficiencyStatus
+import app.fitdash.metrics.awakeningsStatus
 import app.fitdash.metrics.scoreStatus
 import app.fitdash.metrics.shareStatus
-import app.fitdash.ui.components.Bars
+import app.fitdash.ui.components.SmoothArea
 import app.fitdash.ui.components.CardShape
 import app.fitdash.ui.components.tappable
 import app.fitdash.ui.components.EmptyState
@@ -44,9 +47,13 @@ import app.fitdash.ui.components.StatTile
 import app.fitdash.ui.components.TileGrid
 import app.fitdash.ui.components.TypicalShareBar
 import app.fitdash.ui.dayLetter
+import app.fitdash.ui.formatDate
 import app.fitdash.ui.formatDuration
 import app.fitdash.ui.formatNumber
-import app.fitdash.ui.formatTime12
+import app.fitdash.ui.clock
+import app.fitdash.ui.formatTempDelta
+import app.fitdash.ui.LocalPrefs
+import app.fitdash.ui.sleepWord
 import app.fitdash.ui.metricName
 import app.fitdash.ui.rangeNote
 import app.fitdash.ui.theme.Palette
@@ -77,18 +84,35 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
             item(key = "empty") { EmptyState(if (data.isToday) "No sleep last night" else "No sleep that night", "Wear your Fitbit to bed and sync it. Your night will show up here.") }
         } else {
             item(key = "gauge") {
-                Column(Modifier.fillMaxWidth().clip(CardShape).tappable(opener(MetricKind.SLEEP_SCORE), "Sleep score details"), horizontalAlignment = Alignment.CenterHorizontally) {
-                    SemiGauge(s.score, "Sleep", scoreStatus(s.score))
-                    SpanBar(formatTime12(s.start, zone), formatTime12(s.end, zone), Modifier.padding(horizontal = 22.dp, vertical = Space.s))
+                val colour = scoreColor(s.score)
+                Column(Modifier.fillMaxWidth().padding(top = Space.m).clip(CardShape).tappable(opener(MetricKind.SLEEP_SCORE), "Sleep score details"), horizontalAlignment = Alignment.CenterHorizontally) {
+                    SemiGauge(s.score, "Sleep", scoreStatus(s.score), from = Palette.Deep, to = colour, tag = sleepWord(s.score))
+                    Text(
+                        "${formatDuration(s.asleep)} asleep · ${(s.efficiency * 100).roundToInt()}% efficient".uppercase(),
+                        Modifier.padding(top = Space.s),
+                        style = Type.tiny,
+                        color = Palette.Muted,
+                    )
+                }
+            }
+            item(key = "span") {
+                Column(Modifier.padding(horizontal = Space.l).fillMaxWidth().cardSurface().padding(horizontal = Space.l, vertical = Space.m)) {
+                    SpanBar(clock(s.start, zone), clock(s.end, zone))
                 }
             }
             item(key = "last-night") { Heading(if (data.isToday) "Last night" else "That night") }
             item(key = "sleep-tiles") {
                 val hrCeiling = data.heart?.restingHrRange?.endInclusive
-                TileGrid(
-                    listOf<@Composable (Modifier) -> Unit>(
+                val all = listOf<@Composable (Modifier) -> Unit>(
                         { m -> NumberTile("Total sleep", NavIcons.moonSmall, hoursMins(s.asleep), m, scoreStatus(s.score), onClick = opener(MetricKind.SLEEP_HOURS), description = "Total sleep details") },
                         { m -> NumberTile("Time in bed", NavIcons.clock, hoursMins(s.timeInBed), m, if (s.timeInBed >= Duration.ofMinutes((data.goals.sleepHours * 60).roundToInt().toLong())) Status.GOOD else Status.FAIR, onClick = opener(MetricKind.SLEEP_HOURS), description = "Time in bed details") },
+                        { m ->
+                            NumberTile(
+                                "Efficiency", NavIcons.bed, listOf((s.efficiency * 100).roundToInt().toString() to "%"), m,
+                                efficiencyStatus(s.efficiency),
+                                onClick = opener(MetricKind.EFFICIENCY), description = "Sleep efficiency details",
+                            )
+                        },
                         { m ->
                             NumberTile(
                                 "Restorative", NavIcons.moonSmall,
@@ -99,19 +123,28 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                         },
                         { m ->
                             NumberTile(
+                                "Awakenings", NavIcons.sun,
+                                listOf((s.awakenings?.toString() ?: "—") to if (s.awakenings != null) (if (s.awakenings == 1) "time" else "times") else ""),
+                                m, s.awakenings?.let { awakeningsStatus(it) },
+                                onClick = opener(MetricKind.AWAKENINGS), description = "Awakenings details",
+                            )
+                        },
+                        { m ->
+                            NumberTile(
                                 "Overnight HR", NavIcons.heart,
                                 listOf((s.overnightHr?.let { formatNumber(it) } ?: "—") to if (s.overnightHr != null) "bpm" else ""),
                                 m, if (s.overnightHr != null && hrCeiling != null) (if (s.overnightHr <= hrCeiling) Status.GOOD else Status.FAIR) else null,
                                 onClick = opener(MetricKind.RESTING_HR), description = "Overnight heart rate details",
                             )
                         },
-                    ),
                 )
+                // Efficiency (index 2) and Awakenings (index 4) need stages.
+                TileGrid(if (s.hasStages) all else all.filterIndexed { i, _ -> i != 2 && i != 4 })
             }
         }
         data.naps.forEachIndexed { i, nap ->
             item(key = "nap-$i") {
-                ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${formatTime12(nap.start, zone)} – ${formatTime12(nap.end, zone)}")
+                ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}")
             }
         }
         if (s != null) {
@@ -120,8 +153,8 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                     SectionCard("STAGES") {
                         Hypnogram("sleep-hypnogram", s.stages)
                         Row(Modifier.fillMaxWidth().padding(top = Space.xs), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(formatTime12(s.stages.minOf { it.start }, zone).uppercase(), style = Type.tiny, color = Palette.Muted)
-                            Text(formatTime12(s.stages.maxOf { it.end }, zone).uppercase(), style = Type.tiny, color = Palette.Muted)
+                            Text(clock(s.stages.minOf { it.start }, zone).uppercase(), style = Type.tiny, color = Palette.Muted)
+                            Text(clock(s.stages.maxOf { it.end }, zone).uppercase(), style = Type.tiny, color = Palette.Muted)
                         }
                     }
                 }
@@ -167,8 +200,9 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                     data.vitals.map<VitalReading, @Composable (Modifier) -> Unit> { v ->
                         { m ->
                             val kind = vitalKind(v.label)
+                            val f = LocalPrefs.current.fahrenheit && kind == MetricKind.SKIN_TEMP
                             StatTile(
-                                v.label, formatNumber(v.value), v.unit, rangeNote(v.value, v.range, v.good), m,
+                                v.label, if (f) formatTempDelta(v.value, true) else formatNumber(v.value), if (f) "°F" else v.unit, rangeNote(v.value, v.range, v.good), m,
                                 status = v.range?.let { rangeWord(rangeStatus(v.value, it, v.good)) },
                                 onClick = opener(kind),
                                 description = "${metricName(kind)} details",
@@ -187,11 +221,15 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                     onClick = opener(MetricKind.SLEEP_HOURS),
                     description = "Sleep details",
                 ) {
-                    Bars(
+                    SmoothArea(
                         "sleep-week",
-                        data.sleepWeek.map { (it.hours ?: 0.0).toFloat() },
+                        data.sleepWeek.map { it.hours },
                         poor = { i -> (data.sleepWeek[i].score ?: 100) < 50 },
                         labels = data.sleepWeek.map { dayLetter(it.date) },
+                        readout = { i -> "${formatDate(data.sleepWeek[i].date)} · ${data.sleepWeek[i].hours?.let { formatDuration(Duration.ofMinutes((it * 60).roundToInt().toLong())) } ?: "—"}" },
+                        baseline = data.goals.sleepHours,
+                        height = 80.dp,
+                        color = Palette.Rem,
                     )
                 }
             }

@@ -16,6 +16,8 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -48,6 +50,8 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.ThemeId
 import app.fitdash.ui.share.ShareRender
 import app.fitdash.ui.theme.ThemedBackground
+import app.fitdash.health.Workout
+import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.today.TodayUiState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -72,6 +76,8 @@ fun PagerScreen(
     onAddWater: (Int) -> Unit,
     onUndoWater: () -> Unit,
     onSetHeight: (Int) -> Unit,
+    onAskHistory: () -> Unit = {},
+    onSync: (String) -> Unit = {},
 ) {
     val data = state.data
     val pager = rememberPagerState { NAV.size }
@@ -85,6 +91,7 @@ fun PagerScreen(
     var sharing by remember { mutableStateOf(false) }
     var showCalendar by remember { mutableStateOf(false) }
     var metric by remember { mutableStateOf<MetricRef?>(null) }
+    var workout by remember { mutableStateOf<Workout?>(null) }
     val settings by store.flow.collectAsState()
     val today = if (data.isToday) data.date else LocalDate.now()
 
@@ -101,6 +108,7 @@ fun PagerScreen(
         date = data.date,
         today = today,
         error = state.error,
+        daysBack = data.daysBack,
         onPrev = { onSelectDate(data.date.minusDays(1)) },
         onNext = { onSelectDate(data.date.plusDays(1)) },
         onPickDate = { showCalendar = true },
@@ -109,19 +117,35 @@ fun PagerScreen(
         onRetry = onRefresh,
     )
 
-    CompositionLocalProvider(LocalRevealed provides revealed, LocalOpenMetric provides { metric = it }) {
+    CompositionLocalProvider(LocalRevealed provides revealed, LocalOpenMetric provides { metric = it }, LocalMiles provides settings.miles, LocalPrefs provides settings) {
+        val refreshState = rememberPullToRefreshState()
+        val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        // The spinner only for a pull; a background refresh shows "Updating…" in the sync row instead.
+        var pulled by remember { mutableStateOf(false) }
+        LaunchedEffect(state.refreshing) { if (!state.refreshing) pulled = false }
         PullToRefreshBox(
-            isRefreshing = state.refreshing,
-            onRefresh = onRefresh,
+            isRefreshing = state.refreshing && pulled,
+            onRefresh = { pulled = true; onRefresh() },
             modifier = Modifier.fillMaxSize().background(Palette.Background),
+            state = refreshState,
+            // Sits under the status bar and the top bar instead of over the date.
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = refreshState,
+                    isRefreshing = state.refreshing && pulled,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = statusTop + 8.dp),
+                    containerColor = LocalTheme.current.bgMid,
+                    color = Palette.Accent,
+                )
+            },
         ) {
             Box(Modifier.fillMaxSize().hazeSource(haze)) {
                 ThemedBackground()
                 HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
                     when (page) {
-                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, { sharing = true }, askAi, onAddWater, onUndoWater)
+                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, { sharing = true }, askAi, onAddWater, onUndoWater, settings.miles, { workout = it }, onSync, state.refreshing)
                         1 -> SleepPage(data, chrome)
-                        2 -> ActivityPage(data, chrome, settings.miles)
+                        2 -> ActivityPage(data, chrome, settings.miles, { workout = it })
                         else -> TrendsPage(data, chrome)
                     }
                 }
@@ -145,10 +169,11 @@ fun PagerScreen(
             )
         }
         if (sharing) ShareRender(data, onDone = { sharing = false })
-        if (showSettings) SettingsSheet(store, data.sources, data.heightMeters, onSetHeight, onDismiss = { showSettings = false })
+        if (showSettings) SettingsSheet(store, data.sources, data.heightMeters, onSetHeight, state.canAskHistory, onAskHistory, onDismiss = { showSettings = false })
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
         metric?.let { MetricDetailSheet(it, data, settings.miles, onDismiss = { metric = null }) }
-        if (showCalendar) DatePickerSheet(data.date, today, onSelectDate, onDismiss = { showCalendar = false })
+        workout?.let { WorkoutSheet(it, data.workoutHr[it.start].orEmpty(), settings.miles, onDismiss = { workout = null }) }
+        if (showCalendar) DatePickerSheet(data.date, today, data.daysBack, onSelectDate, onDismiss = { showCalendar = false })
     }
 }
 
@@ -158,7 +183,7 @@ private fun TodayTeal() = PagePreview(ThemeId.TEAL, 0)
 
 @Preview(heightDp = 900)
 @Composable
-private fun TodayPastel() = PagePreview(ThemeId.PASTEL, 0)
+private fun TodayGraphite() = PagePreview(ThemeId.GRAPHITE, 0)
 
 @Preview(heightDp = 900)
 @Composable
@@ -166,12 +191,12 @@ private fun SleepTeal() = PagePreview(ThemeId.TEAL, 1)
 
 @Preview(heightDp = 900)
 @Composable
-private fun SleepPastel() = PagePreview(ThemeId.PASTEL, 1)
+private fun SleepGraphite() = PagePreview(ThemeId.GRAPHITE, 1)
 
 @Composable
 private fun PagePreview(theme: ThemeId, page: Int) {
     val data = PreviewData.today(21, 30)
-    val chrome = PageChrome(data.date, data.date, false, {}, {}, {}, {}, {}, {})
+    val chrome = PageChrome(data.date, data.date, false, 29, {}, {}, {}, {}, {}, {})
     FitdashTheme(theme) {
         Box(Modifier.fillMaxSize()) {
             ThemedBackground()
