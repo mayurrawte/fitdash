@@ -75,6 +75,7 @@ import app.fitdash.metrics.Good
 import app.fitdash.metrics.Status
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.Motion
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
@@ -442,6 +443,8 @@ fun SmoothArea(
     val badColor = Palette.Bad
     val faint = Palette.Faint
     val dotRing = Palette.Background
+    // The latest day is a bright dot on dark themes and an ink dot on the light one.
+    val lastDot = if (LocalTheme.current.soft) Palette.Text else Color.White
     val tinyStyle = Type.tiny
     val known = values.filterNotNull()
     Column(modifier.fillMaxWidth()) {
@@ -481,7 +484,7 @@ fun SmoothArea(
                     val last = i == values.indexOfLast { it != null }
                     val r = if (last || sel == i) 5.dp.toPx() else 3.dp.toPx()
                     drawCircle(dotRing, r + 1.5.dp.toPx(), Offset(x(i), y(v)))
-                    drawCircle(if (last && sel == null) Color.White else c, r, Offset(x(i), y(v)))
+                    drawCircle(if (last && sel == null) lastDot else c, r, Offset(x(i), y(v)))
                 }
             }
             if (known.size == 1) {

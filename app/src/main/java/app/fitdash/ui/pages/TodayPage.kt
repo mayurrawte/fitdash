@@ -98,6 +98,8 @@ import app.fitdash.ui.components.Orb
 import app.fitdash.ui.components.RangeBar
 import app.fitdash.ui.components.SectionLabel
 import app.fitdash.ui.components.StatTile
+import app.fitdash.ui.components.MiniRing
+import app.fitdash.ui.components.tappable
 import app.fitdash.ui.components.cardSurface
 import app.fitdash.ui.components.TileGrid
 import app.fitdash.ui.components.WeekStrip
@@ -106,7 +108,9 @@ import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.rangeNote
 import app.fitdash.ui.suggestionText
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 import app.fitdash.ui.theme.scoreColor
@@ -174,6 +178,14 @@ fun TodayPage(
         }
         if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing) }
         item(key = "orb") {
+            if (LocalTheme.current.soft) {
+                SoftHero(data, heroScore, heroLabel, pageOffset, when {
+                    score != null -> openRecovery
+                    data.sleep != null -> { { onOpen(1) } }
+                    else -> { { onOpen(2) } }
+                })
+                return@item
+            }
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -292,6 +304,7 @@ fun TodayPage(
                         icon = NavIcons.activity,
                         onClick = openHrv,
                         description = "HRV details",
+                        tint = Tint.LAVENDER,
                     ) { h.hrvRange?.let { RangeBar("today-hrv", v, it, Good.HIGHER) } ?: EmptyTrack() }
                 }
             }
@@ -304,6 +317,7 @@ fun TodayPage(
                         labelTag = if (data.restingHrEstimated) "EST." else null,
                         onClick = openRhr,
                         description = "Resting heart rate details",
+                        tint = Tint.PEACH,
                     ) { h.restingHrRange?.let { RangeBar("today-rhr", v, it, Good.LOWER) } ?: EmptyTrack() }
                 }
             }
@@ -395,7 +409,7 @@ private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, o
                 "Sleep", s?.score?.toString() ?: "—", null, m, icon = NavIcons.moonSmall,
                 ring = s?.score?.div(100f), ringColor = s?.score?.let { scoreColor(it) } ?: Palette.Faint,
                 note = s?.let { formatDuration(it.asleep) } ?: "no night yet", delta = sleepDelta,
-                ringKey = "glance-sleep-${data.date}", onClick = { onOpen(1) }, description = "Sleep page",
+                ringKey = "glance-sleep-${data.date}", onClick = { onOpen(1) }, description = "Sleep page", tint = Tint.SKY,
             )
         },
         { m ->
@@ -403,7 +417,7 @@ private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, o
                 "Steps", a?.let { formatSteps(it.steps) } ?: "—", null, m, icon = NavIcons.walk,
                 ring = a?.goalPercent?.coerceAtMost(100)?.div(100f), ringColor = Palette.Accent,
                 note = "of ${formatSteps(data.goals.steps.toLong())}", delta = stepsDelta,
-                ringKey = "glance-steps-${data.date}", onClick = openSteps, description = "Steps details",
+                ringKey = "glance-steps-${data.date}", onClick = openSteps, description = "Steps details", tint = Tint.SAGE,
             )
         },
         { m ->
@@ -412,7 +426,7 @@ private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, o
                 "Active", a?.activeMinutes?.toString() ?: "—", if (a != null) "min" else null, m, icon = NavIcons.bolt,
                 ring = a?.let { (it.activeMinutes.toFloat() / goal).coerceAtMost(1f) }, ringColor = Palette.Good,
                 note = "goal $goal min",
-                ringKey = "glance-active-${data.date}", onClick = openActive, description = "Active minutes details",
+                ringKey = "glance-active-${data.date}", onClick = openActive, description = "Active minutes details", tint = Tint.LAVENDER,
             )
         },
         { m ->
@@ -423,13 +437,13 @@ private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, o
                     "Resting HR", rhr.roundToInt().toString(), "bpm", m, icon = NavIcons.heart,
                     status = h.restingHrRange?.let { rangeWord(rangeStatus(rhr, it, Good.LOWER)) },
                     note = if (data.restingHrEstimated) "estimated" else "last night",
-                    onClick = openRhr, description = "Resting heart rate details",
+                    onClick = openRhr, description = "Resting heart rate details", tint = Tint.PEACH,
                 )
-                hd != null -> GlanceTile("Heart rate", hd.avg.toString(), "bpm", m, icon = NavIcons.heart, note = "${hd.min}–${hd.max} today", onClick = openHeart, description = "Heart rate details")
+                hd != null -> GlanceTile("Heart rate", hd.avg.toString(), "bpm", m, icon = NavIcons.heart, note = "${hd.min}–${hd.max} today", onClick = openHeart, description = "Heart rate details", tint = Tint.PEACH)
                 else -> GlanceTile(
                     "Recovery", recovery?.toString() ?: "—", null, m, icon = NavIcons.today,
                     ring = recovery?.div(100f), ringColor = recovery?.let { scoreColor(it) } ?: Palette.Faint,
-                    note = if (recovery == null) "calibrating" else null, ringKey = "glance-recovery-${data.date}",
+                    note = if (recovery == null) "calibrating" else null, ringKey = "glance-recovery-${data.date}", tint = Tint.PEACH,
                 )
             }
         },
@@ -577,6 +591,56 @@ private fun HeartDayCard(data: TodayData, hd: HeartDay, zone: ZoneId, onOpen: ()
                     NumberWithUnits(listOf(v.toString() to "bpm"), style = Type.tile.copy(fontSize = 20.sp))
                 }
             }
+        }
+    }
+}
+
+// Soft's hero: a white card with a thick score ring on the left and the verdict beside it, in place of the orb.
+@Composable
+private fun SoftHero(data: TodayData, heroScore: Int?, heroLabel: String, pageOffset: () -> Float, onClick: () -> Unit) {
+    val r = data.readiness
+    val score = (r as? ReadinessResult.Ready)?.score
+    val (word, advice) = when (r) {
+        is ReadinessResult.Ready -> bandWord(r.band) to bandAdvice(r.band)
+        is ReadinessResult.Calibrating -> "Recovery · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to
+            if (data.isToday) "Until then the ring shows your ${if (data.sleep != null) "sleep score" else "steps"}." else "Not enough earlier data for this day"
+        ReadinessResult.NoData -> "No data for last night" to "Sync your watch, then pull down to refresh."
+    }
+    val name = heroLabel.trim('›', ' ').lowercase()
+    Row(
+        Modifier
+            .padding(horizontal = Space.l)
+            .fillMaxWidth()
+            .graphicsLayer {
+                val offset = pageOffset()
+                translationX = offset * size.width * 0.15f
+                alpha = 1f - abs(offset).coerceAtMost(1f)
+            }
+            .cardSurface()
+            .tappable(onClick, name.replaceFirstChar { it.uppercase() } + " details")
+            .padding(horizontal = Space.l, vertical = 18.dp)
+            .semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) {
+            MiniRing("hero-ring-${data.date}", (heroScore ?: 0) / 100f, heroScore?.let { scoreColor(it) } ?: Palette.Faint, diameter = 112.dp, stroke = 12.dp)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                if (heroScore != null) CountUpText("orb-score", heroScore.toLong(), Type.title.copy(fontSize = 34.sp), color = Palette.Text)
+                else Text("—", style = Type.title.copy(fontSize = 34.sp), color = Palette.Faint)
+                Text(name, style = Type.secondary, color = Palette.Muted)
+            }
+        }
+        Column(Modifier.weight(1f).padding(start = 18.dp)) {
+            Text(word, style = Type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium), color = score?.let { scoreColor(it) } ?: Palette.Text)
+            Text(advice, style = Type.secondary.copy(fontSize = 13.sp, lineHeight = 18.sp), color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
+            if (r is ReadinessResult.Calibrating) {
+                Row(Modifier.padding(top = Space.s), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    repeat(Tuning.MIN_NIGHTS) { i ->
+                        Box(Modifier.size(7.dp).clip(CircleShape).background(if (i < r.nights) Palette.Accent else Palette.Divider))
+                    }
+                }
+            }
+            (r as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.used)?.let { Text(it, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s)) } }
         }
     }
 }

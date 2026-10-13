@@ -5,4 +5,8 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_orb</item>
         <item name="postSplashScreenTheme">@android:style/Theme.Material.NoActionBar</item>
     </style>
+    <!-- Soft's light ground; chosen at runtime on Android 13+ once the user is on the Soft theme. -->
+    <style name="Theme.Fitdash.Starting.Soft" parent="Theme.Fitdash.Starting">
+        <item name="windowSplashScreenBackground">#F2F3F0</item>
+    </style>
 </resources>

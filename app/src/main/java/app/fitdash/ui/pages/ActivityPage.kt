@@ -44,6 +44,7 @@ import app.fitdash.ui.dayLetter
 import app.fitdash.ui.formatNumber
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 import kotlin.math.roundToInt
@@ -98,7 +99,7 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean, onOpenWork
                                 "Active", NavIcons.bolt, listOf(a.activeMinutes.toString() to "min"), m,
                                 if (data.isToday && left > 0) null else scoreStatus((a.activeMinutes * 100 / goal).toInt().coerceAtMost(100)),
                                 if (left <= 0) "GOAL $goal MIN DONE" else "$left MIN TO GO",
-                                opener(MetricKind.ACTIVE_MINUTES), "Active minutes details",
+                                opener(MetricKind.ACTIVE_MINUTES), "Active minutes details", tint = Tint.LAVENDER,
                             )
                         },
                         { m ->
@@ -106,7 +107,7 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean, onOpenWork
                                 "Distance", NavIcons.walk, listOf(formatNumber(a.distanceKm * unitScale) to if (miles) "mi" else "km"), m,
                                 if (data.isToday) null else againstAverage(a.distanceKm, distance.takeIf { it.isNotEmpty() }?.average()),
                                 if (distance.isEmpty()) "THIS WEEK" else "7-DAY AVG ${formatNumber(distance.average() * unitScale)} ${if (miles) "MI" else "KM"}",
-                                opener(MetricKind.DISTANCE), "Distance details",
+                                opener(MetricKind.DISTANCE), "Distance details", tint = Tint.SKY,
                             )
                         },
                         { m ->
@@ -114,7 +115,7 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean, onOpenWork
                                 "Calories", NavIcons.heart, listOf(formatSteps(a.kcal.roundToLong()) to "kcal"), m,
                                 if (data.isToday) null else againstAverage(a.kcal, kcal.takeIf { it.isNotEmpty() }?.average()),
                                 if (kcal.isEmpty()) "THIS WEEK" else "7-DAY AVG ${formatSteps(kcal.average().roundToLong())}",
-                                opener(MetricKind.CALORIES), "Calories details",
+                                opener(MetricKind.CALORIES), "Calories details", tint = Tint.PEACH,
                             )
                         },
                     ),

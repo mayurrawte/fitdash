@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.roundToInt
 
 data class Settings(
-    val theme: ThemeId = ThemeId.TEAL,
+    val theme: ThemeId = ThemeId.SOFT,
     val stepGoal: Int = 9000,
     val sleepHours: Double = 8.0,
     val miles: Boolean = false,
@@ -25,7 +25,7 @@ data class Settings(
     val showHeartRate: Boolean = true,
     val showSuggestions: Boolean = true,
     val showBody: Boolean = true,
-    val numbersFont: NumbersFont = NumbersFont.INTER,
+    val numbersFont: NumbersFont = NumbersFont.OUTFIT,
 )
 
 class SettingsStore(context: Context) {
@@ -34,7 +34,7 @@ class SettingsStore(context: Context) {
     val flow: StateFlow<Settings> = _flow
 
     private fun read() = Settings(
-        theme = runCatching { ThemeId.valueOf(prefs.getString("theme", null) ?: "TEAL") }.getOrDefault(ThemeId.TEAL),
+        theme = runCatching { ThemeId.valueOf(prefs.getString("theme", null) ?: "SOFT") }.getOrDefault(ThemeId.TEAL),
         stepGoal = prefs.getInt("stepGoal", 9000),
         sleepHours = prefs.getInt("sleepTenths", 80) / 10.0,
         miles = prefs.getBoolean("miles", false),
@@ -51,7 +51,8 @@ class SettingsStore(context: Context) {
         showHeartRate = prefs.getBoolean("showHeartRate", true),
         showSuggestions = prefs.getBoolean("showSuggestions", true),
         showBody = prefs.getBoolean("showBody", true),
-        numbersFont = runCatching { NumbersFont.valueOf(prefs.getString("numbersFont", null) ?: "INTER") }.getOrDefault(NumbersFont.INTER),
+        // Installs that saved settings before Outfit existed keep Inter; only fresh installs start on Outfit.
+        numbersFont = runCatching { NumbersFont.valueOf(prefs.getString("numbersFont", null) ?: if (prefs.contains("theme")) "INTER" else "OUTFIT") }.getOrDefault(NumbersFont.OUTFIT),
     )
 
     fun update(change: (Settings) -> Settings) {

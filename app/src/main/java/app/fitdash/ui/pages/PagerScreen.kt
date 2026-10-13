@@ -179,6 +179,14 @@ fun PagerScreen(
 
 @Preview(heightDp = 900)
 @Composable
+private fun TodaySoft() = PagePreview(ThemeId.SOFT, 0)
+
+@Preview(heightDp = 900)
+@Composable
+private fun SleepSoft() = PagePreview(ThemeId.SOFT, 1)
+
+@Preview(heightDp = 900)
+@Composable
 private fun TodayTeal() = PagePreview(ThemeId.TEAL, 0)
 
 @Preview(heightDp = 900)

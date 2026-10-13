@@ -57,6 +57,7 @@ import app.fitdash.ui.sleepWord
 import app.fitdash.ui.metricName
 import app.fitdash.ui.rangeNote
 import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 import app.fitdash.ui.theme.scoreColor
@@ -104,13 +105,13 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
             item(key = "sleep-tiles") {
                 val hrCeiling = data.heart?.restingHrRange?.endInclusive
                 val all = listOf<@Composable (Modifier) -> Unit>(
-                        { m -> NumberTile("Total sleep", NavIcons.moonSmall, hoursMins(s.asleep), m, scoreStatus(s.score), onClick = opener(MetricKind.SLEEP_HOURS), description = "Total sleep details") },
-                        { m -> NumberTile("Time in bed", NavIcons.clock, hoursMins(s.timeInBed), m, if (s.timeInBed >= Duration.ofMinutes((data.goals.sleepHours * 60).roundToInt().toLong())) Status.GOOD else Status.FAIR, onClick = opener(MetricKind.SLEEP_HOURS), description = "Time in bed details") },
+                        { m -> NumberTile("Total sleep", NavIcons.moonSmall, hoursMins(s.asleep), m, scoreStatus(s.score), onClick = opener(MetricKind.SLEEP_HOURS), description = "Total sleep details", tint = Tint.SKY) },
+                        { m -> NumberTile("Time in bed", NavIcons.clock, hoursMins(s.timeInBed), m, if (s.timeInBed >= Duration.ofMinutes((data.goals.sleepHours * 60).roundToInt().toLong())) Status.GOOD else Status.FAIR, onClick = opener(MetricKind.SLEEP_HOURS), description = "Time in bed details", tint = Tint.LAVENDER) },
                         { m ->
                             NumberTile(
                                 "Efficiency", NavIcons.bed, listOf((s.efficiency * 100).roundToInt().toString() to "%"), m,
                                 efficiencyStatus(s.efficiency),
-                                onClick = opener(MetricKind.EFFICIENCY), description = "Sleep efficiency details",
+                                onClick = opener(MetricKind.EFFICIENCY), description = "Sleep efficiency details", tint = Tint.SAGE,
                             )
                         },
                         { m ->
@@ -118,7 +119,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                                 "Restorative", NavIcons.moonSmall,
                                 listOf((s.restorative?.let { (it * 100).roundToInt().toString() } ?: "—") to if (s.restorative != null) "%" else ""),
                                 m, s.restorative?.let { shareStatus(it, 0.33..0.48) },
-                                onClick = opener(MetricKind.SLEEP_SCORE), description = "Restorative sleep details",
+                                onClick = opener(MetricKind.SLEEP_SCORE), description = "Restorative sleep details", tint = Tint.PEACH,
                             )
                         },
                         { m ->
@@ -126,7 +127,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                                 "Awakenings", NavIcons.sun,
                                 listOf((s.awakenings?.toString() ?: "—") to if (s.awakenings != null) (if (s.awakenings == 1) "time" else "times") else ""),
                                 m, s.awakenings?.let { awakeningsStatus(it) },
-                                onClick = opener(MetricKind.AWAKENINGS), description = "Awakenings details",
+                                onClick = opener(MetricKind.AWAKENINGS), description = "Awakenings details", tint = Tint.LAVENDER,
                             )
                         },
                         { m ->
@@ -134,7 +135,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                                 "Overnight HR", NavIcons.heart,
                                 listOf((s.overnightHr?.let { formatNumber(it) } ?: "—") to if (s.overnightHr != null) "bpm" else ""),
                                 m, if (s.overnightHr != null && hrCeiling != null) (if (s.overnightHr <= hrCeiling) Status.GOOD else Status.FAIR) else null,
-                                onClick = opener(MetricKind.RESTING_HR), description = "Overnight heart rate details",
+                                onClick = opener(MetricKind.RESTING_HR), description = "Overnight heart rate details", tint = Tint.SKY,
                             )
                         },
                 )
@@ -197,7 +198,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
             item(key = "vitals-label") { SectionLabel("OVERNIGHT VITALS") }
             item(key = "vitals") {
                 TileGrid(
-                    data.vitals.map<VitalReading, @Composable (Modifier) -> Unit> { v ->
+                    data.vitals.mapIndexed<VitalReading, @Composable (Modifier) -> Unit> { i, v ->
                         { m ->
                             val kind = vitalKind(v.label)
                             val f = LocalPrefs.current.fahrenheit && kind == MetricKind.SKIN_TEMP
@@ -206,6 +207,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                                 status = v.range?.let { rangeWord(rangeStatus(v.value, it, v.good)) },
                                 onClick = opener(kind),
                                 description = "${metricName(kind)} details",
+                                tint = VITAL_TINTS[i % VITAL_TINTS.size],
                             ) { v.range?.let { RangeBar("vital-${v.label}", v.value, it, v.good) } ?: EmptyTrack() }
                         }
                     },
@@ -236,3 +238,5 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
         }
     }
 }
+
+private val VITAL_TINTS = listOf(Tint.LAVENDER, Tint.SAGE, Tint.PEACH, Tint.SKY)

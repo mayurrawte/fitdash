@@ -22,6 +22,10 @@ Final pass (13 Oct): sleep score is now four parts (duration 50, efficiency 15, 
 
 Not done: fresh Play screenshots from this build (`fastlane/.../phoneScreenshots` still shows 0.4 mockups; pad a 1080×2424 capture to 9:16 with `sips --padToHeightWidth 2424 1363 --padColor 050909`), the typeface picker, workout sheet and Trends 6M were not seen on the phone, and nothing is pushed.
 
+## Soft theme (13 Oct evening, uncommitted, not run on a device)
+
+A light pastel theme modelled on two Dribbble references, now the default for fresh installs (existing installs keep their saved theme and Inter numbers). It has a `#F2F3F0` ground, white 28 dp cards, tiles tinted sky, sage, lavender and peach (`Tint` + `TintScope` recolour the text inside), a dark icon-only dock in place of the glass nav, a peach week-strip pill and date chip, and a white hero card with a ring in place of the orb. Outfit (OFL, bundled) is used for body and labels on Soft and is a fourth numbers option. Status-bar icons go dark on Soft, and on Android 13+ the splash colour follows the theme from the next cold start. Two Soft previews are in `PagerScreen.kt`. To check on the Pixel: every page, every sheet (they use `bgMid`), the share card, chart dots and gauge tips on white, and labels that are still uppercased in code.
+
 ## Not yet checked on a device
 
 - v0.5.0: everything above. Watch the first-run permission screen (now asks for "read older data"), the heart-rate card with Fitbit's 1-minute samples, the workout sheet, Trends 6M after granting history, and every page at 1.3x font scale with the larger labels.

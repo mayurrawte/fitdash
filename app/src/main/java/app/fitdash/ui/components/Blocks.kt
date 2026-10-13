@@ -17,6 +17,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,15 +56,22 @@ import androidx.compose.ui.unit.sp
 import app.fitdash.metrics.Status
 import app.fitdash.ui.theme.Mono
 import app.fitdash.ui.theme.Motion
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 
-val CardShape = RoundedCornerShape(20.dp)
+private val DarkCardShape = RoundedCornerShape(20.dp)
+private val SoftCardShape = RoundedCornerShape(28.dp)
+
+// Soft rounds everything further, like its pills and dock.
+val CardShape: Shape @Composable @ReadOnlyComposable get() = if (LocalTheme.current.soft) SoftCardShape else DarkCardShape
 
 // Section cards: faint fill with a hairline. Tiles: a slightly stronger fill and no line, so a grid of them reads as one calm block.
+// On Soft the cards are plain white on the grey ground, so the hairline goes.
 @Composable
-fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card).border(1.dp, Palette.Divider, CardShape)
+fun Modifier.cardSurface(): Modifier =
+    if (LocalTheme.current.soft) clip(CardShape).background(Palette.Card) else clip(CardShape).background(Palette.Card).border(1.dp, Palette.Divider, CardShape)
 
 @Composable
 fun Modifier.tileSurface(): Modifier = clip(CardShape).background(Palette.Card)

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -28,6 +29,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Type
 import dev.chrisbanes.haze.HazeInput
@@ -45,6 +47,7 @@ private val PillShape = RoundedCornerShape(20.dp)
 
 @Composable
 fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
+    if (LocalTheme.current.soft) return DockNav(items, pager, onSelect, modifier)
     val background = Palette.Background
     val glass = Palette.Glass
     val hairline = Palette.Divider
@@ -87,6 +90,47 @@ fun GlassNav(items: List<NavItem>, pager: PagerState, hazeState: HazeState, onSe
                     val tint = if (selected) Palette.Text else Palette.Muted
                     Icon(item.icon, null, Modifier.size(18.dp), tint = tint)
                     Text(item.label.uppercase(), style = Type.tiny.copy(fontSize = 10.sp), color = tint, modifier = Modifier.padding(top = 2.dp))
+                }
+            }
+        }
+    }
+}
+
+private val DockItem = 56.dp
+private val DockGap = 6.dp
+private val DockShape = RoundedCornerShape(36.dp)
+
+// Soft's nav: a solid ink capsule of icon-only circles; the light circle slides with the pager.
+@Composable
+private fun DockNav(items: List<NavItem>, pager: PagerState, onSelect: (Int) -> Unit, modifier: Modifier) {
+    val ink = Palette.Glass
+    val ground = Palette.Background
+    Box(
+        modifier
+            .shadow(16.dp, DockShape, ambientColor = Color.Black.copy(alpha = 0.4f), spotColor = Color.Black.copy(alpha = 0.4f))
+            .clip(DockShape)
+            .background(ink)
+            .padding(8.dp),
+    ) {
+        Box(
+            Modifier
+                .size(DockItem)
+                .graphicsLayer { translationX = (pager.currentPage + pager.currentPageOffsetFraction) * (DockItem + DockGap).toPx() }
+                .clip(CircleShape)
+                .background(ground),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(DockGap)) {
+            items.forEachIndexed { i, item ->
+                val selected = pager.currentPage == i
+                Box(
+                    Modifier
+                        .size(DockItem)
+                        .clip(CircleShape)
+                        .clickable { onSelect(i) }
+                        .clearAndSetSemantics { contentDescription = item.label; this.selected = selected; role = Role.Tab },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(item.icon, null, Modifier.size(22.dp), tint = if (selected) ink else ground.copy(alpha = 0.75f))
                 }
             }
         }

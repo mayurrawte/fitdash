@@ -21,7 +21,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.fitdash.metrics.Status
+import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.Tint
+import app.fitdash.ui.theme.TintScope
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 
@@ -37,8 +40,9 @@ fun StatTile(
     labelTag: String? = null,
     onClick: (() -> Unit)? = null,
     description: String? = null,
+    tint: Tint? = null,
     visual: @Composable () -> Unit,
-) {
+) = TintScope(tint) {
     Column(
         modifier
             .tileSurface()
@@ -69,7 +73,8 @@ fun NumberTile(
     note: String? = null,
     onClick: (() -> Unit)? = null,
     description: String? = null,
-) {
+    tint: Tint? = null,
+) = TintScope(tint) {
     Column(
         modifier
             .tileSurface()
@@ -115,7 +120,10 @@ fun GlanceTile(
     ringKey: String = "glance-$label",
     onClick: (() -> Unit)? = null,
     description: String? = null,
-) {
+    tint: Tint? = null,
+) = TintScope(tint) {
+    // On a pastel tile the ring is drawn in ink, like the mockup's steps ring; colour there comes from the tile.
+    val ringPaint = if (tint != null && LocalTheme.current.tints.isNotEmpty()) Palette.Text else ringColor
     Row(
         modifier
             .tileSurface()
@@ -138,6 +146,6 @@ fun GlanceTile(
                 note != null -> Text(note.uppercase(), Modifier.padding(top = 4.dp), style = Type.tiny, color = Palette.Faint, maxLines = 1)
             }
         }
-        if (ring != null) MiniRing(ringKey, ring, ringColor, Modifier.padding(start = Space.s), diameter = 42.dp, stroke = 4.dp)
+        if (ring != null) MiniRing(ringKey, ring, ringPaint, Modifier.padding(start = Space.s), diameter = 42.dp, stroke = 4.dp)
     }
 }

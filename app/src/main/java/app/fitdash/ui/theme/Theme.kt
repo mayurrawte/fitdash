@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -62,24 +63,40 @@ val Mono = FontFamily(
 val SpaceGrotesk = FontFamily(Font(R.font.space_grotesk_light, FontWeight.Light), Font(R.font.space_grotesk_light, FontWeight.ExtraLight))
 val InstrumentSerif = FontFamily(Font(R.font.instrument_serif_regular, FontWeight.Normal), Font(R.font.instrument_serif_regular, FontWeight.Light), Font(R.font.instrument_serif_regular, FontWeight.ExtraLight))
 
-enum class NumbersFont(val label: String, val sample: String) { INTER("Inter", "Clean"), GROTESK("Space Grotesk", "Geometric"), SERIF("Instrument Serif", "Editorial") }
+// The Soft theme's typeface, for body and labels there and as a numbers option everywhere.
+val Outfit = FontFamily(
+    Font(R.font.outfit_light, FontWeight.ExtraLight),
+    Font(R.font.outfit_light, FontWeight.Light),
+    Font(R.font.outfit_regular, FontWeight.Normal),
+    Font(R.font.outfit_medium, FontWeight.Medium),
+    Font(R.font.outfit_semibold, FontWeight.SemiBold),
+)
+
+enum class NumbersFont(val label: String, val sample: String) { OUTFIT("Outfit", "Friendly"), INTER("Inter", "Clean"), GROTESK("Space Grotesk", "Geometric"), SERIF("Instrument Serif", "Editorial") }
 
 val LocalNumbersFont = staticCompositionLocalOf { NumbersFont.INTER }
 
 @Composable
 @ReadOnlyComposable
 fun displayFamily(): FontFamily = when (LocalNumbersFont.current) {
+    NumbersFont.OUTFIT -> Outfit
     NumbersFont.INTER -> Inter
     NumbersFont.GROTESK -> SpaceGrotesk
     NumbersFont.SERIF -> InstrumentSerif
 }
 
 object Type {
-    private val bodyFamily: FontFamily @Composable @ReadOnlyComposable get() = Inter
+    private val soft: Boolean @Composable @ReadOnlyComposable get() = LocalTheme.current.soft
+    private val bodyFamily: FontFamily @Composable @ReadOnlyComposable get() = if (soft) Outfit else Inter
+    // Soft drops the mono labels for its own face, a weight heavier so small text holds on the light ground.
+    private val labelFamily: FontFamily @Composable @ReadOnlyComposable get() = if (soft) Outfit else Mono
+    private val bodyWeight: FontWeight @Composable @ReadOnlyComposable get() = if (soft) FontWeight.Normal else FontWeight.Light
     // The serif has no light weight and sits wider, so numbers in it are set regular and a touch tighter.
+    // Outfit is set regular too: its light weight is too thin for big numbers on a light ground.
     private val serif: Boolean @Composable @ReadOnlyComposable get() = LocalNumbersFont.current == NumbersFont.SERIF
-    private val displayWeight: FontWeight @Composable @ReadOnlyComposable get() = if (serif) FontWeight.Normal else FontWeight.Light
-    private val heroWeight: FontWeight @Composable @ReadOnlyComposable get() = if (serif) FontWeight.Normal else FontWeight.ExtraLight
+    private val regular: Boolean @Composable @ReadOnlyComposable get() = serif || LocalNumbersFont.current == NumbersFont.OUTFIT
+    private val displayWeight: FontWeight @Composable @ReadOnlyComposable get() = if (regular) FontWeight.Normal else FontWeight.Light
+    private val heroWeight: FontWeight @Composable @ReadOnlyComposable get() = if (regular) FontWeight.Normal else FontWeight.ExtraLight
 
     val hero: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = displayFamily(), fontSize = 68.sp, fontWeight = heroWeight, letterSpacing = (-0.03).em, fontFeatureSettings = "tnum")
@@ -90,18 +107,18 @@ object Type {
     val tile: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = displayFamily(), fontSize = 24.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
     val body: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = bodyFamily, fontSize = 14.sp, fontWeight = FontWeight.Light, lineHeight = 21.sp)
+        TextStyle(fontFamily = bodyFamily, fontSize = 14.sp, fontWeight = bodyWeight, lineHeight = 21.sp)
     val small: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = bodyFamily, fontSize = 12.sp, fontWeight = FontWeight.Normal)
     // 11 sp is the floor for mono labels: anything smaller is unreadable on a phone at 1.0x.
     val label: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = labelFamily, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
     val tiny: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Mono, fontSize = 11.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = labelFamily, fontSize = 11.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
     val unit: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Mono, fontSize = 10.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = labelFamily, fontSize = 10.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
     val status: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Mono, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = labelFamily, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
     val secondary: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = bodyFamily, fontSize = 12.sp, fontWeight = FontWeight.Normal)
 }
@@ -118,7 +135,8 @@ object Space {
 @Composable
 fun FitdashTheme(themeId: ThemeId = ThemeId.TEAL, content: @Composable () -> Unit) {
     val t = THEMES.getValue(themeId)
-    val scheme = darkColorScheme(primary = t.accent, background = t.bgBottom, surface = t.bgMid, onBackground = t.text, onSurface = t.text)
+    val scheme = if (t.soft) lightColorScheme(primary = t.accent, background = t.bgBottom, surface = t.card, onBackground = t.text, onSurface = t.text)
+    else darkColorScheme(primary = t.accent, background = t.bgBottom, surface = t.bgMid, onBackground = t.text, onSurface = t.text)
     CompositionLocalProvider(LocalTheme provides t) {
         MaterialTheme(colorScheme = scheme, content = content)
     }
@@ -134,3 +152,16 @@ fun ThemedBackground(modifier: Modifier = Modifier) {
 
 // Accessibility: when on, draw-in, count-up and reveal animations finish immediately and the orb holds still.
 val LocalReduceMotion = staticCompositionLocalOf { false }
+
+// Inside a tinted tile the muted and faint text take the tile's own ink, so every child reads on the pastel without knowing about it.
+@Composable
+fun TintScope(tint: Tint?, content: @Composable () -> Unit) {
+    val t = LocalTheme.current
+    if (tint == null || t.tints.isEmpty()) return content()
+    val ink = t.tintInk[tint.ordinal]
+    CompositionLocalProvider(LocalTheme provides t.copy(card = t.tints[tint.ordinal], muted = ink, faint = ink, hairline = ink.copy(alpha = 0.15f)), content = content)
+}
+
+@Composable
+@ReadOnlyComposable
+fun tintColor(tint: Tint?): Color? = tint?.let { LocalTheme.current.tints.getOrNull(it.ordinal) }
