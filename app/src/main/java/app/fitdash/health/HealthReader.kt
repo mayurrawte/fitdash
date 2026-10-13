@@ -5,6 +5,7 @@ import android.util.Log
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.aggregate.AggregateMetric
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
@@ -49,6 +50,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.reflect.KClass
 
 const val HISTORY_PERMISSION = HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY
+const val BACKGROUND_PERMISSION = HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND
 
 // Large, high-frequency types only ever read for the last 30 days, even with the history permission.
 private val SHORT_WINDOW_TYPES: Set<KClass<out Record>> = setOf(HeartRateRecord::class, PowerRecord::class, SpeedRecord::class)
@@ -77,6 +79,12 @@ class HealthReader(private val context: Context) : HealthSource {
         types.map { HealthPermission.getReadPermission(it.type) }.toSet() + writeWater + writeHeight + listOfNotNull(history)
 
     override val historyPermission: String? get() = history
+
+    override suspend fun backgroundPermission(): String? {
+        if (BACKGROUND_PERMISSION !in declared) return null
+        val status = runCatching { client.features.getFeatureStatus(HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_IN_BACKGROUND) }.getOrNull()
+        return BACKGROUND_PERMISSION.takeIf { status == HealthConnectFeatures.FEATURE_STATUS_AVAILABLE }
+    }
 
     override fun availability() = when (HealthConnectClient.getSdkStatus(context)) {
         HealthConnectClient.SDK_AVAILABLE -> Availability.AVAILABLE

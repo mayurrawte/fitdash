@@ -78,6 +78,10 @@ fun PagerScreen(
     onSetHeight: (Int) -> Unit,
     onAskHistory: () -> Unit = {},
     onSync: (String) -> Unit = {},
+    onAskBackground: () -> Unit = {},
+    // A page a widget tap asked for; cleared once the pager is there.
+    openPage: Int? = null,
+    onPageOpened: () -> Unit = {},
 ) {
     val data = state.data
     val pager = rememberPagerState { NAV.size }
@@ -95,6 +99,9 @@ fun PagerScreen(
     val settings by store.flow.collectAsState()
     val today = if (data.isToday) data.date else LocalDate.now()
 
+    LaunchedEffect(openPage) {
+        openPage?.let { pager.scrollToPage(it.coerceIn(0, NAV.size - 1)); onPageOpened() }
+    }
     LaunchedEffect(pager) {
         snapshotFlow { pager.settledPage }.drop(1).collect { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove) }
     }
@@ -169,7 +176,7 @@ fun PagerScreen(
             )
         }
         if (sharing) ShareRender(data, onDone = { sharing = false })
-        if (showSettings) SettingsSheet(store, data.sources, data.heightMeters, onSetHeight, state.canAskHistory, onAskHistory, onDismiss = { showSettings = false })
+        if (showSettings) SettingsSheet(store, data.sources, data.heightMeters, onSetHeight, state.canAskHistory, onAskHistory, state.background, onAskBackground, onDismiss = { showSettings = false })
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
         metric?.let { MetricDetailSheet(it, data, settings.miles, onDismiss = { metric = null }) }
         workout?.let { WorkoutSheet(it, data.workoutHr[it.start].orEmpty(), settings.miles, onDismiss = { workout = null }) }

@@ -14,15 +14,16 @@ fun scoreColor(score: Int, bad: Color, warn: Color, good: Color): Color {
 }
 
 // Soft steps between three clear pastels: a blend of its dark text greens and ambers turns olive on white.
-@Composable
-@ReadOnlyComposable
-fun scoreColor(score: Int): Color = LocalTheme.current.let {
-    if (it.soft) when {
+fun scoreColor(score: Int, t: ThemeTokens): Color =
+    if (t.soft) when {
         score >= 70 -> Color(0xFF8DB85A)
         score >= 50 -> Color(0xFFE3A06F)
         else -> Color(0xFFD9604F)
-    } else scoreColor(score, it.bad, it.warn, it.good)
-}
+    } else scoreColor(score, t.bad, t.warn, t.good)
+
+@Composable
+@ReadOnlyComposable
+fun scoreColor(score: Int): Color = scoreColor(score, LocalTheme.current)
 
 @Composable
 @ReadOnlyComposable

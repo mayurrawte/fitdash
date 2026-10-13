@@ -1,5 +1,11 @@
 package app.fitdash
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import androidx.glance.appwidget.updateAll
+import app.fitdash.health.BACKGROUND_PERMISSION
+import app.fitdash.background.BackgroundRefresh
+import app.fitdash.widget.EXTRA_PAGE
+import app.fitdash.widget.FitdashWidget
 import android.content.Intent
 import app.fitdash.ui.share.clearShareCache
 import android.net.Uri
@@ -67,12 +73,20 @@ private const val SPLASH_EXIT_MILLIS = 500L
 
 class MainActivity : ComponentActivity() {
     private val splashStart = SystemClock.uptimeMillis()
+    // The page a widget tap opened us on, for a cold start and for onNewIntent alike.
+    private val openPage = MutableStateFlow<Int?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        openPage.value = intent.pageExtra()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val splash = installSplashScreen()
+        openPage.value = intent.pageExtra()
         super.onCreate(savedInstanceState)
         clearShareCache(applicationContext)
-        val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) }, store = SnapshotCache(applicationContext)) } } }
+        val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) }, store = SnapshotCache(applicationContext), onCacheSaved = { FitdashWidget().updateAll(applicationContext) }) } } }
         splash.setKeepOnScreenCondition { vm.state.value == TodayUiState.Loading && SystemClock.uptimeMillis() - splashStart < SPLASH_MAX_MILLIS }
         splash.setOnExitAnimationListener { provider ->
             val view = provider.view
@@ -100,20 +114,30 @@ class MainActivity : ComponentActivity() {
             // Theme changes fade rather than snap.
             Crossfade(settings.theme, animationSpec = tween(Motion.COLOUR / 2), label = "theme") { theme ->
                 FitdashTheme(theme) {
-                    CompositionLocalProvider(LocalPrefs provides settings, LocalReduceMotion provides settings.reduceMotion, LocalNumbersFont provides settings.numbersFont) { App(store) }
+                    CompositionLocalProvider(LocalPrefs provides settings, LocalReduceMotion provides settings.reduceMotion, LocalNumbersFont provides settings.numbersFont) { App(store, openPage) }
                 }
             }
         }
     }
 }
 
+private fun Intent?.pageExtra(): Int? = this?.getIntExtra(EXTRA_PAGE, -1)?.takeIf { it >= 0 }
+
 private const val HEALTH_CONNECT_STORE =
     "market://details?id=com.google.android.apps.healthdata&url=healthconnect%3A%2F%2Fonboarding"
 
 @Composable
-private fun App(store: SettingsStore) {
+private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
     val context = LocalContext.current
-    val vm: TodayViewModel = viewModel { TodayViewModel(HealthReader(context.applicationContext), settings = store.flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) }, store = SnapshotCache(context.applicationContext)) }
+    val vm: TodayViewModel = viewModel {
+        TodayViewModel(
+            HealthReader(context.applicationContext), settings = store.flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) },
+            store = SnapshotCache(context.applicationContext), onCacheSaved = { FitdashWidget().updateAll(context.applicationContext) },
+        )
+    }
+    val settings by store.flow.collectAsStateWithLifecycle()
+    val page by openPage.collectAsStateWithLifecycle()
+    LaunchedEffect(settings.backgroundRefresh) { BackgroundRefresh.apply(context.applicationContext, settings.backgroundRefresh) }
     val state by vm.state.collectAsStateWithLifecycle()
     val askPermissions = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { vm.load() }
 
@@ -163,6 +187,9 @@ private fun App(store: SettingsStore) {
                 onUndoWater = vm::undoWater,
                 onSetHeight = vm::setHeight,
                 onAskHistory = { askPermissions.launch(vm.permissions) },
+                onAskBackground = { askPermissions.launch(setOf(BACKGROUND_PERMISSION)) },
+                openPage = page,
+                onPageOpened = { openPage.value = null },
                 onSync = { pkg ->
                     // Open the wearable's app so it pushes to Health Connect; we read again when the user comes back.
                     val intent = context.packageManager.getLaunchIntentForPackage(pkg)

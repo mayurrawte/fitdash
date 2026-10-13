@@ -37,7 +37,8 @@ class SnapshotCache(context: Context) : SnapshotStore {
 
     override fun save(cached: CachedSnapshot) {
         try {
-            val tmp = File(file.parentFile, "snapshot.tmp")
+            // A unique temp file: the dashboard and the background worker may save at the same moment.
+            val tmp = File.createTempFile("snapshot", ".tmp", file.parentFile)
             ObjectOutputStream(tmp.outputStream().buffered()).use { out ->
                 out.writeInt(CachedSnapshot.VERSION)
                 out.writeObject(cached)

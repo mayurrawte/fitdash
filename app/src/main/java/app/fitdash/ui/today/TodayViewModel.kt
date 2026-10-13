@@ -6,7 +6,7 @@ import app.fitdash.health.Availability
 import app.fitdash.health.HealthSource
 import app.fitdash.health.HealthSnapshot
 import java.time.Instant
-import app.fitdash.health.mergedWith
+import app.fitdash.health.readFresh
 import app.fitdash.health.SnapshotStore
 import app.fitdash.health.CachedSnapshot
 import app.fitdash.metrics.Goals
@@ -34,6 +34,9 @@ import java.time.LocalDate
 import java.time.ZonedDateTime
 import kotlin.coroutines.cancellation.CancellationException
 
+// Whether Health Connect lets fitdash read while it is closed, for background refresh and widgets.
+enum class BackgroundAccess { UNSUPPORTED, NOT_GRANTED, GRANTED }
+
 sealed interface TodayUiState {
     data object Loading : TodayUiState
     data class NeedsHealthConnect(val update: Boolean) : TodayUiState
@@ -47,6 +50,7 @@ sealed interface TodayUiState {
         val error: Boolean = false,
         // True when this build can ask for the "read older data" permission and it is not granted yet.
         val canAskHistory: Boolean = false,
+        val background: BackgroundAccess = BackgroundAccess.UNSUPPORTED,
     ) : TodayUiState
 }
 
@@ -59,6 +63,8 @@ class TodayViewModel(
     private val onReadFailed: (Throwable) -> Unit = {},
     // Last snapshot on disk, shown instantly on a cold start while the fresh read runs.
     private val store: SnapshotStore? = null,
+    // After each save, so home-screen widgets redraw from the new cache.
+    private val onCacheSaved: suspend () -> Unit = {},
 ) : ViewModel() {
     private val _state = MutableStateFlow<TodayUiState>(TodayUiState.Loading)
     val state: StateFlow<TodayUiState> = _state
@@ -100,7 +106,7 @@ class TodayViewModel(
         rebuildJob = viewModelScope.launch {
             val (data, text) = withContext(work) { build(snapshot, now, date, goals) }
             val prev = _state.value as? TodayUiState.Ready
-            _state.value = TodayUiState.Ready(data, text, prev?.refreshing ?: false, prev?.error ?: false, prev?.canAskHistory ?: false)
+            _state.value = TodayUiState.Ready(data, text, prev?.refreshing ?: false, prev?.error ?: false, prev?.canAskHistory ?: false, prev?.background ?: BackgroundAccess.UNSUPPORTED)
         }
     }
 
@@ -204,19 +210,11 @@ class TodayViewModel(
                 if (granted.none { it in source.allPermissions }) {
                     TodayUiState.NeedsPermission
                 } else {
-                    val base = raw
-                    val fullDue = base == null || lastFullRead?.let { Duration.between(it, now.toInstant()) > Duration.ofHours(Tuning.FULL_READ_HOURS) } ?: true
-                    // Incremental: re-read from two days before the last read so late wearable syncs are caught, and lay it over the cache.
-                    val cutoff = if (fullDue) null else lastRead?.let { now.zone.let { z -> it.atZone(z).toLocalDate().minusDays(Tuning.REREAD_DAYS).atStartOfDay(z).toInstant() } }
-                    var fresh = source.read(now, cutoff)
-                    var merged = if (cutoff == null || base == null) fresh else base.mergedWith(fresh, cutoff, now)
-                    if (cutoff != null && base != null && fresh.windowDays != base.windowDays) {
-                        fresh = source.read(now, null)
-                        merged = fresh
-                    }
-                    val read = merged
-                    if (cutoff == null || fresh === merged) lastFullRead = now.toInstant()
+                    val result = readFresh(source, raw, lastRead, lastFullRead, now)
+                    val read = result.snapshot
+                    if (result.full) lastFullRead = now.toInstant()
                     val canAskHistory = source.historyPermission?.let { it !in granted } ?: false
+                    val background = source.backgroundPermission()?.let { if (it in granted) BackgroundAccess.GRANTED else BackgroundAccess.NOT_GRANTED } ?: BackgroundAccess.UNSUPPORTED
                     val date = selectedDate.value ?: now.toLocalDate()
                     val goals = currentGoals()
                     val (augmented, built) = withContext(work) {
@@ -227,10 +225,13 @@ class TodayViewModel(
                     snapshot = augmented
                     lastNow = now
                     lastRead = now.toInstant()
-                    store?.let { st -> withContext(work) { st.save(CachedSnapshot(read, now.toInstant(), lastFullRead ?: now.toInstant())) } }
+                    store?.let { st ->
+                        withContext(work) { st.save(CachedSnapshot(read, now.toInstant(), lastFullRead ?: now.toInstant())) }
+                        onCacheSaved()
+                    }
                     if (read.selectedDateOutOfWindow(selectedDate.value, now)) selectedDate.value = null
                     if (read.sources.none { it.hasData }) TodayUiState.NoData
-                    else TodayUiState.Ready(built.first, built.second, canAskHistory = canAskHistory)
+                    else TodayUiState.Ready(built.first, built.second, canAskHistory = canAskHistory, background = background)
                 }
             } catch (e: CancellationException) {
                 throw e

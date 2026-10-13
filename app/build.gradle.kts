@@ -67,6 +67,8 @@ dependencies {
     implementation(libs.coroutines.android)
     implementation(libs.core.splashscreen)
     implementation(libs.health.connect)
+    implementation(libs.glance.appwidget)
+    implementation(libs.work.runtime)
     implementation(libs.haze)
     implementation(libs.haze.blur)
 

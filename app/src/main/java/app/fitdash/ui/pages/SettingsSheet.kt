@@ -76,6 +76,7 @@ import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.THEMES
+import app.fitdash.ui.today.BackgroundAccess
 import app.fitdash.metrics.maxHrForAge
 import app.fitdash.ui.theme.ThemeId
 import app.fitdash.ui.theme.ThemeTokens
@@ -96,6 +97,8 @@ fun SettingsSheet(
     onSetHeight: (Int) -> Unit,
     canAskHistory: Boolean = false,
     onAskHistory: () -> Unit = {},
+    background: BackgroundAccess = BackgroundAccess.UNSUPPORTED,
+    onAskBackground: () -> Unit = {},
     onDismiss: () -> Unit,
 ) {
     val settings by store.flow.collectAsState()
@@ -167,6 +170,20 @@ fun SettingsSheet(
             item { ListRow(NavIcons.info, "Data sources", null) { showInfo = true } }
             if (canAskHistory) {
                 item { ListRow(NavIcons.trends, "Read older data", "Up to 6 months of history instead of 30 days") { onAskHistory() } }
+            }
+            if (background != BackgroundAccess.UNSUPPORTED) {
+                item {
+                    // Turning it on asks Health Connect for background access; without it the worker only redraws the widget.
+                    ToggleRow(
+                        "Background refresh",
+                        settings.backgroundRefresh && background == BackgroundAccess.GRANTED,
+                        { v ->
+                            store.update { it.copy(backgroundRefresh = v) }
+                            if (v && background != BackgroundAccess.GRANTED) onAskBackground()
+                        },
+                        "Reads Health Connect every 2 hours while fitdash is closed, for the widget and a fresh open",
+                    )
+                }
             }
             item {
                 ListRow(NavIcons.heart, "Open Health Connect", null) {

@@ -110,11 +110,14 @@ Write permissions (fitdash writes only the water and height you enter yourself, 
 - WRITE_HYDRATION: log water you drink from the Today page
 - WRITE_HEIGHT: save your height, entered in Settings, used to calculate BMI
 
+Background read (READ_HEALTH_DATA_IN_BACKGROUND)
+- Off by default. Only requested when the user turns on Settings › Background refresh. Used every two hours to refresh the on-device cache and the home-screen widget so they show last night's sleep and today's steps without opening the app. Nothing is transmitted.
+
 Other data tiles (shown only if you have data, as a tile in the Other data section of Trends, and included in the Ask AI summary)
 - Weight, Body fat, VO2 max, Floors climbed, Active calories: each shown as a tile with its latest value and trend.
 - Height, Body temperature, Hydration, Elevation gained: each shown as a plain tile with its latest value and trend.
 
-The Play build declares exactly these 20 read permissions, plus the two write permissions below. `app/src/play/AndroidManifest.xml` removes the other 11 (blood glucose, blood pressure, nutrition, basal body temperature, bone mass, body water mass, lean body mass, basal metabolic rate, wheelchair pushes, power, speed), and the app only requests and shows data types whose permission is declared. The GitHub APK requests all 31.
+The Play build declares exactly these 20 read permissions, plus READ_HEALTH_DATA_HISTORY, READ_HEALTH_DATA_IN_BACKGROUND and the two write permissions. `app/src/play/AndroidManifest.xml` removes the other 11 (blood glucose, blood pressure, nutrition, basal body temperature, bone mass, body water mass, lean body mass, basal metabolic rate, wheelchair pushes, power, speed), and the app only requests and shows data types whose permission is declared. The GitHub APK requests all 31.
 
 Also provide the privacy policy link (step 9) and a short screen recording of the permission prompt if asked.
 
