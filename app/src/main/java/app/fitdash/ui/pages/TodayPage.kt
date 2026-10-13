@@ -603,7 +603,7 @@ private fun SoftHero(data: TodayData, heroScore: Int?, heroLabel: String, pageOf
     val (word, advice) = when (r) {
         is ReadinessResult.Ready -> bandWord(r.band) to bandAdvice(r.band)
         is ReadinessResult.Calibrating -> "Recovery · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to
-            if (data.isToday) "Until then the ring shows your ${if (data.sleep != null) "sleep score" else "steps"}." else "Not enough earlier data for this day"
+            if (data.isToday) "Recovery needs ${Tuning.MIN_NIGHTS} nights of sleep, HRV and resting heart rate. Until then the ring shows your ${if (data.sleep != null) "sleep score" else "steps"}." else "Not enough earlier data for this day"
         ReadinessResult.NoData -> "No data for last night" to "Sync your watch, then pull down to refresh."
     }
     val name = heroLabel.trim('›', ' ').lowercase()
@@ -631,7 +631,7 @@ private fun SoftHero(data: TodayData, heroScore: Int?, heroLabel: String, pageOf
             }
         }
         Column(Modifier.weight(1f).padding(start = 18.dp)) {
-            Text(word, style = Type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium), color = score?.let { scoreColor(it) } ?: Palette.Text)
+            Text(word, style = Type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
             Text(advice, style = Type.secondary.copy(fontSize = 13.sp, lineHeight = 18.sp), color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
             if (r is ReadinessResult.Calibrating) {
                 Row(Modifier.padding(top = Space.s), horizontalArrangement = Arrangement.spacedBy(5.dp)) {

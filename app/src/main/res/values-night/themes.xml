@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Soft in system dark mode starts on its charcoal ground. -->
+    <style name="Theme.Fitdash.Starting.Soft" parent="Theme.Fitdash.Starting">
+        <item name="windowSplashScreenBackground">#131517</item>
+    </style>
+</resources>

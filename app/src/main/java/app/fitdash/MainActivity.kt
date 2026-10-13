@@ -56,6 +56,9 @@ import app.fitdash.ui.theme.LocalReduceMotion
 import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.theme.THEMES
+import app.fitdash.ui.theme.ThemeId
+import app.fitdash.ui.theme.resolveTheme
+import androidx.compose.foundation.isSystemInDarkTheme
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
 
@@ -84,12 +87,14 @@ class MainActivity : ComponentActivity() {
             val store = SettingsStore.get(this@MainActivity)
             val settings by store.flow.collectAsStateWithLifecycle()
             // Light theme: dark status-bar icons. Android 13+ also remembers the splash colour for the next cold start.
-            LaunchedEffect(settings.theme) {
-                val light = THEMES.getValue(settings.theme).soft
+            val systemDark = isSystemInDarkTheme()
+            LaunchedEffect(settings.theme, systemDark) {
+                val light = resolveTheme(settings.theme, systemDark).lightGround
                 val bars = if (light) SystemBarStyle.light(TRANSPARENT, TRANSPARENT) else SystemBarStyle.dark(TRANSPARENT)
                 (this@MainActivity as ComponentActivity).enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    splashScreen.setSplashScreenTheme(if (light) R.style.Theme_Fitdash_Starting_Soft else R.style.Theme_Fitdash_Starting)
+                    // Soft's splash follows the system itself through values-night.
+                    splashScreen.setSplashScreenTheme(if (settings.theme == ThemeId.SOFT) R.style.Theme_Fitdash_Starting_Soft else R.style.Theme_Fitdash_Starting)
                 }
             }
             // Theme changes fade rather than snap.

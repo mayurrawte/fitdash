@@ -54,12 +54,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.fitdash.metrics.Status
-import app.fitdash.ui.theme.Mono
 import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
+import app.fitdash.ui.theme.labelCase
+import app.fitdash.ui.theme.noteCase
 
 private val DarkCardShape = RoundedCornerShape(20.dp)
 private val SoftCardShape = RoundedCornerShape(28.dp)
@@ -144,8 +145,8 @@ fun SectionCard(
             .padding(horizontal = Space.l, vertical = Space.l),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(label.uppercase(), style = Type.label, color = Palette.Muted)
-            if (trailing != null) Text(trailing.uppercase(), style = Type.tiny, color = trailingColor)
+            Text(labelCase(label), style = Type.label, color = Palette.Muted)
+            if (trailing != null) Text(noteCase(trailing), style = Type.tiny, color = trailingColor)
         }
         Spacer(Modifier.height(Space.s))
         content()
@@ -154,7 +155,7 @@ fun SectionCard(
 
 @Composable
 fun SectionLabel(text: String) {
-    Text(text.uppercase(), style = Type.label, color = Palette.Muted, modifier = Modifier.padding(start = Space.xl, end = Space.xl, top = Space.s))
+    Text(labelCase(text), style = Type.label, color = Palette.Muted, modifier = Modifier.padding(start = Space.xl, end = Space.xl, top = Space.s))
 }
 
 @Composable
@@ -162,7 +163,7 @@ fun ValueText(value: String, unit: String?, modifier: Modifier = Modifier, style
     Text(
         buildAnnotatedString {
             append(value)
-            if (!unit.isNullOrEmpty()) withStyle(SpanStyle(fontFamily = Mono, fontSize = 10.sp, letterSpacing = 0.08.em, color = Palette.Muted)) { append(" ${unit.uppercase()}") }
+            if (!unit.isNullOrEmpty()) withStyle(Type.unit.toSpanStyle().copy(color = Palette.Muted)) { append(" ${noteCase(unit)}") }
         },
         modifier,
         style = style,
@@ -208,7 +209,7 @@ fun StatusText(status: Status, modifier: Modifier = Modifier) {
         Status.FAIR -> Palette.Warn
         Status.ATTENTION -> Palette.Bad
     }
-    Text(statusWord(status), modifier, style = Type.status, color = colour)
+    Text(noteCase(statusWord(status), upper = false), modifier, style = Type.status, color = colour)
 }
 
 @Composable
@@ -217,7 +218,7 @@ fun NumberWithUnits(parts: List<Pair<String, String>>, modifier: Modifier = Modi
         parts.forEachIndexed { i, (number, unit) ->
             Text(number, Modifier.alignByBaseline(), style = style, color = Palette.Text)
             Text(
-                unit.uppercase(),
+                noteCase(unit),
                 Modifier.alignByBaseline().padding(start = 2.dp, end = if (i < parts.lastIndex) Space.xs + 2.dp else 0.dp),
                 style = Type.unit,
                 color = Palette.Muted,

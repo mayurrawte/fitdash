@@ -2,6 +2,7 @@ package app.fitdash.ui.theme
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -85,11 +86,30 @@ fun displayFamily(): FontFamily = when (LocalNumbersFont.current) {
     NumbersFont.SERIF -> InstrumentSerif
 }
 
+// Dark themes set small labels in tracked capitals; Soft writes them in sentence case and lowercase, like its mockup.
+private val ACRONYMS = setOf("HRV", "HR", "BMI", "AI", "REM", "SPO2", "SPO₂", "AM", "PM")
+
+private fun restoreAcronyms(s: String): String =
+    s.split(" ").joinToString(" ") { w -> if (w.trim('.', ',', '·', ':').uppercase() in ACRONYMS) w.uppercase().replace("SPO", "SpO") else w }
+
+// A title: "Resting HR", "Sleep · 7 nights".
+@Composable
+@ReadOnlyComposable
+fun labelCase(s: String): String =
+    if (LocalTheme.current.soft) restoreAcronyms(s.lowercase().replaceFirstChar { it.uppercase() }) else s.uppercase()
+
+// A note or unit: "of 9,000", "4h 55m", "bpm". `upper` false leaves dark themes' text exactly as it was passed.
+@Composable
+@ReadOnlyComposable
+fun noteCase(s: String, upper: Boolean = true): String =
+    if (LocalTheme.current.soft) restoreAcronyms(s.lowercase()) else if (upper) s.uppercase() else s
+
 object Type {
     private val soft: Boolean @Composable @ReadOnlyComposable get() = LocalTheme.current.soft
     private val bodyFamily: FontFamily @Composable @ReadOnlyComposable get() = if (soft) Outfit else Inter
     // Soft drops the mono labels for its own face, a weight heavier so small text holds on the light ground.
     private val labelFamily: FontFamily @Composable @ReadOnlyComposable get() = if (soft) Outfit else Mono
+    private val tracking: androidx.compose.ui.unit.TextUnit @Composable @ReadOnlyComposable get() = if (soft) 0.01.em else 0.08.em
     private val bodyWeight: FontWeight @Composable @ReadOnlyComposable get() = if (soft) FontWeight.Normal else FontWeight.Light
     // The serif has no light weight and sits wider, so numbers in it are set regular and a touch tighter.
     // Outfit is set regular too: its light weight is too thin for big numbers on a light ground.
@@ -112,13 +132,13 @@ object Type {
         TextStyle(fontFamily = bodyFamily, fontSize = 12.sp, fontWeight = FontWeight.Normal)
     // 11 sp is the floor for mono labels: anything smaller is unreadable on a phone at 1.0x.
     val label: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = labelFamily, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = labelFamily, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = tracking)
     val tiny: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = labelFamily, fontSize = 11.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = labelFamily, fontSize = 11.sp, fontWeight = FontWeight.Normal, letterSpacing = tracking)
     val unit: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = labelFamily, fontSize = 10.sp, fontWeight = FontWeight.Normal, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = labelFamily, fontSize = if (soft) 14.sp else 10.sp, fontWeight = FontWeight.Normal, letterSpacing = tracking)
     val status: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = labelFamily, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.08.em)
+        TextStyle(fontFamily = labelFamily, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = tracking)
     val secondary: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = bodyFamily, fontSize = 12.sp, fontWeight = FontWeight.Normal)
 }
@@ -134,8 +154,8 @@ object Space {
 
 @Composable
 fun FitdashTheme(themeId: ThemeId = ThemeId.TEAL, content: @Composable () -> Unit) {
-    val t = THEMES.getValue(themeId)
-    val scheme = if (t.soft) lightColorScheme(primary = t.accent, background = t.bgBottom, surface = t.card, onBackground = t.text, onSurface = t.text)
+    val t = resolveTheme(themeId, isSystemInDarkTheme())
+    val scheme = if (t.lightGround) lightColorScheme(primary = t.accent, background = t.bgBottom, surface = t.card, onBackground = t.text, onSurface = t.text)
     else darkColorScheme(primary = t.accent, background = t.bgBottom, surface = t.bgMid, onBackground = t.text, onSurface = t.text)
     CompositionLocalProvider(LocalTheme provides t) {
         MaterialTheme(colorScheme = scheme, content = content)
@@ -159,7 +179,7 @@ fun TintScope(tint: Tint?, content: @Composable () -> Unit) {
     val t = LocalTheme.current
     if (tint == null || t.tints.isEmpty()) return content()
     val ink = t.tintInk[tint.ordinal]
-    CompositionLocalProvider(LocalTheme provides t.copy(card = t.tints[tint.ordinal], muted = ink, faint = ink, hairline = ink.copy(alpha = 0.15f)), content = content)
+    CompositionLocalProvider(LocalTheme provides t.copy(card = t.tints[tint.ordinal], muted = ink, faint = ink, hairline = if (t.lightGround) Color.White.copy(alpha = 0.6f) else ink.copy(alpha = 0.22f)), content = content)
 }
 
 @Composable

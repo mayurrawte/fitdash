@@ -76,6 +76,8 @@ import app.fitdash.metrics.Status
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.LocalTheme
+import app.fitdash.ui.theme.labelCase
+import app.fitdash.ui.theme.noteCase
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
@@ -693,11 +695,11 @@ fun SemiGauge(
             drawCircle(Color.White, 5.dp.toPx(), tip)
         }
         Column(Modifier.padding(top = 52.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label.uppercase(), style = Type.label, color = Palette.Muted)
+            Text(labelCase(label), style = Type.label, color = Palette.Muted)
             if (numeric != null) CountUpText("$key-count", numeric, Type.hero.copy(fontSize = 52.sp), color = Palette.Text)
             else Text(value, style = Type.hero.copy(fontSize = 52.sp), color = Palette.Text)
             Text(
-                tag.uppercase(),
+                noteCase(tag),
                 Modifier.padding(top = 4.dp).clip(RoundedCornerShape(8.dp)).background(chipText.copy(alpha = 0.14f)).padding(horizontal = 12.dp, vertical = 5.dp),
                 style = Type.status,
                 color = chipText,
@@ -723,11 +725,11 @@ fun SpanBar(start: String, end: String, modifier: Modifier = Modifier, from: Flo
         Row(Modifier.fillMaxWidth().padding(top = Space.s), horizontalArrangement = Arrangement.SpaceBetween) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(NavIcons.moonSmall, null, Modifier.padding(end = 4.dp).size(12.dp), tint = Palette.Muted)
-                Text(start.uppercase(), style = Type.tiny, color = Palette.Muted)
+                Text(noteCase(start), style = Type.tiny, color = Palette.Muted)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(NavIcons.sun, null, Modifier.padding(end = 4.dp).size(12.dp), tint = Palette.Muted)
-                Text(end.uppercase(), style = Type.tiny, color = Palette.Muted)
+                Text(noteCase(end), style = Type.tiny, color = Palette.Muted)
             }
         }
     }

@@ -25,6 +25,8 @@ import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.TintScope
+import app.fitdash.ui.theme.labelCase
+import app.fitdash.ui.theme.noteCase
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 
@@ -53,13 +55,13 @@ fun StatTile(
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (icon != null) Icon(icon, null, Modifier.padding(end = 6.dp).size(13.dp), tint = Palette.Muted)
             Text(label, style = Type.secondary, color = Palette.Muted)
-            if (labelTag != null) Text(labelTag.uppercase(), Modifier.padding(start = 4.dp), style = Type.tiny, color = Palette.Muted)
+            if (labelTag != null) Text(noteCase(labelTag), Modifier.padding(start = 4.dp), style = Type.tiny, color = Palette.Muted)
         }
         ValueText(value, unit, Modifier.padding(top = Space.xs, bottom = if (status == null) Space.s else 2.dp), style = Type.tile)
         if (status != null) StatusText(status, Modifier.padding(bottom = Space.s))
         Spacer(Modifier.weight(1f))
         visual()
-        Text(note, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s))
+        Text(noteCase(note, upper = false), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s))
     }
 }
 
@@ -88,7 +90,7 @@ fun NumberTile(
         }
         NumberWithUnits(parts, Modifier.padding(top = Space.s, bottom = 6.dp))
         if (status != null) StatusText(status)
-        if (note != null) Text(note, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
+        if (note != null) Text(noteCase(note, upper = false), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
     }
 }
 
@@ -135,7 +137,7 @@ fun GlanceTile(
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) Icon(icon, null, Modifier.padding(end = 5.dp).size(12.dp), tint = Palette.Muted)
-                Text(label.uppercase(), style = Type.tiny, color = Palette.Muted, maxLines = 1)
+                Text(labelCase(label), style = Type.tiny, color = Palette.Muted, maxLines = 1)
             }
             Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 NumberWithUnits(listOf(value to (unit ?: "")), style = Type.tile)
@@ -143,7 +145,7 @@ fun GlanceTile(
             }
             when {
                 status != null -> StatusText(status, Modifier.padding(top = 4.dp))
-                note != null -> Text(note.uppercase(), Modifier.padding(top = 4.dp), style = Type.tiny, color = Palette.Faint, maxLines = 1)
+                note != null -> Text(noteCase(note), Modifier.padding(top = 4.dp), style = Type.tiny, color = Palette.Faint, maxLines = 1)
             }
         }
         if (ring != null) MiniRing(ringKey, ring, ringPaint, Modifier.padding(start = Space.s), diameter = 42.dp, stroke = 4.dp)
