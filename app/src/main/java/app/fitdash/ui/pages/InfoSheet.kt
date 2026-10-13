@@ -19,6 +19,9 @@ import app.fitdash.health.SourceStatus
 import app.fitdash.ui.components.ListRow
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.sourceLine
+import app.fitdash.ui.missingReason
+import app.fitdash.ui.writerNames
+import androidx.compose.ui.unit.dp
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
@@ -42,11 +45,14 @@ fun InfoSheet(sources: List<SourceStatus>, onDismiss: () -> Unit) {
                 )
                 Text("DATA SOURCES", style = Type.label, color = Palette.Muted, modifier = Modifier.padding(bottom = Space.s))
             }
+            val writers = writerNames(sources)
             items(sources, key = { it.label }) { s ->
-                Row(Modifier.fillMaxWidth().padding(vertical = Space.s), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(Modifier.fillMaxWidth().padding(top = Space.s, bottom = if (s.hasData) Space.s else 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(s.label, style = Type.small, color = Palette.Text)
                     Text(sourceLine(s), style = Type.small, color = if (s.hasData) Palette.Green else Palette.Faint)
                 }
+                // Granted but empty, or not granted: one line on why, so an empty tile is not a mystery.
+                missingReason(s, writers)?.let { Text(it, style = Type.secondary, color = Palette.Muted, modifier = Modifier.padding(bottom = Space.s)) }
                 HorizontalDivider(color = Palette.Divider)
             }
             if (BuildConfig.SHOW_SUPPORT) {

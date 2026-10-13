@@ -88,6 +88,7 @@ import app.fitdash.metrics.rangeWord
 import app.fitdash.ui.bandAdvice
 import app.fitdash.ui.bandWord
 import app.fitdash.ui.basedOn
+import app.fitdash.ui.missingRecoveryLine
 import app.fitdash.ui.components.Chart
 import app.fitdash.ui.components.CountUpText
 import app.fitdash.ui.components.EmptyTrack
@@ -246,6 +247,9 @@ fun TodayPage(
                     modifier = Modifier.padding(horizontal = Space.xxl, vertical = Space.xs),
                 )
                 (r as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.used)?.let { Text(it.uppercase(), style = Type.tiny, color = Palette.Muted) } }
+                if (data.isToday) missingRecoveryLine(data.sources)?.let {
+                    Text(it, style = Type.secondary, color = Palette.Warn, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = Space.xxl, vertical = Space.xs))
+                }
             }
         }
         item(key = "glance") { GlanceGrid(data, score, onOpen, openSteps, openRhr, metricOpener(MetricRef.Kind(MetricKind.ACTIVE_MINUTES)), metricOpener(MetricRef.Kind(MetricKind.HEART_RATE))) }
@@ -641,6 +645,7 @@ private fun SoftHero(data: TodayData, heroScore: Int?, heroLabel: String, pageOf
                 }
             }
             (r as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.used)?.let { Text(it, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s)) } }
+            if (data.isToday) missingRecoveryLine(data.sources)?.let { Text(it, style = Type.secondary, color = Palette.Warn, modifier = Modifier.padding(top = Space.s)) }
         }
     }
 }

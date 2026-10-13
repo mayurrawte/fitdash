@@ -92,6 +92,50 @@ fun sourceLine(s: SourceStatus): String = when {
     else -> "✓ " + s.apps.map(::sourceAppName).distinct().joinToString(", ")
 }
 
+private fun joinNames(names: List<String>): String = when (names.size) {
+    0 -> ""
+    1 -> names[0]
+    else -> names.dropLast(1).joinToString(", ") + " and " + names.last()
+}
+
+// The apps writing anything to Health Connect, by display name. Phone and Health Connect itself are not watches, so they are left out.
+fun writerNames(sources: List<SourceStatus>): List<String> =
+    sources.filter { it.hasData }.flatMap { it.apps }.map(::sourceAppName).distinct()
+        .filter { it != "Phone" && it != "Health Connect" }.sorted()
+
+// "Heart rate" → "heart rate", but "SpO₂" and "VO₂ max" keep their capitals.
+private fun inSentence(label: String): String =
+    if (label.length > 1 && label[1].isLowerCase()) label.replaceFirstChar { it.lowercase() } else label
+
+// Why a type shows nothing: either access is off, or nothing has written it. Null when it has data.
+fun missingReason(s: SourceStatus, writers: List<String>): String? = when {
+    !s.granted -> "Access is off. Turn it on in Health Connect › App permissions › fitdash."
+    s.hasData -> null
+    writers.isEmpty() -> "No app has written this to Health Connect yet."
+    else -> "${joinNames(writers)} ${if (writers.size == 1) "hasn't" else "haven't"} written any ${inSentence(s.label)} to Health Connect."
+}
+
+// Recovery leans on HRV and resting heart rate; when either never arrives, say which and from whom instead of only counting nights.
+fun missingRecoveryLine(sources: List<SourceStatus>): String? {
+    fun find(label: String) = sources.firstOrNull { it.label == label }
+    val hrv = find("Heart rate variability")
+    val rhr = find("Resting heart rate")
+    val noHrv = hrv != null && !hrv.hasData
+    val noRhr = rhr != null && !rhr.hasData
+    if (!noHrv && !noRhr) return null
+    if ((noHrv && hrv?.granted == false) || (noRhr && rhr?.granted == false)) {
+        val off = listOfNotNull("HRV".takeIf { noHrv && hrv?.granted == false }, "resting heart rate".takeIf { noRhr && rhr?.granted == false })
+        return "Allow ${joinNames(off)} in Health Connect so recovery can use ${if (off.size == 1) "it" else "them"}."
+    }
+    val who = joinNames(writerNames(sources)).ifEmpty { "Your watch" }
+    val be = if (writerNames(sources).size > 1) "aren't" else "isn't"
+    return when {
+        noHrv && noRhr -> "$who $be sharing HRV or resting heart rate with Health Connect, so recovery uses sleep only."
+        noHrv -> "$who $be sharing HRV with Health Connect, so recovery uses resting heart rate and sleep."
+        else -> "$who $be sharing resting heart rate with Health Connect, so recovery uses HRV and sleep."
+    }
+}
+
 fun suggestionText(s: Suggestion): String = when (s.kind) {
     SuggestionKind.HARD_WORKOUT -> "Good day for a hard workout."
     SuggestionKind.MODERATE -> "Moderate effort today. Keep workouts under an hour."

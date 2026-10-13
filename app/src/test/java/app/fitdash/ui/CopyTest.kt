@@ -79,4 +79,39 @@ class IssueUrlTest {
         assertTrue(idea.contains("labels=enhancement"))
         assertTrue(idea.contains("title=Feature%20request%3A%20"))
     }
+
+    private fun src(label: String, granted: Boolean = true, data: Boolean = true, apps: Set<String> = if (data) setOf("com.fitbit.FitbitMobile") else emptySet()) =
+        SourceStatus(label, granted, data, apps)
+
+    @Test fun `missing reason names the writing app`() {
+        val sources = listOf(src("Sleep"), src("Heart rate variability", data = false), src("Weight", granted = false, data = false))
+        val writers = writerNames(sources)
+        assertEquals(listOf("Fitbit"), writers)
+        assertEquals("Fitbit hasn't written any heart rate variability to Health Connect.", missingReason(sources[1], writers))
+        assertTrue(missingReason(sources[2], writers)!!.startsWith("Access is off"))
+        assertNull(missingReason(sources[0], writers))
+        assertEquals("No app has written this to Health Connect yet.", missingReason(sources[1], emptyList()))
+    }
+
+    @Test fun `phone and health connect are not counted as watches`() {
+        val sources = listOf(src("Steps", apps = setOf("com.android.healthconnect.phone.steps", "com.google.android.apps.healthdata")))
+        assertEquals(emptyList<String>(), writerNames(sources))
+    }
+
+    @Test fun `recovery line says which signal is missing`() {
+        val sleep = src("Sleep")
+        assertNull(missingRecoveryLine(listOf(sleep, src("Heart rate variability"), src("Resting heart rate"))))
+        assertEquals(
+            "Fitbit isn't sharing HRV with Health Connect, so recovery uses resting heart rate and sleep.",
+            missingRecoveryLine(listOf(sleep, src("Heart rate variability", data = false), src("Resting heart rate"))),
+        )
+        assertEquals(
+            "Fitbit isn't sharing HRV or resting heart rate with Health Connect, so recovery uses sleep only.",
+            missingRecoveryLine(listOf(sleep, src("Heart rate variability", data = false), src("Resting heart rate", data = false))),
+        )
+        assertEquals(
+            "Allow HRV in Health Connect so recovery can use it.",
+            missingRecoveryLine(listOf(sleep, src("Heart rate variability", granted = false, data = false), src("Resting heart rate"))),
+        )
+    }
 }
