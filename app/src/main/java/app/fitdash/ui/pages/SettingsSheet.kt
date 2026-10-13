@@ -76,6 +76,7 @@ import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.THEMES
+import app.fitdash.metrics.maxHrForAge
 import app.fitdash.ui.theme.ThemeId
 import app.fitdash.ui.theme.ThemeTokens
 import app.fitdash.ui.theme.Type
@@ -135,6 +136,18 @@ fun SettingsSheet(
             }
             item {
                 ListRow(NavIcons.walk, "Height", heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set") { showHeight = true }
+            }
+            item {
+                // Age sets maximum heart rate for workout zones; unset, the zones card asks for it.
+                val year = java.time.Year.now().value
+                val age = settings.birthYear?.let { year - it }
+                SectionCard("Heart-rate zones", Modifier.padding(top = Space.s), trailing = age?.let { "max ≈ ${maxHrForAge(it)} bpm" }) {
+                    Stepper(
+                        "Age", age?.toString() ?: "Not set", age != null && age > 13, age == null || age < 90,
+                        { store.update { s -> s.copy(birthYear = s.birthYear?.plus(1)) } },
+                        { store.update { s -> s.copy(birthYear = s.birthYear?.minus(1) ?: (year - 30)) } },
+                    )
+                }
             }
             item { Label("UNITS") }
             item { SegmentedControl(listOf("km", "miles"), if (settings.miles) 1 else 0, { i -> store.update { it.copy(miles = i == 1) } }) }

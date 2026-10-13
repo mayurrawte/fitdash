@@ -26,6 +26,8 @@ data class Settings(
     val showSuggestions: Boolean = true,
     val showBody: Boolean = true,
     val numbersFont: NumbersFont = NumbersFont.OUTFIT,
+    // Stored as a year so the age (and the zones from it) move on by themselves.
+    val birthYear: Int? = null,
 )
 
 class SettingsStore(context: Context) {
@@ -52,6 +54,7 @@ class SettingsStore(context: Context) {
         showSuggestions = prefs.getBoolean("showSuggestions", true),
         showBody = prefs.getBoolean("showBody", true),
         // Installs that saved settings before Outfit existed keep Inter; only fresh installs start on Outfit.
+        birthYear = prefs.getInt("birthYear", 0).takeIf { it > 0 },
         numbersFont = runCatching { NumbersFont.valueOf(prefs.getString("numbersFont", null) ?: if (prefs.contains("theme")) "INTER" else "OUTFIT") }.getOrDefault(NumbersFont.OUTFIT),
     )
 
@@ -64,7 +67,7 @@ class SettingsStore(context: Context) {
             .putBoolean("reduceMotion", s.reduceMotion).putBoolean("haptics", s.haptics)
             .putBoolean("showWater", s.showWater).putBoolean("showWorkouts", s.showWorkouts).putBoolean("showHeartRate", s.showHeartRate)
             .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody)
-            .putString("numbersFont", s.numbersFont.name).apply()
+            .putString("numbersFont", s.numbersFont.name).putInt("birthYear", s.birthYear ?: 0).apply()
         _flow.value = s
     }
 

@@ -1,5 +1,16 @@
 package app.fitdash.ui.pages
 
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import app.fitdash.metrics.ZONE_FLOORS
+import app.fitdash.metrics.zoneSeconds
+import app.fitdash.metrics.maxHrForAge
+import app.fitdash.ui.LocalPrefs
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -72,6 +83,7 @@ fun WorkoutSheet(workout: Workout, line: List<Double>, miles: Boolean, onDismiss
                     GapLine("workout-hr-${workout.start}", line, Modifier.fillMaxWidth().height(90.dp))
                 }
             }
+            if (line.size >= MIN_SESSION_HR_SAMPLES) ZonesCard(workout, line)
             val tiles = buildList<@Composable (Modifier) -> Unit> {
                 workout.distanceMeters?.let { d ->
                     val km = d / 1000
@@ -92,6 +104,39 @@ fun WorkoutSheet(workout: Workout, line: List<Double>, miles: Boolean, onDismiss
                     style = Type.body,
                     color = Palette.Muted,
                 )
+            }
+        }
+    }
+}
+
+// Time in each heart-rate zone as one stacked bar and a row per zone. Needs an age in Settings for maximum heart rate.
+@Composable
+private fun ZonesCard(workout: Workout, line: List<Double>) {
+    val birthYear = LocalPrefs.current.birthYear
+    SectionCard("HEART-RATE ZONES", Modifier.padding(top = Space.m)) {
+        if (birthYear == null) {
+            Text("Set your age in Settings to see time in each zone.", style = Type.body, color = Palette.Muted)
+            return@SectionCard
+        }
+        val maxHr = maxHrForAge(java.time.Year.now().value - birthYear)
+        val seconds = zoneSeconds(line, maxHr)
+        val total = seconds.sum()
+        if (total == 0L) {
+            Text("Heart rate stayed under zone 1 (${(ZONE_FLOORS[0] * maxHr).roundToInt()} bpm).", style = Type.body, color = Palette.Muted)
+            return@SectionCard
+        }
+        val colours = listOf(Palette.Light, Palette.Good, Palette.Warn, Palette.Awake, Palette.Bad)
+        Row(Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp)), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            seconds.forEachIndexed { i, s -> if (s > 0) Box(Modifier.weight(s.toFloat()).fillMaxHeight().background(colours[i])) }
+        }
+        seconds.forEachIndexed { i, s ->
+            val lo = (ZONE_FLOORS[i] * maxHr).roundToInt()
+            val hi = ZONE_FLOORS.getOrNull(i + 1)?.let { (it * maxHr).roundToInt() - 1 }
+            Row(Modifier.fillMaxWidth().padding(top = Space.s), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(8.dp).clip(CircleShape).background(colours[i]))
+                Text("Zone ${i + 1}", Modifier.padding(start = Space.s).weight(1f), style = Type.small, color = Palette.Text)
+                Text(if (hi != null) "$lo–$hi bpm" else "$lo+ bpm", Modifier.padding(end = Space.m), style = Type.secondary, color = Palette.Muted)
+                Text(formatDuration(java.time.Duration.ofSeconds(s)), style = Type.small, color = if (s > 0) Palette.Text else Palette.Faint)
             }
         }
     }

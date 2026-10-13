@@ -55,3 +55,19 @@ fun spanLine(samples: List<Sample>, start: java.time.Instant, end: java.time.Ins
     return inSpan.groupBy { (it.time.epochSecond - start.epochSecond) / bucketSeconds }
         .toSortedMap().values.map { b -> b.map { it.value }.average() }
 }
+
+// Tanaka's estimate of maximum heart rate; closer than 220 − age for adults over 40.
+fun maxHrForAge(age: Int): Int = (208 - 0.7 * age).roundToInt()
+
+// Lower edge of zones 1–5 as a share of maximum heart rate.
+val ZONE_FLOORS = listOf(0.5, 0.6, 0.7, 0.8, 0.9)
+
+// Seconds in each of the five zones, from a line of 30-second buckets. Readings under 50% of max count in no zone.
+fun zoneSeconds(line: List<Double>, maxHr: Int, bucketSeconds: Long = 30): List<Long> {
+    val seconds = LongArray(ZONE_FLOORS.size)
+    line.forEach { bpm ->
+        val zone = ZONE_FLOORS.indexOfLast { bpm >= it * maxHr }
+        if (zone >= 0) seconds[zone] += bucketSeconds
+    }
+    return seconds.toList()
+}

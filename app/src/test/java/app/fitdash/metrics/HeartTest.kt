@@ -53,4 +53,15 @@ class HeartTest {
         assertEquals(listOf(101.0, 105.0, 109.0), line)
         assertEquals(emptyList<Double>(), spanLine(hr, at(TODAY, 12), at(TODAY, 13)))
     }
+
+    @Test fun `max heart rate from age`() {
+        assertEquals(187, maxHrForAge(30))
+        assertEquals(173, maxHrForAge(50))
+    }
+
+    @Test fun `zone seconds bucket each reading by share of max`() {
+        // max 200: zone floors at 100, 120, 140, 160, 180 bpm.
+        val line = listOf(90.0, 100.0, 125.0, 139.9, 140.0, 165.0, 185.0, 199.0)
+        assertEquals(listOf(30L, 60L, 30L, 30L, 60L), zoneSeconds(line, 200))
+    }
 }
