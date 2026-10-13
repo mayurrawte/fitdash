@@ -1,0 +1,67 @@
+package app.fitdash.ui.components
+
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import app.fitdash.metrics.MetricKind
+import app.fitdash.metrics.WeekReview
+import app.fitdash.metrics.WeekRow
+import app.fitdash.ui.formatDuration
+import app.fitdash.ui.formatSteps
+import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.Space
+import app.fitdash.ui.theme.Type
+import java.time.Duration
+import kotlin.math.abs
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
+
+private fun name(kind: MetricKind) = when (kind) {
+    MetricKind.RECOVERY -> "Recovery"
+    MetricKind.SLEEP_HOURS -> "Sleep a night"
+    MetricKind.STEPS -> "Steps a day"
+    MetricKind.ACTIVE_MINUTES -> "Active a day"
+    else -> kind.name
+}
+
+private fun value(kind: MetricKind, v: Double) = when (kind) {
+    MetricKind.SLEEP_HOURS -> formatDuration(Duration.ofMinutes((v * 60).roundToLong()))
+    MetricKind.STEPS -> formatSteps(v.roundToLong())
+    MetricKind.ACTIVE_MINUTES -> "${v.roundToInt()} min"
+    else -> v.roundToInt().toString()
+}
+
+// Recovery moves in points and sleep in minutes; the rest read best as a share.
+private fun change(r: WeekRow): String? {
+    val last = r.lastWeek ?: return null
+    val d = r.thisWeek - last
+    return when (r.kind) {
+        MetricKind.RECOVERY -> d.roundToInt().takeIf { it != 0 }?.let { "${if (it > 0) "+" else "−"}${abs(it)}" }
+        MetricKind.SLEEP_HOURS -> (d * 60).roundToInt().takeIf { it != 0 }?.let { "${if (it > 0) "+" else "−"}${abs(it)}m" }
+        else -> if (last <= 0) null else (d / last * 100).roundToInt().takeIf { it != 0 }?.let { "${if (it > 0) "+" else "−"}${abs(it)}%" }
+    }
+}
+
+// Last seven complete days against the seven before: one sentence on the biggest change, then a row per metric.
+@Composable
+fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier) {
+    SectionCard("LAST 7 DAYS", modifier, trailing = "vs week before") {
+        review.headline?.let { Text(it, style = Type.body, color = Palette.Text, modifier = Modifier.padding(bottom = Space.s)) }
+        review.rows.forEach { r ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(name(r.kind), Modifier.weight(1f), style = Type.small, color = Palette.Muted)
+                Text(value(r.kind, r.thisWeek), style = Type.small, color = Palette.Text)
+                val c = change(r)
+                if (c != null) {
+                    DeltaArrow(r.thisWeek > (r.lastWeek ?: r.thisWeek), Modifier.padding(start = Space.s, end = 4.dp))
+                    Text(c, style = Type.secondary, color = Palette.Muted)
+                }
+            }
+        }
+    }
+}

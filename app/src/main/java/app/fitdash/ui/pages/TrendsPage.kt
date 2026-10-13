@@ -45,6 +45,8 @@ import app.fitdash.ui.formatNumber
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.metricName
 import app.fitdash.ui.theme.Palette
+import app.fitdash.metrics.weekReview
+import app.fitdash.ui.components.WeekReviewCard
 import app.fitdash.ui.theme.Type
 import app.fitdash.ui.theme.bmiColour
 import java.time.ZoneId
@@ -73,6 +75,9 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
         if (!hasTrend && data.generic.isEmpty()) {
             item(key = "empty") { EmptyState("No trends yet", "A few days of data from your Fitbit and your trends will build up here.") }
             return@PageColumn
+        }
+        weekReview(data.series, if (data.isToday) data.date.minusDays(1) else data.date)?.let { review ->
+            item(key = "week-review") { WeekReviewCard(review, Modifier.padding(bottom = Space.s)) }
         }
         item(key = "toggle") { SegmentedControl(if (history) listOf("Week", "Month", "6M") else listOf("Week", "Month"), segment, { segment = it }) }
         val letters = if (sixMonths) monthLabels(weekStarts) else sparseLabels(days.map { it.date }, month)

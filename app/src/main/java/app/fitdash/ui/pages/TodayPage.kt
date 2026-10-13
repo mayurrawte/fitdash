@@ -111,6 +111,8 @@ import app.fitdash.ui.rangeNote
 import app.fitdash.ui.suggestionText
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
+import app.fitdash.metrics.weekReview
+import app.fitdash.ui.components.WeekReviewCard
 import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
@@ -251,6 +253,10 @@ fun TodayPage(
                     Text(it, style = Type.secondary, color = Palette.Warn, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = Space.xxl, vertical = Space.xs))
                 }
             }
+        }
+        // Monday: last week in one card, the week-over-week view that otherwise lives on Trends.
+        if (data.isToday && data.date.dayOfWeek == java.time.DayOfWeek.MONDAY) {
+            weekReview(data.series, data.date.minusDays(1))?.let { review -> item(key = "week-review") { WeekReviewCard(review) } }
         }
         item(key = "glance") { GlanceGrid(data, score, onOpen, openSteps, openRhr, metricOpener(MetricRef.Kind(MetricKind.ACTIVE_MINUTES)), metricOpener(MetricRef.Kind(MetricKind.HEART_RATE))) }
         // Action first: the one thing to do today sits right under the numbers, the rest fold under it.
