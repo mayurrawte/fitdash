@@ -123,7 +123,7 @@
     <p>Data is read from Health Connect and processed on your phone to draw the dashboard, scores and trends. It is not sent to us or to anyone else. The release APK requests no INTERNET permission, so fitdash itself cannot connect to the internet. fitdash can open links (the GitHub page, Buy Me a Coffee and the Play Store page for Health Connect) in your browser or the Play Store. These links carry none of your data. The "Report a problem" and "Request a feature" links open a GitHub issue form prefilled with your phone model, Android version and fitdash version, and nothing else; you see the text before you submit it.</p>
   </section>
   <section><h2>What is stored</h2>
-    <p>fitdash stores only your settings (theme, goals, water goal, height and units) in the app&rsquo;s local preferences on your phone. fitdash keeps no copy of your health data, apart from the image Share day creates. It is saved in the app&rsquo;s private cache, replaced the next time you share and cleared when the app starts. Uninstalling removes it. Android backup is switched off for the app.</p>
+    <p>fitdash stores your settings (theme, goals, water goal, height, birth year for heart-rate zones, and units) in the app&rsquo;s local preferences on your phone. So that it opens instantly, fitdash also keeps a copy of the health data it last read from Health Connect in its private app storage, and replaces it on each read. The image Share day creates is saved in the app&rsquo;s private cache, replaced the next time you share and cleared when the app starts. Other apps cannot read fitdash&rsquo;s private storage, Android backup is switched off for the app, and clearing fitdash&rsquo;s storage or uninstalling it removes all of this.</p>
   </section>
   <section><h2>Sharing</h2>
     <p>Data leaves your phone only when you choose to send it:</p>
@@ -137,7 +137,7 @@
     <p>Health Connect keeps its own copy of your data under its own controls and backup settings. fitdash&rsquo;s <code>allowBackup=false</code> covers fitdash&rsquo;s own files only.</p>
   </section>
   <section><h2>Delete your data</h2>
-    <ul><li>Clear fitdash&rsquo;s storage or uninstall it to remove its settings and any share image.</li><li>Revoke fitdash&rsquo;s access in Health Connect (Settings &rarr; Health Connect &rarr; App permissions).</li><li>Delete the health data itself in Health Connect.</li></ul>
+    <ul><li>Clear fitdash&rsquo;s storage or uninstall it to remove its settings, its copy of your data and any share image.</li><li>Revoke fitdash&rsquo;s access in Health Connect (Settings &rarr; Health Connect &rarr; App permissions).</li><li>Delete the health data itself in Health Connect.</li></ul>
   </section>
   <section><h2>Third parties</h2>
     <p>fitdash has no analytics, crash reporting, advertising or trackers. Its only third-party libraries are AndroidX and Jetpack Compose, the Health Connect client and Haze (a blur effect). Your data is not shared with any third party.</p>

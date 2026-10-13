@@ -26,7 +26,7 @@ PRIVACY
 - fitdash writes only the water and height you enter yourself. It never changes or deletes any other data. Undo deletes only the water entry you just added.
 - No analytics, advertising, crash reporting or trackers.
 - Data only leaves your phone when you choose to share it. Ask AI and Share day use the standard Android share sheet, and you choose the destination each time. The summary and image contain health metrics, so the app you pick handles them under its own privacy policy.
-- fitdash keeps no copy of your health data, apart from the image Share day creates. It is saved in the app's private cache, replaced the next time you share and cleared when the app starts. Uninstalling removes it.
+- So it opens instantly, fitdash keeps a copy of the data it last read from Health Connect in its private app storage. Other apps can't read it, backup is off, and clearing storage or uninstalling removes it.
 
 You can read the privacy policy at https://mayurrawte.is-a.dev/fitdash/privacy.html
 
