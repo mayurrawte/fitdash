@@ -383,15 +383,17 @@ private fun SyncRow(data: TodayData, onSync: (String) -> Unit, refreshing: Boole
     val prefs = LocalPrefs.current
     val now = remember(data.date) { java.time.ZonedDateTime.now() }
     val stale = syncStale(data.latestData, now)
+    // Names and dates ("Fitbit", "13 Oct") stay as written on Soft; the dark themes set the row in capitals.
+    val soft = LocalTheme.current.soft
     Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         Text(
-            (if (refreshing) "Updating…" else data.latestData?.let { dataUpTo(it, now, prefs.clock24) } ?: "No watch data yet").uppercase(),
+            (if (refreshing) "Updating…" else data.latestData?.let { dataUpTo(it, now, prefs.clock24) } ?: "No watch data yet").let { if (soft) it else it.uppercase() },
             style = Type.tiny,
             color = if (refreshing) Palette.Muted else if (stale) Palette.Warn else Palette.Faint,
         )
         data.syncApp?.let { pkg ->
             Text(
-                "SYNC ${sourceAppName(pkg).uppercase()}",
+                if (soft) "Sync ${sourceAppName(pkg)}" else "SYNC ${sourceAppName(pkg).uppercase()}",
                 Modifier
                     .padding(start = Space.s)
                     .clip(RoundedCornerShape(8.dp))

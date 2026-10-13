@@ -98,14 +98,17 @@ private fun joinNames(names: List<String>): String = when (names.size) {
     else -> names.dropLast(1).joinToString(", ") + " and " + names.last()
 }
 
+// Packages that write to Health Connect but are not a watch or a tracker app: the system, and fitdash's own water and height.
+private fun notAWearable(pkg: String) = pkg == "android" || pkg.startsWith("app.fitdash")
+
 // The apps writing anything to Health Connect, by display name. Phone and Health Connect itself are not watches, so they are left out.
 fun writerNames(sources: List<SourceStatus>): List<String> =
-    sources.filter { it.hasData }.flatMap { it.apps }.map(::sourceAppName).distinct()
+    sources.filter { it.hasData }.flatMap { it.apps }.filterNot(::notAWearable).map(::sourceAppName).distinct()
         .filter { it != "Phone" && it != "Health Connect" }.sorted()
 
 // "Heart rate" → "heart rate", but "SpO₂" and "VO₂ max" keep their capitals.
 private fun inSentence(label: String): String =
-    if (label.length > 1 && label[1].isLowerCase()) label.replaceFirstChar { it.lowercase() } else label
+    if (label.drop(1).none { it.isUpperCase() }) label.replaceFirstChar { it.lowercase() } else label
 
 // Why a type shows nothing: either access is off, or nothing has written it. Null when it has data.
 fun missingReason(s: SourceStatus, writers: List<String>): String? = when {

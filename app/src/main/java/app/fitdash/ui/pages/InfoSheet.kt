@@ -26,6 +26,7 @@ import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
+import app.fitdash.ui.theme.labelCase
 
 const val SUPPORT_URL = "https://buymeacoffee.com/thepsygeek"
 
@@ -43,7 +44,7 @@ fun InfoSheet(sources: List<SourceStatus>, onDismiss: () -> Unit) {
                     color = Palette.Muted,
                     modifier = Modifier.padding(top = Space.s, bottom = Space.xl),
                 )
-                Text("DATA SOURCES", style = Type.label, color = Palette.Muted, modifier = Modifier.padding(bottom = Space.s))
+                Text(labelCase("Data sources"), style = Type.label, color = Palette.Muted, modifier = Modifier.padding(bottom = Space.s))
             }
             val writers = writerNames(sources)
             items(sources, key = { it.label }) { s ->

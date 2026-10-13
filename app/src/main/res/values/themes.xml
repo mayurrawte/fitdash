@@ -2,7 +2,7 @@
 <resources>
     <style name="Theme.Fitdash.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#050909</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_orb</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_ring</item>
         <item name="postSplashScreenTheme">@android:style/Theme.Material.NoActionBar</item>
     </style>
     <!-- Soft's light ground; chosen at runtime on Android 13+ once the user is on the Soft theme. -->

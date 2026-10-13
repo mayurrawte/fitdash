@@ -114,4 +114,10 @@ class IssueUrlTest {
             missingRecoveryLine(listOf(sleep, src("Heart rate variability", granted = false, data = false), src("Resting heart rate"))),
         )
     }
+
+    @Test fun `the system and fitdash itself are not named as writers`() {
+        val sources = listOf(src("Sleep"), src("Hydration", apps = setOf("app.fitdash", "android")), src("SpO₂", data = false))
+        assertEquals(listOf("Fitbit"), writerNames(sources))
+        assertEquals("Fitbit hasn't written any SpO₂ to Health Connect.", missingReason(sources[2], writerNames(sources)))
+    }
 }
