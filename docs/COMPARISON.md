@@ -54,7 +54,7 @@ Legend: ● has it · ◐ partial · — no. fitdash column: Done, Partial, #n =
 | Home screen widget | ● | ● | ● | ◐ ("bare-bones") | ● | #1 |
 | Watch complication / tile | ● | ● | ● | ● | ● | Skip for now |
 | Customisable home (hide / pin cards) | ● (PowerPlugs) | ◐ | ● | ● (focus metrics) | ◐ | Done (toggles), pinning order not done |
-| Light and dark themes | ● | ● | ◐ | ● | ● | Dark only (Teal, Graphite); Material You #12 |
+| Light and dark themes | ● | ● | ◐ | ● | ● | Soft (light and dark), Teal and Graphite; Material You #12 |
 | Chart scrubbing / tap values | ● | ● | ● | ● | ● | — (next UX item) |
 | CSV export | ◐ | ◐ | ◐ | ● | ● | #2 |
 | Works offline, no account | ◐ (Emerald) | — | — | — | — | Done |
