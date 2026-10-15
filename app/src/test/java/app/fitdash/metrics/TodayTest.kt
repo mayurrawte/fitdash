@@ -157,4 +157,9 @@ class TodayTest {
         assertEquals(22.86, t.bmi!!, 0.005)
         assertEquals(BmiBand.HEALTHY, t.bmiBand)
     }
+
+    @Test fun `goals expose age from birth year`() {
+        assertEquals(36, Goals(birthYear = 1990).age(2026))
+        assertNull(Goals().age(2026))
+    }
 }

@@ -10,7 +10,11 @@ data class Goals(
     val sleepHours: Double = Tuning.SLEEP_TARGET_HOURS,
     val waterLiters: Double = 2.5,
     val activeMinutes: Int = Tuning.ACTIVE_MINUTES_GOAL,
-)
+    val birthYear: Int? = null,
+    val gender: Gender? = null,
+) {
+    fun age(year: Int): Int? = birthYear?.let { year - it }
+}
 
 enum class Band { RECOVER, STEADY, PRIMED }
 
