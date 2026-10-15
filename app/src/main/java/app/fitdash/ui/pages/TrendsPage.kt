@@ -169,6 +169,7 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
             }
         }
         val bodyTiles = listOf(bmiTile) + body.mapNotNull { byLabel[it] }.map(::tile)
+        if (showBody) fitnessSection(data, chrome)
         if (showBody) {
             item(key = "body-label") { SectionLabel("BODY") }
             item(key = "body") { TileGrid(bodyTiles) }
