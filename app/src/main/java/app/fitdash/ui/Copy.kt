@@ -6,6 +6,9 @@ import app.fitdash.metrics.ExerciseType
 import app.fitdash.metrics.Band
 import app.fitdash.metrics.BmiBand
 import app.fitdash.metrics.Component
+import app.fitdash.metrics.FitnessCard
+import app.fitdash.metrics.LoadBand
+import app.fitdash.metrics.MissingInput
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.RangeStatus
@@ -362,3 +365,35 @@ fun dataUpTo(latest: Instant, now: ZonedDateTime, clock24: Boolean): String {
 
 // The wearable has not written for a while: suggest a sync.
 fun syncStale(latest: Instant?, now: ZonedDateTime): Boolean = latest == null || Duration.between(latest, now.toInstant()) > Duration.ofHours(Tuning.SYNC_STALE_HOURS)
+
+const val NOT_MEDICAL = "General guide, not medical advice."
+
+fun fitnessAgeWord(delta: Int): String = when {
+    delta == 0 -> "matches your age"
+    delta < 0 -> "${-delta} ${if (delta == -1) "year" else "years"} younger"
+    else -> "$delta ${if (delta == 1) "year" else "years"} older"
+}
+
+fun loadWord(band: LoadBand): String = when (band) {
+    LoadBand.EASING -> "easing off"
+    LoadBand.STEADY -> "steady"
+    LoadBand.RAMPING -> "ramping fast"
+}
+
+fun missingWord(m: MissingInput): String = when (m) {
+    MissingInput.GENDER -> "Add gender in Settings"
+    MissingInput.BIRTH_YEAR -> "Add age in Settings"
+    MissingInput.HEIGHT -> "Add height in Settings"
+    MissingInput.WEIGHT -> "Needs a weight in Health Connect"
+    MissingInput.RESTING_HR -> "Needs resting heart rate"
+}
+
+fun fitnessCardName(card: FitnessCard): String = when (card) {
+    FitnessCard.FITNESS_AGE -> "Fitness age"
+    FitnessCard.VO2 -> "VO₂ max est."
+    FitnessCard.SLEEP_DEBT -> "Sleep debt"
+    FitnessCard.TRAINING_LOAD -> "Training load"
+    FitnessCard.CALORIES -> "Resting kcal"
+}
+
+fun formatHoursShort(h: Double): String = if (h == 0.0) "0 h" else String.format(Locale.ENGLISH, "%.1f h", h)

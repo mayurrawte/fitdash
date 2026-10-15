@@ -2,6 +2,9 @@ package app.fitdash.ui
 
 import app.fitdash.health.SourceStatus
 import app.fitdash.metrics.Component
+import app.fitdash.metrics.FitnessCard
+import app.fitdash.metrics.LoadBand
+import app.fitdash.metrics.MissingInput
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
@@ -119,5 +122,18 @@ class IssueUrlTest {
         val sources = listOf(src("Sleep"), src("Hydration", apps = setOf("app.fitdash", "android")), src("SpO₂", data = false))
         assertEquals(listOf("Fitbit"), writerNames(sources))
         assertEquals("Fitbit hasn't written any SpO₂ to Health Connect.", missingReason(sources[2], writerNames(sources)))
+    }
+
+    @Test fun `fitness words`() {
+        assertEquals("3 years younger", fitnessAgeWord(-3))
+        assertEquals("1 year older", fitnessAgeWord(1))
+        assertEquals("matches your age", fitnessAgeWord(0))
+        assertEquals("ramping fast", loadWord(LoadBand.RAMPING))
+        assertEquals("Add gender in Settings", missingWord(MissingInput.GENDER))
+        assertEquals("Add height in Settings", missingWord(MissingInput.HEIGHT))
+        assertEquals("Needs resting heart rate", missingWord(MissingInput.RESTING_HR))
+        assertEquals("Fitness age", fitnessCardName(FitnessCard.FITNESS_AGE))
+        assertEquals("3.5 h", formatHoursShort(3.5))
+        assertEquals("0 h", formatHoursShort(0.0))
     }
 }
