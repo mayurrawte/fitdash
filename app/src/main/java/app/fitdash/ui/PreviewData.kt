@@ -12,6 +12,8 @@ import app.fitdash.health.SleepStage
 import app.fitdash.health.SourceStatus
 import app.fitdash.health.StageType
 import app.fitdash.metrics.TodayData
+import app.fitdash.metrics.Gender
+import app.fitdash.metrics.Goals
 import app.fitdash.metrics.buildToday
 import app.fitdash.ui.today.TodayUiState
 import java.time.Instant
@@ -44,11 +46,12 @@ object PreviewData {
             spo2 = days.map { Sample(at(it, 4), 96.0) },
             respiratoryRate = days.map { Sample(at(it, 4), 14.5) },
             hourlySteps = hourly.mapIndexed { h, s -> HourBucket(at(today, h), s.toLong()) },
-            dailyActivity = listOf(
-                DayActivity(today.minusDays(1), 5760, 4300.0, 1820.0),
-                DayActivity(today, 8240, 6100.0, 2140.0),
-            ),
-            workouts = listOf(Workout(at(today, 18), at(today, 18, 46), ExerciseType.RUNNING, distanceMeters = 5100.0, kcal = 312.0, avgHr = 148.0, maxHr = 171.0, app = "com.fitbit.FitbitMobile")),
+            dailyActivity = listOf(DayActivity(today, 8240, 6100.0, 2140.0)) +
+                (1..27).map { DayActivity(today.minusDays(it.toLong()), if (it == 1) 5760 else 7000L + (it % 5) * 600, 4300.0 + it * 40, 1820.0 + it * 10) },
+            workouts = listOf(Workout(at(today, 18), at(today, 18, 46), ExerciseType.RUNNING, distanceMeters = 5100.0, kcal = 312.0, avgHr = 148.0, maxHr = 171.0, app = "com.fitbit.FitbitMobile")) +
+                (1..3).map { w -> val d = today.minusDays(w * 7L); Workout(at(d, 18), at(d, 18, 50), ExerciseType.RUNNING, distanceMeters = 5400.0, kcal = 330.0, avgHr = 150.0, maxHr = 172.0, app = "com.fitbit.FitbitMobile") },
+            heightMeters = 1.75,
+            weightKg = 72.4,
             heartRate = (0 until 24 * 12).map { i -> Sample(at(today, 0).plusSeconds(i * 300L), if (i < 108) 56.0 + (i % 7) else if (i in 216..225) 140.0 + (i % 9) * 3 else 72.0 + (i % 11)) }.filter { it.time.isBefore(at(today, 21, 30)) },
             generic = listOf(GenericSeries("Weight", "kg", days.reversed().mapIndexed { i, d -> Sample(at(d, 8), 72.4 - i * 0.05) })),
             sources = listOf(
@@ -59,11 +62,13 @@ object PreviewData {
         )
     }
 
-    fun today(hour: Int, minute: Int = 0): TodayData = buildToday(snapshot, today.atTime(hour, minute).atZone(zone))
+    private val goals = Goals(birthYear = today.year - 36, gender = Gender.MALE)
+
+    fun today(hour: Int, minute: Int = 0): TodayData = buildToday(snapshot, today.atTime(hour, minute).atZone(zone), goals = goals)
 
     fun ready(hour: Int, minute: Int = 0): TodayUiState.Ready {
         val now = today.atTime(hour, minute).atZone(zone)
-        val data = buildToday(snapshot, now)
+        val data = buildToday(snapshot, now, goals = goals)
         return TodayUiState.Ready(data, aiSummary(snapshot, data, now))
     }
 }

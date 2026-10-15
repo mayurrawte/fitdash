@@ -40,10 +40,14 @@ A light pastel theme modelled on two Dribbble references, now the default for fr
 
 - The Fitbit Air has only written Sleep, Steps and raw heart rate so far. After a full night's sleep, open the Fitbit app, then check fitdash's ⓘ Data sources for HRV, SpO2 and resting heart rate. If they come through, tune `metrics/Tuning.kt`.
 
-## Play submission (Mayur)
+## Play (15 Oct)
 
+Own personal developer account (SNX Studio). App `app.fitdash` created, all declarations and the store listing done, v0.5.0 (code 5) live on internal testing and on the closed "Alpha" track with the "fitdash testers" list (14 people added). Everything sent to Google for review on 15 Oct; reviews take up to 7 days. Production needs 12 testers opted in to the closed track for 14 days, then "Apply for production".
+
+- Play App Signing uses a Google-generated key; the local keystore is the upload key. Play and GitHub builds therefore have different signatures.
 - Back up `~/.android/fitdash-release.jks` and `~/.android/fitdash-release-credentials.txt` to a password manager.
-- Follow `docs/play/PUBLISHING.md` once the friend's developer account is ready. Have someone review the privacy policy before submitting.
+- Do not edit the listing or declarations while the review runs; each edit restarts it.
+- v0.6.0 (code 6, this tree): fitness cards (`docs/superpowers/specs/2026-10-15-fitdash-fitness-cards-design.md`), gender setting, No data screen with app buttons, device-neutral copy, Soft dropdown fix. Upload to the closed track after the review approves.
 
 ## Later
 
