@@ -52,6 +52,15 @@ fun aiSummary(snapshot: HealthSnapshot, data: TodayData, now: ZonedDateTime): St
             } + ".\n")
         }
         data.heartDay?.let { append("Heart rate: min ${it.min}, avg ${it.avg}, max ${it.max} bpm.\n") }
+        val f = data.fitness
+        val parts = listOfNotNull(
+            f.fitnessAge?.let { "fitness age ${it.value.years} (Jackson 1990)" },
+            f.vo2Estimate?.let { "VO2max est. ${String.format(Locale.ENGLISH, "%.1f", it.value)} ml/kg/min (Uth 2004)" },
+            "sleep debt ${String.format(Locale.ENGLISH, "%.1f", f.sleepDebt.value.hours)} h",
+            f.trainingLoad?.let { "training load ${String.format(Locale.ENGLISH, "%.1f", it.value.ratio)} (${loadWord(it.value.band)})" },
+            f.calories?.let { "resting ${it.value.resting} kcal, daily ${it.value.daily} kcal (Mifflin-St Jeor)" },
+        )
+        append("Fitness (published formulas): " + parts.joinToString(", ") + ".\n")
         append("\n")
         append("Last ${data.trend.size} days (date, recovery, sleep_hours, hrv_ms, resting_hr, steps):\n")
         append(rows)

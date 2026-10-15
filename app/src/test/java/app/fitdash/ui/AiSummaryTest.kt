@@ -6,10 +6,13 @@ import app.fitdash.at
 import app.fitdash.day
 import app.fitdash.history
 import app.fitdash.plus
+import app.fitdash.health.DayActivity
 import app.fitdash.health.GenericSeries
 import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.HourBucket
 import app.fitdash.health.Sample
+import app.fitdash.metrics.Gender
+import app.fitdash.metrics.Goals
 import app.fitdash.metrics.buildToday
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -57,5 +60,16 @@ class AiSummaryTest {
 
     @Test fun `other data line`() {
         assertTrue(text.endsWith("Other data (latest): Weight 72.4 kg"))
+    }
+
+    @Test fun `summary carries a fitness block`() {
+        val goals = Goals(birthYear = TODAY.year - 40, gender = Gender.MALE)
+        val snap = history(TODAY, 28, rhr = 60.0, sleepHours = 7.0) + HealthSnapshot(heightMeters = 1.75, weightKg = 70.0,
+            dailyActivity = (1..28).map { DayActivity(TODAY.minusDays(it.toLong()), 8000, 6000.0, 2000.0) })
+        val data = buildToday(snap, TODAY.atTime(9, 0).atZone(IST), goals = goals)
+        val text = aiSummary(snap, data, TODAY.atTime(9, 0).atZone(IST))
+        assertTrue(text.contains("Fitness (published formulas):"))
+        assertTrue(text.contains("fitness age ${data.fitness.fitnessAge!!.value.years}"))
+        assertTrue(text.contains("sleep debt 6.0 h"))
     }
 }
