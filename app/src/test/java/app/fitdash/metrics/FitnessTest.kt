@@ -74,4 +74,33 @@ class FitnessTest {
         assertEquals(1320, calories(30, Gender.FEMALE, 60.0, 165.0, 1000.0).value.resting)
         assertEquals("Mifflin et al. 1990", m.explanation.source.title)
     }
+
+    @Test fun `sleep debt sums shortfall and ignores missing nights`() {
+        val d = sleepDebt(listOf(6.0, 7.5, null, 9.0, 5.0, 8.0, 7.0), 8.0)
+        assertEquals(2.0 + 0.5 + 0.0 + 0.0 + 3.0 + 0.0 + 1.0, d.value.hours, 1e-9)
+        assertEquals(listOf(2.0, 0.5, 0.0, 0.0, 3.0, 0.0, 1.0), d.value.nights)
+        assertEquals("Sleep goal" to "8.0 h", d.explanation.inputs.first())
+    }
+
+    @Test fun `training load needs four workouts in 28 days`() {
+        val quiet = List(28) { 0L }
+        assertEquals(null, trainingLoad(quiet))
+        val three = quiet.toMutableList().also { it[27] = 30; it[20] = 30; it[10] = 30 }
+        assertEquals(null, trainingLoad(three))
+    }
+
+    @Test fun `training load ratio and bands`() {
+        // 4 weeks of one 60-minute workout a week: acute 60, chronic weekly 60, ratio 1.0
+        val steady = List(28) { i -> if (i % 7 == 6) 60L else 0L }
+        val s = trainingLoad(steady)!!
+        assertEquals(1.0, s.value.ratio, 1e-9)
+        assertEquals(LoadBand.STEADY, s.value.band)
+        // last week doubled: acute 120, chronic (60*3+120)/4 = 75, ratio 1.6
+        val ramp = steady.toMutableList().also { it[27] = 120 }
+        assertEquals(LoadBand.RAMPING, trainingLoad(ramp)!!.value.band)
+        // last week skipped but 4 earlier workouts: acute 0, ratio 0
+        val ease = steady.toMutableList().also { it[27] = 0; it[0] = 60 }
+        assertEquals(LoadBand.EASING, trainingLoad(ease)!!.value.band)
+        assertEquals("Gabbett 2016", s.explanation.source.title)
+    }
 }

@@ -119,3 +119,54 @@ fun calories(age: Int, gender: Gender, weightKg: Double, heightCm: Double, steps
         ),
     )
 }
+
+val SLEEP_DEBT_SOURCE = Source("Your sleep goal", "Sum over the last 7 nights of the hours short of the goal set in Settings. A night without a recording adds nothing.")
+val GABBETT = Source("Gabbett 2016", "The training–injury prevention paradox: should athletes be training smarter and harder? Br J Sports Med 50:273–280 (acute:chronic workload ratio).")
+
+data class SleepDebt(val hours: Double, val nights: List<Double>)
+
+fun sleepDebt(nightHours: List<Double?>, goalHours: Double): FitnessValue<SleepDebt> {
+    val nights = nightHours.map { h -> if (h == null) 0.0 else (goalHours - h).coerceAtLeast(0.0) }
+    val total = nights.sum()
+    return FitnessValue(
+        SleepDebt(total, nights),
+        Explanation(
+            formula = "Debt = Σ over 7 nights of max(0, goal − hours asleep)",
+            inputs = listOf("Sleep goal" to "${String.format(Locale.ENGLISH, "%.1f", goalHours)} h") +
+                nightHours.mapIndexed { i, h -> "Night ${i + 1}" to (h?.let { String.format(Locale.ENGLISH, "%.1f h", it) } ?: "no recording") },
+            source = SLEEP_DEBT_SOURCE,
+        ),
+    )
+}
+
+enum class LoadBand { EASING, STEADY, RAMPING }
+
+data class TrainingLoad(val ratio: Double, val acuteMinutes: Long, val chronicWeeklyMinutes: Double, val band: LoadBand)
+
+private const val MIN_LOAD_WORKOUT_DAYS = 4
+
+fun trainingLoad(minutesPerDay: List<Long>): FitnessValue<TrainingLoad>? {
+    require(minutesPerDay.size == 28) { "28 days expected" }
+    if (minutesPerDay.count { it > 0 } < MIN_LOAD_WORKOUT_DAYS) return null
+    val acute = minutesPerDay.takeLast(7).sum()
+    val chronicWeekly = minutesPerDay.sum() / 4.0
+    if (chronicWeekly == 0.0) return null
+    val ratio = acute / chronicWeekly
+    val band = when {
+        ratio < 0.8 -> LoadBand.EASING
+        ratio <= 1.3 -> LoadBand.STEADY
+        else -> LoadBand.RAMPING
+    }
+    return FitnessValue(
+        TrainingLoad(ratio, acute, chronicWeekly, band),
+        Explanation(
+            formula = "Ratio = workout minutes in the last 7 days ÷ (minutes in the last 28 days ÷ 4)",
+            inputs = listOf(
+                "Last 7 days" to "$acute min",
+                "28-day weekly mean" to "${chronicWeekly.roundToInt()} min",
+            ),
+            source = GABBETT,
+            note = "Under 0.8 is easing off, 0.8–1.3 steady, over 1.3 ramping fast. Shown once there are four workout days in 28.",
+        ),
+    )
+}
