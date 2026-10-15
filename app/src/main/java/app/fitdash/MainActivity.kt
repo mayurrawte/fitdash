@@ -50,6 +50,9 @@ import app.fitdash.health.SnapshotCache
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.LoadingScreen
 import app.fitdash.ui.MessageScreen
+import app.fitdash.ui.NoDataScreen
+import app.fitdash.ui.sourceAppName
+import app.fitdash.health.SYNC_APPS
 import app.fitdash.ui.pages.PagerScreen
 import app.fitdash.ui.theme.FitdashTheme
 import app.fitdash.ui.theme.LocalTheme
@@ -155,7 +158,7 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
             TodayUiState.Loading -> LoadingScreen(firstRun = true)
             is TodayUiState.NeedsHealthConnect -> MessageScreen(
                 title = if (s.update) "Update Health Connect" else "Install Health Connect",
-                body = "fitdash reads your Fitbit data through Health Connect.",
+                body = "fitdash reads your watch, ring or phone data through Health Connect.",
                 action = if (s.update) "Update" else "Install",
                 onAction = {
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(HEALTH_CONNECT_STORE)).setPackage("com.android.vending"))
@@ -167,11 +170,11 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
                 action = "Grant access",
                 onAction = { askPermissions.launch(vm.permissions) },
             )
-            TodayUiState.NoData -> MessageScreen(
-                title = "No data yet",
-                body = "In the Fitbit app, turn on Health Connect sync, then come back.",
-                action = "Check again",
-                onAction = vm::load,
+            TodayUiState.NoData -> NoDataScreen(
+                installed = SYNC_APPS.filter { context.packageManager.getLaunchIntentForPackage(it) != null }.map { it to sourceAppName(it) },
+                onOpen = { pkg -> context.packageManager.getLaunchIntentForPackage(pkg)?.let { context.startActivity(it) } },
+                onStore = { pkg -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")).setPackage("com.android.vending")) },
+                onCheck = vm::load,
             )
             TodayUiState.Failed -> MessageScreen(
                 title = "Couldn't read Health Connect",

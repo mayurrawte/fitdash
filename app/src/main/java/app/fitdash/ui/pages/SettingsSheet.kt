@@ -296,7 +296,7 @@ private fun ThemeRow(selected: ThemeId, onSelect: (ThemeId) -> Unit) {
             Text(selected.label, style = Type.body.copy(fontSize = 13.5.sp), color = Palette.Muted)
             Icon(NavIcons.chevronDown, null, Modifier.padding(start = Space.s).size(14.dp), tint = Palette.Faint)
         }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = current.bgMid) {
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = LocalTheme.current.bgMid) {
             THEMES.values.forEach { t ->
                 DropdownMenuItem(
                     text = { Text(t.id.label, style = Type.body, color = Palette.Text) },

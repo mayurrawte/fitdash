@@ -43,6 +43,13 @@
 
     <queries>
         <package android:name="com.google.android.apps.healthdata" />
+        <package android:name="com.fitbit.FitbitMobile" />
+        <package android:name="com.google.android.apps.fitness" />
+        <package android:name="com.sec.android.app.shealth" />
+        <package android:name="com.garmin.android.apps.connectmobile" />
+        <package android:name="com.xiaomi.wearable" />
+        <package android:name="com.huawei.health" />
+        <package android:name="com.mc.miband1" />
     </queries>
 
     <application

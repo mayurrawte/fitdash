@@ -51,7 +51,7 @@ fun HealthSnapshot.latestDataTime(): Instant? = listOfNotNull(
 ).maxOrNull()
 
 // Which app to open so the wearable syncs: the one that wrote the most types, preferring wearable companions over the phone.
-private val SYNC_APPS = listOf("com.fitbit.FitbitMobile", "com.google.android.apps.fitness", "com.sec.android.app.shealth", "com.garmin.android.apps.connectmobile", "com.xiaomi.wearable", "com.huawei.health", "com.mc.miband1")
+val SYNC_APPS = listOf("com.fitbit.FitbitMobile", "com.google.android.apps.fitness", "com.sec.android.app.shealth", "com.garmin.android.apps.connectmobile", "com.xiaomi.wearable", "com.huawei.health", "com.mc.miband1")
 
 fun HealthSnapshot.syncApp(): String? {
     val counts = sources.flatMap { it.apps }.filter { it in SYNC_APPS }.groupingBy { it }.eachCount()

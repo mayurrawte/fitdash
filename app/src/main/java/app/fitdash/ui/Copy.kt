@@ -82,6 +82,10 @@ private val APP_NAMES = mapOf(
     "com.google.android.apps.fitness" to "Google Fit",
     "com.google.android.apps.healthdata" to "Health Connect",
     "com.sec.android.app.shealth" to "Samsung Health",
+    "com.garmin.android.apps.connectmobile" to "Garmin Connect",
+    "com.xiaomi.wearable" to "Mi Fitness",
+    "com.huawei.health" to "Huawei Health",
+    "com.mc.miband1" to "Notify for Mi Band",
 )
 
 fun sourceAppName(pkg: String): String = APP_NAMES[pkg] ?: if (pkg.startsWith("com.android.healthconnect.phone")) "Phone" else pkg

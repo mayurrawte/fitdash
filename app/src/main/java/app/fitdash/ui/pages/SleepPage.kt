@@ -82,7 +82,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
     @Composable fun opener(kind: MetricKind) = metricOpener(MetricRef.Kind(kind))
     PageColumn(chrome, accent = Palette.Rem) {
         if (s == null) {
-            item(key = "empty") { EmptyState(if (data.isToday) "No sleep last night" else "No sleep that night", "Wear your Fitbit to bed and sync it. Your night will show up here.") }
+            item(key = "empty") { EmptyState(if (data.isToday) "No sleep last night" else "No sleep that night", "Wear your device to bed and sync it. Your night will show up here.") }
         } else {
             item(key = "gauge") {
                 val colour = scoreColor(s.score)

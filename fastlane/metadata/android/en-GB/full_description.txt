@@ -21,7 +21,7 @@ Also included:
 
 PRIVACY
 
-- No internet permission. The release APK requests no INTERNET permission, so fitdash itself cannot connect to the internet. It can open links (GitHub, Buy Me a Coffee and the Play Store page for Health Connect) in your browser or the Play Store; these links carry none of your data.
+- No internet permission. The release APK requests no INTERNET permission, so fitdash itself cannot connect to the internet. It can open links (GitHub and the Play Store page for Health Connect) in your browser or the Play Store; these links carry none of your data.
 - No account, no sign-in, no server.
 - fitdash writes only the water and height you enter yourself. It never changes or deletes any other data. Undo deletes only the water entry you just added.
 - No analytics, advertising, crash reporting or trackers.

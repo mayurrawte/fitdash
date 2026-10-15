@@ -9,8 +9,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -47,5 +53,45 @@ fun MessageScreen(title: String, body: String, action: String? = null, onAction:
         Text(title, style = Type.value, color = Palette.Text, textAlign = TextAlign.Center)
         Text(body, style = Type.body, color = Palette.Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp))
         if (action != null) Button(onClick = onAction, modifier = Modifier.padding(top = 28.dp)) { Text(action) }
+    }
+}
+
+// Phone-only tracking: these write steps to Health Connect without a wearable.
+val PHONE_TRACKERS = listOf("com.fitbit.FitbitMobile" to "Fitbit", "com.sec.android.app.shealth" to "Samsung Health")
+
+@Composable
+fun NoDataScreen(installed: List<Pair<String, String>>, onOpen: (String) -> Unit, onStore: (String) -> Unit, onCheck: () -> Unit) {
+    var noDevice by rememberSaveable { mutableStateOf(false) }
+    Column(
+        Modifier.fillMaxSize().background(Palette.Background).padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Orb(null) {}
+        Spacer(Modifier.height(32.dp))
+        Text("No data yet", style = Type.value, color = Palette.Text, textAlign = TextAlign.Center)
+        Text(
+            "Turn on Health Connect sync in your watch or ring app, then come back.",
+            style = Type.body, color = Palette.Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 10.dp),
+        )
+        installed.forEachIndexed { i, (pkg, name) ->
+            OutlinedButton(onClick = { onOpen(pkg) }, modifier = Modifier.padding(top = if (i == 0) 24.dp else 8.dp)) { Text("Open $name") }
+        }
+        Button(onClick = onCheck, modifier = Modifier.padding(top = if (installed.isEmpty()) 28.dp else 16.dp)) { Text("Check again") }
+        TextButton(onClick = { noDevice = !noDevice }, modifier = Modifier.padding(top = 12.dp)) {
+            Text("I don't have a watch or ring", style = Type.label, color = Palette.Accent)
+        }
+        if (noDevice) {
+            Text(
+                "Your phone can count steps. Install one of these free apps, turn on Health Connect sync in it, and come back. Sleep and heart rate need a wearable.",
+                style = Type.body, color = Palette.Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp),
+            )
+            PHONE_TRACKERS.forEach { (pkg, name) ->
+                val isInstalled = installed.any { it.first == pkg }
+                OutlinedButton(onClick = { if (isInstalled) onOpen(pkg) else onStore(pkg) }, modifier = Modifier.padding(top = 8.dp)) {
+                    Text(if (isInstalled) "Open $name" else "Get $name")
+                }
+            }
+        }
     }
 }

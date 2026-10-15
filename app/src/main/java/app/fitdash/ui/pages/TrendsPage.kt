@@ -73,7 +73,7 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
     val hasTrend = data.trend.any { it.recovery != null || it.sleepScore != null || it.steps != null || it.restingHr != null || it.hrv != null }
     PageColumn(chrome, accent = Palette.Hrv) {
         if (!hasTrend && data.generic.isEmpty()) {
-            item(key = "empty") { EmptyState("No trends yet", "A few days of data from your Fitbit and your trends will build up here.") }
+            item(key = "empty") { EmptyState("No trends yet", "A few days of data from your device and your trends will build up here.") }
             return@PageColumn
         }
         weekReview(data.series, if (data.isToday) data.date.minusDays(1) else data.date)?.let { review ->

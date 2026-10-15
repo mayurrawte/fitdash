@@ -62,7 +62,7 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean, onOpenWork
     @Composable fun opener(kind: MetricKind) = metricOpener(MetricRef.Kind(kind))
     PageColumn(chrome, accent = Palette.Green) {
         if (a == null) {
-            item(key = "empty") { EmptyState(if (data.isToday) "No activity yet today" else "No activity recorded", "Sync your Fitbit, then pull down to refresh.") }
+            item(key = "empty") { EmptyState(if (data.isToday) "No activity yet today" else "No activity recorded", "Sync your watch or ring, then pull down to refresh.") }
         } else {
             item(key = "gauge") {
                 val percent = a.goalPercent.coerceIn(0, 100)
