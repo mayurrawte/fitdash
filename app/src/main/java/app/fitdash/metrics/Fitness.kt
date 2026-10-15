@@ -1,5 +1,8 @@
 package app.fitdash.metrics
 
+import app.fitdash.health.HealthSnapshot
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -169,4 +172,67 @@ fun trainingLoad(minutesPerDay: List<Long>): FitnessValue<TrainingLoad>? {
             note = "Under 0.8 is easing off, 0.8–1.3 steady, over 1.3 ramping fast. Shown once there are four workout days in 28.",
         ),
     )
+}
+
+enum class FitnessCard { FITNESS_AGE, VO2, SLEEP_DEBT, TRAINING_LOAD, CALORIES }
+
+enum class MissingInput { GENDER, BIRTH_YEAR, HEIGHT, WEIGHT, RESTING_HR }
+
+data class FitnessData(
+    val fitnessAge: FitnessValue<FitnessAge>?,
+    val fitnessAgeSeries: List<DayValue>,
+    val vo2Estimate: FitnessValue<Double>?,
+    val vo2Series: List<DayValue>,
+    val watchVo2: Boolean,
+    val calories: FitnessValue<Calories>?,
+    val sleepDebt: FitnessValue<SleepDebt>,
+    val trainingLoad: FitnessValue<TrainingLoad>?,
+    val missing: Map<FitnessCard, MissingInput>,
+)
+
+private const val LOAD_DAYS = 28L
+
+// Mean over the 28 days ending on `date`, of whatever `pick` returns per day; null when nothing was recorded.
+private fun mean28(date: LocalDate, pick: (LocalDate) -> Double?): Double? =
+    window(date, LOAD_DAYS).mapNotNull(pick).takeIf { it.isNotEmpty() }?.average()
+
+fun fitness(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId, goals: Goals): FitnessData {
+    val age = goals.age(date.year)
+    val gender = goals.gender
+    val bmi = snapshot.weightKg?.let { w -> snapshot.heightMeters?.let { h -> bmi(w, h) } }
+    val rhrDaily = dailyLast(snapshot.restingHr, zone)
+    val workoutMinutes = snapshot.workouts.groupBy { it.start.atZone(zone).toLocalDate() }.mapValues { (_, ws) -> ws.sumOf { it.duration.toMinutes() } }
+    fun stepsMean(d: LocalDate, days: Long) = window(d, days).mapNotNull { stepsOn(snapshot, it, zone)?.toDouble() }.takeIf { it.isNotEmpty() }?.average() ?: 0.0
+    fun weeklyMinutes(d: LocalDate) = window(d, LOAD_DAYS).sumOf { workoutMinutes[it] ?: 0L } / 4.0
+    fun paOn(d: LocalDate) = paRating(weeklyMinutes(d), stepsMean(d, LOAD_DAYS))
+    fun rhrOn(d: LocalDate) = mean28(d) { rhrDaily[it] }
+
+    val missing = mutableMapOf<FitnessCard, MissingInput>()
+    fun need(card: FitnessCard, vararg checks: Pair<Boolean, MissingInput>): Boolean {
+        val first = checks.firstOrNull { it.first }?.second ?: return true
+        missing[card] = first
+        return false
+    }
+
+    val ageResult = if (need(FitnessCard.FITNESS_AGE, (age == null) to MissingInput.BIRTH_YEAR, (gender == null) to MissingInput.GENDER, (snapshot.heightMeters == null) to MissingInput.HEIGHT, (snapshot.weightKg == null) to MissingInput.WEIGHT))
+        fitnessAge(age!!, gender!!, bmi!!, paOn(date)) else null
+    val fitnessAgeSeries = if (ageResult != null) window(date, snapshot.windowDays).map { d ->
+        DayValue(d, fitnessAge(age!!, gender!!, bmi!!, paOn(d)).value.years.toDouble())
+    } else emptyList()
+
+    val watchVo2 = snapshot.generic.any { it.label == "VO₂ max" && it.points.isNotEmpty() }
+    val rhr = rhrOn(date)
+    val vo2 = if (!watchVo2 && need(FitnessCard.VO2, (age == null) to MissingInput.BIRTH_YEAR, (rhr == null) to MissingInput.RESTING_HR))
+        vo2Estimate(age!!, rhr!!) else null
+    val vo2Series = if (vo2 != null) window(date, snapshot.windowDays).mapNotNull { d -> rhrOn(d)?.let { DayValue(d, vo2Estimate(age!!, it).value) } } else emptyList()
+
+    val calResult = if (need(FitnessCard.CALORIES, (age == null) to MissingInput.BIRTH_YEAR, (gender == null) to MissingInput.GENDER, (snapshot.heightMeters == null) to MissingInput.HEIGHT, (snapshot.weightKg == null) to MissingInput.WEIGHT))
+        calories(age!!, gender!!, snapshot.weightKg!!, snapshot.heightMeters!! * 100, stepsMean(date, Tuning.WEEK_DAYS)) else null
+
+    val nights = window(date, Tuning.WEEK_DAYS).map { d -> nightEnding(d, snapshot.sleep, zone)?.let { asleepDuration(it).seconds / 3600.0 } }
+    val debt = sleepDebt(nights, goals.sleepHours)
+
+    val load = trainingLoad(window(date, LOAD_DAYS).map { workoutMinutes[it] ?: 0L })
+
+    return FitnessData(ageResult, fitnessAgeSeries, vo2, vo2Series, watchVo2, calResult, debt, load, missing)
 }
