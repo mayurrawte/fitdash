@@ -57,6 +57,8 @@ import app.fitdash.ui.formatBmi
 import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatNumber
 import app.fitdash.ui.formatSteps
+import app.fitdash.metrics.FitnessCard
+import app.fitdash.ui.fitnessCardName
 import app.fitdash.ui.metricExplain
 import app.fitdash.ui.metricName
 import app.fitdash.ui.theme.LocalTheme
@@ -70,6 +72,7 @@ import kotlin.math.roundToLong
 sealed interface MetricRef {
     data class Kind(val kind: MetricKind) : MetricRef
     data class Generic(val label: String, val unit: String) : MetricRef
+    data class Fitness(val card: FitnessCard) : MetricRef
 }
 
 val LocalOpenMetric = staticCompositionLocalOf<(MetricRef) -> Unit> { {} }
@@ -88,6 +91,7 @@ fun metricOpener(ref: MetricRef): () -> Unit {
 fun metricDescription(ref: MetricRef) = when (ref) {
     is MetricRef.Kind -> "${metricName(ref.kind)} details"
     is MetricRef.Generic -> "${ref.label} details"
+    is MetricRef.Fitness -> "${fitnessCardName(ref.card)}: how it is worked out"
 }
 
 private const val MILES_PER_KM = 0.621371
@@ -142,16 +146,19 @@ fun MetricDetailSheet(ref: MetricRef, data: TodayData, miles: Boolean, onDismiss
     val series: List<DayValue> = when (ref) {
         is MetricRef.Kind -> data.series[ref.kind].orEmpty()
         is MetricRef.Generic -> data.genericDaily[ref.label].orEmpty()
+        is MetricRef.Fitness -> emptyList()
     }.map { d -> d.copy(value = d.value?.times(scale)) }
     // Diastolic for blood pressure, drawn as a second line.
     val second: List<DayValue>? = generic?.second?.takeIf { it.isNotEmpty() }?.let { genericDailySeries(it, data.date, ZoneId.systemDefault(), data.daysBack + 1) }
     val name = when (ref) {
         is MetricRef.Kind -> metricName(ref.kind)
         is MetricRef.Generic -> ref.label
+        is MetricRef.Fitness -> fitnessCardName(ref.card)
     }
     val unit = when (ref) {
         is MetricRef.Kind -> if (isTempDelta) "°F" else unitFor(ref.kind, miles)
         is MetricRef.Generic -> if (isWeight) "lb" else ref.unit
+        is MetricRef.Fitness -> ""
     }
     val explain = kind?.let(::metricExplain) ?: GENERIC_EXPLAIN
     val history = data.daysBack > 30

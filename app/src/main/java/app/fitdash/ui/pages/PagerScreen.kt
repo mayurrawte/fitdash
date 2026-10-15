@@ -178,7 +178,10 @@ fun PagerScreen(
         if (sharing) ShareRender(data, onDone = { sharing = false })
         if (showSettings) SettingsSheet(store, data.sources, data.heightMeters, onSetHeight, state.canAskHistory, onAskHistory, state.background, onAskBackground, onDismiss = { showSettings = false })
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
-        metric?.let { MetricDetailSheet(it, data, settings.miles, onDismiss = { metric = null }) }
+        metric?.let { ref ->
+            if (ref is MetricRef.Fitness) FitnessSheet(ref.card, data, onDismiss = { metric = null })
+            else MetricDetailSheet(ref, data, settings.miles, onDismiss = { metric = null })
+        }
         workout?.let { WorkoutSheet(it, data.workoutHr[it.start].orEmpty(), settings.miles, onDismiss = { workout = null }) }
         if (showCalendar) DatePickerSheet(data.date, today, data.daysBack, onSelectDate, onDismiss = { showCalendar = false })
     }
