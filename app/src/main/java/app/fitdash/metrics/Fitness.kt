@@ -202,7 +202,9 @@ fun fitness(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId, goals: Goal
     val bmi = snapshot.weightKg?.let { w -> snapshot.heightMeters?.let { h -> bmi(w, h) } }
     val rhrDaily = dailyLast(snapshot.restingHr, zone)
     val workoutMinutes = snapshot.workouts.groupBy { it.start.atZone(zone).toLocalDate() }.mapValues { (_, ws) -> ws.sumOf { it.duration.toMinutes() } }
-    fun stepsMean(d: LocalDate, days: Long) = window(d, days).mapNotNull { stepsOn(snapshot, it, zone)?.toDouble() }.takeIf { it.isNotEmpty() }?.average() ?: 0.0
+    // Steps per day once, over the window plus the 28 days before it, so the per-day series does not rescan the snapshot.
+    val stepsByDay: Map<LocalDate, Double?> = window(date, snapshot.windowDays + LOAD_DAYS).associateWith { stepsOn(snapshot, it, zone)?.toDouble() }
+    fun stepsMean(d: LocalDate, days: Long) = window(d, days).mapNotNull { stepsByDay[it] }.takeIf { it.isNotEmpty() }?.average() ?: 0.0
     fun weeklyMinutes(d: LocalDate) = window(d, LOAD_DAYS).sumOf { workoutMinutes[it] ?: 0L } / 4.0
     fun paOn(d: LocalDate) = paRating(weeklyMinutes(d), stepsMean(d, LOAD_DAYS))
     fun rhrOn(d: LocalDate) = mean28(d) { rhrDaily[it] }

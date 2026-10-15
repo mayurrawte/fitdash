@@ -32,7 +32,6 @@ import app.fitdash.metrics.LoadBand
 import app.fitdash.metrics.MissingInput
 import app.fitdash.metrics.TodayData
 import app.fitdash.ui.components.Chart
-import app.fitdash.ui.components.CountUpText
 import app.fitdash.ui.components.EmptyTrack
 import app.fitdash.ui.components.SectionCard
 import app.fitdash.ui.components.SectionLabel
@@ -106,7 +105,7 @@ private fun FitnessAgeCard(data: TodayData, chrome: PageChrome) {
     SectionCard(
         "FITNESS AGE",
         trailing = if (age != null) "tap for the formula" else null,
-        onClick = if (age != null) open else chrome.onMenu,
+        onClick = if (age != null) open else if (missing == MissingInput.WEIGHT) null else chrome.onMenu,
         description = if (age != null) metricDescription(MetricRef.Fitness(FitnessCard.FITNESS_AGE)) else missing?.let(::missingWord),
     ) {
         if (age == null) {
@@ -219,7 +218,8 @@ private fun CaloriesTile(data: TodayData, chrome: PageChrome, m: Modifier, tint:
         return
     }
     val open = metricOpener(MetricRef.Fitness(FitnessCard.CALORIES))
-    StatTile(fitnessCardName(FitnessCard.CALORIES), "", "kcal", "${formatSteps(c.value.daily.toLong())} kcal a day with your steps", m, onClick = open, description = metricDescription(MetricRef.Fitness(FitnessCard.CALORIES)), tint = tint) {
-        CountUpText("calories-${c.value.resting}", c.value.resting.toLong(), Type.tile, color = Palette.Text)
+    // ValueText always appends the unit, so the number goes through it as a plain value; no count-up here.
+    StatTile(fitnessCardName(FitnessCard.CALORIES), formatSteps(c.value.resting.toLong()), "kcal", "${formatSteps(c.value.daily.toLong())} kcal a day with your steps", m, onClick = open, description = metricDescription(MetricRef.Fitness(FitnessCard.CALORIES)), tint = tint) {
+        Text("at rest", style = Type.tiny, color = Palette.Muted)
     }
 }
