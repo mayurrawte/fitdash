@@ -1,6 +1,7 @@
 package app.fitdash.settings
 
 import android.content.Context
+import app.fitdash.metrics.Gender
 import app.fitdash.ui.theme.NumbersFont
 import app.fitdash.ui.theme.ThemeId
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +29,7 @@ data class Settings(
     val numbersFont: NumbersFont = NumbersFont.OUTFIT,
     // Stored as a year so the age (and the zones from it) move on by themselves.
     val birthYear: Int? = null,
+    val gender: Gender? = null,
     // Read Health Connect every few hours while closed, for the widget and a fresh cold open.
     val backgroundRefresh: Boolean = false,
 )
@@ -57,6 +59,7 @@ class SettingsStore(context: Context) {
         showBody = prefs.getBoolean("showBody", true),
         // Installs that saved settings before Outfit existed keep Inter; only fresh installs start on Outfit.
         birthYear = prefs.getInt("birthYear", 0).takeIf { it > 0 },
+        gender = prefs.getString("gender", null)?.let { runCatching { Gender.valueOf(it) }.getOrNull() },
         backgroundRefresh = prefs.getBoolean("backgroundRefresh", false),
         numbersFont = runCatching { NumbersFont.valueOf(prefs.getString("numbersFont", null) ?: if (prefs.contains("theme")) "INTER" else "OUTFIT") }.getOrDefault(NumbersFont.OUTFIT),
     )
@@ -70,7 +73,7 @@ class SettingsStore(context: Context) {
             .putBoolean("reduceMotion", s.reduceMotion).putBoolean("haptics", s.haptics)
             .putBoolean("showWater", s.showWater).putBoolean("showWorkouts", s.showWorkouts).putBoolean("showHeartRate", s.showHeartRate)
             .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody)
-            .putString("numbersFont", s.numbersFont.name).putInt("birthYear", s.birthYear ?: 0).putBoolean("backgroundRefresh", s.backgroundRefresh).apply()
+            .putString("numbersFont", s.numbersFont.name).putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh).apply()
         _flow.value = s
     }
 

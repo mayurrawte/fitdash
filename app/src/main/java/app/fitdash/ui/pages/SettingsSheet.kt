@@ -77,6 +77,8 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.THEMES
 import app.fitdash.ui.today.BackgroundAccess
+import app.fitdash.metrics.Gender
+import app.fitdash.metrics.genderLabel
 import app.fitdash.metrics.maxHrForAge
 import app.fitdash.ui.theme.ThemeId
 import app.fitdash.ui.theme.ThemeTokens
@@ -150,6 +152,7 @@ fun SettingsSheet(
                         { store.update { s -> s.copy(birthYear = s.birthYear?.plus(1)) } },
                         { store.update { s -> s.copy(birthYear = s.birthYear?.minus(1) ?: (year - 30)) } },
                     )
+                    GenderRow(settings.gender) { g -> store.update { s -> s.copy(gender = g) } }
                 }
             }
             item { Label("UNITS") }
@@ -162,7 +165,7 @@ fun SettingsSheet(
             item { ToggleRow("Workouts", settings.showWorkouts, { v -> store.update { it.copy(showWorkouts = v) } }) }
             item { ToggleRow("Heart rate", settings.showHeartRate, { v -> store.update { it.copy(showHeartRate = v) } }) }
             item { ToggleRow("Suggestions", settings.showSuggestions, { v -> store.update { it.copy(showSuggestions = v) } }, "Do this today") }
-            item { ToggleRow("Body on Trends", settings.showBody, { v -> store.update { it.copy(showBody = v) } }, "BMI, weight and body composition") }
+            item { ToggleRow("Body and fitness on Trends", settings.showBody, { v -> store.update { it.copy(showBody = v) } }, "BMI, body composition, fitness age and calories") }
             item { Label("FEEL") }
             item { ToggleRow("Haptics", settings.haptics, { v -> store.update { it.copy(haptics = v) } }, "A light tick on taps") }
             item { ToggleRow("Reduce motion", settings.reduceMotion, { v -> store.update { it.copy(reduceMotion = v) } }, "No draw-in or count-up animations, still orb") }
@@ -307,6 +310,34 @@ private fun ThemeRow(selected: ThemeId, onSelect: (ThemeId) -> Unit) {
             }
         }
     }
+}
+
+@Composable
+private fun GenderRow(selected: Gender?, onSelect: (Gender?) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxWidth().padding(top = Space.s)) {
+        Row(
+            Modifier.fillMaxWidth().clickable(role = Role.Button) { open = true }.padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Gender", Modifier.weight(1f), style = Type.body.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
+            Text(genderLabel(selected), style = Type.body.copy(fontSize = 13.5.sp), color = Palette.Muted)
+            Icon(NavIcons.chevronDown, null, Modifier.padding(start = Space.s).size(14.dp), tint = Palette.Faint)
+        }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = LocalTheme.current.bgMid) {
+            (listOf<Gender?>(null) + Gender.entries).forEach { g ->
+                DropdownMenuItem(
+                    text = { Text(genderLabel(g), style = Type.body, color = Palette.Text) },
+                    trailingIcon = { if (g == selected) Icon(NavIcons.check, null, Modifier.size(16.dp), tint = Palette.Accent) },
+                    onClick = { open = false; onSelect(g) },
+                )
+            }
+        }
+    }
+    Text(
+        "Used by fitness age and resting calories. The studies behind them grouped people by sex at birth; pick whichever matches your physiology.",
+        style = Type.tiny, color = Palette.Faint, modifier = Modifier.padding(top = Space.xs),
+    )
 }
 
 @Composable
