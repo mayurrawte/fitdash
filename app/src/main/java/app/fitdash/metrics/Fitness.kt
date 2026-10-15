@@ -68,3 +68,54 @@ fun fitnessAge(age: Int, gender: Gender, bmi: Double, paR: Int): FitnessValue<Fi
         ),
     )
 }
+
+val UTH = Source("Uth et al. 2004", "Estimation of VO2max from the ratio between HRmax and HRrest. Eur J Appl Physiol 91:111–115. Max HR from Tanaka et al. 2001.")
+val MIFFLIN = Source("Mifflin et al. 1990", "A new predictive equation for resting energy expenditure in healthy individuals. Am J Clin Nutr 51:241–247. Activity factors are the standard Harris-Benedict multipliers.")
+
+fun vo2Estimate(age: Int, restingHr: Double): FitnessValue<Double> {
+    val maxHr = maxHrForAge(age)
+    val vo2 = 15.3 * maxHr / restingHr
+    return FitnessValue(
+        vo2,
+        Explanation(
+            formula = "VO₂max = 15.3 × (max HR ÷ resting HR)",
+            inputs = listOf(
+                "Age" to age.toString(),
+                "Max HR" to "$maxHr bpm (208 − 0.7 × age)",
+                "Resting HR" to "${restingHr.roundToInt()} bpm",
+            ),
+            source = UTH,
+            note = "Resting HR is your 28-day mean. A watch-measured VO₂max replaces this estimate when available.",
+        ),
+    )
+}
+
+data class Calories(val resting: Int, val daily: Int, val factor: Double)
+
+fun activityFactor(stepsPerDay: Double): Double = when {
+    stepsPerDay >= 12_500 -> 1.9
+    stepsPerDay >= 10_000 -> 1.725
+    stepsPerDay >= 7_500 -> 1.55
+    stepsPerDay >= 5_000 -> 1.375
+    else -> 1.2
+}
+
+fun calories(age: Int, gender: Gender, weightKg: Double, heightCm: Double, stepsPerDay: Double): FitnessValue<Calories> {
+    val bmr = 10 * weightKg + 6.25 * heightCm - 5 * age + if (gender == Gender.MALE) 5 else -161
+    val factor = activityFactor(stepsPerDay)
+    return FitnessValue(
+        Calories(bmr.roundToInt(), (bmr * factor).roundToInt(), factor),
+        Explanation(
+            formula = "At rest = 10 × weight + 6.25 × height − 5 × age + 5 (men) or − 161 (women). Daily need = at rest × activity factor from your 7-day steps.",
+            inputs = listOf(
+                "Weight" to "${String.format(Locale.ENGLISH, "%.1f", weightKg)} kg",
+                "Height" to "${heightCm.roundToInt()} cm",
+                "Age" to age.toString(),
+                "Gender" to genderLabel(gender),
+                "Steps a day" to "${stepsPerDay.roundToInt()}",
+                "Activity factor" to String.format(Locale.ENGLISH, "%.3f", factor).trimEnd('0'),
+            ),
+            source = MIFFLIN,
+        ),
+    )
+}

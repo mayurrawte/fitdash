@@ -48,4 +48,30 @@ class FitnessTest {
         assertEquals(18, fitnessAge(20, Gender.MALE, 15.0, 7).value.years)
         assertEquals(90, fitnessAge(85, Gender.FEMALE, 45.0, 0).value.years)
     }
+
+    @Test fun `Uth 2004 VO2 estimate`() {
+        // max HR 208 - 0.7*30 = 187; 15.3 * 187/60 = 47.68
+        val r = vo2Estimate(30, 60.0)
+        assertEquals(47.7, r.value, 0.05)
+        assertEquals(listOf("Age" to "30", "Max HR" to "187 bpm (208 − 0.7 × age)", "Resting HR" to "60 bpm"), r.explanation.inputs)
+        assertEquals("Uth et al. 2004", r.explanation.source.title)
+    }
+
+    @Test fun `activity factor bands`() {
+        assertEquals(1.2, activityFactor(4999.0), 0.0)
+        assertEquals(1.375, activityFactor(5000.0), 0.0)
+        assertEquals(1.55, activityFactor(7500.0), 0.0)
+        assertEquals(1.725, activityFactor(10000.0), 0.0)
+        assertEquals(1.9, activityFactor(12500.0), 0.0)
+    }
+
+    @Test fun `Mifflin-St Jeor worked example`() {
+        // 10*70 + 6.25*175 - 5*30 + 5 = 1648.75
+        val m = calories(30, Gender.MALE, 70.0, 175.0, 8000.0)
+        assertEquals(1649, m.value.resting)
+        assertEquals((1648.75 * 1.55).roundToInt(), m.value.daily)
+        // 10*60 + 6.25*165 - 5*30 - 161 = 1320.25
+        assertEquals(1320, calories(30, Gender.FEMALE, 60.0, 165.0, 1000.0).value.resting)
+        assertEquals("Mifflin et al. 1990", m.explanation.source.title)
+    }
 }
