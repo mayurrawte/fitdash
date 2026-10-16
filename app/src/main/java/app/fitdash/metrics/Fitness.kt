@@ -174,7 +174,7 @@ fun trainingLoad(minutesPerDay: List<Long>): FitnessValue<TrainingLoad>? {
     )
 }
 
-enum class FitnessCard { FITNESS_AGE, VO2, SLEEP_DEBT, TRAINING_LOAD, CALORIES }
+enum class FitnessCard { FITNESS_AGE, VO2, SLEEP_DEBT, TRAINING_LOAD, CALORIES, REGULARITY }
 
 enum class MissingInput { GENDER, BIRTH_YEAR, HEIGHT, WEIGHT, RESTING_HR }
 

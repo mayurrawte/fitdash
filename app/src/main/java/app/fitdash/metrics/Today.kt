@@ -56,6 +56,9 @@ data class TodayData(
     // When the wearable last wrote anything, and which app to open to make it sync.
     val latestData: Instant? = null,
     val syncApp: String? = null,
+    val regularity: FitnessValue<Regularity>? = null,
+    val regularityProgress: Int = 0,
+    val regularityLastWeek: Int? = null,
     val fitness: FitnessData = FitnessData(null, emptyList(), null, emptyList(), false, null, FitnessValue(SleepDebt(0.0, emptyList()), Explanation("", emptyList(), SLEEP_DEBT_SOURCE)), null, emptyMap()),
 )
 
@@ -140,5 +143,8 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         latestData = snap.latestDataTime(),
         syncApp = snap.syncApp(),
         fitness = fitness(snap, date, zone, goals),
+        regularity = regularity(snap.sleep, date, zone),
+        regularityProgress = regularityProgress(snap.sleep, date, zone),
+        regularityLastWeek = regularity(snap.sleep, date.minusDays(7), zone)?.value?.sri,
     )
 }

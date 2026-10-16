@@ -26,6 +26,7 @@ data class Settings(
     val showHeartRate: Boolean = true,
     val showSuggestions: Boolean = true,
     val showBody: Boolean = true,
+    val showSleepScore: Boolean = true,
     val numbersFont: NumbersFont = NumbersFont.OUTFIT,
     // Stored as a year so the age (and the zones from it) move on by themselves.
     val birthYear: Int? = null,
@@ -57,6 +58,7 @@ class SettingsStore(context: Context) {
         showHeartRate = prefs.getBoolean("showHeartRate", true),
         showSuggestions = prefs.getBoolean("showSuggestions", true),
         showBody = prefs.getBoolean("showBody", true),
+        showSleepScore = prefs.getBoolean("showSleepScore", true),
         // Installs that saved settings before Outfit existed keep Inter; only fresh installs start on Outfit.
         birthYear = prefs.getInt("birthYear", 0).takeIf { it > 0 },
         gender = prefs.getString("gender", null)?.let { runCatching { Gender.valueOf(it) }.getOrNull() },
@@ -72,7 +74,7 @@ class SettingsStore(context: Context) {
             .putBoolean("clock24", s.clock24).putBoolean("weightLb", s.weightLb).putBoolean("fahrenheit", s.fahrenheit)
             .putBoolean("reduceMotion", s.reduceMotion).putBoolean("haptics", s.haptics)
             .putBoolean("showWater", s.showWater).putBoolean("showWorkouts", s.showWorkouts).putBoolean("showHeartRate", s.showHeartRate)
-            .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody)
+            .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody).putBoolean("showSleepScore", s.showSleepScore)
             .putString("numbersFont", s.numbersFont.name).putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh).apply()
         _flow.value = s
     }

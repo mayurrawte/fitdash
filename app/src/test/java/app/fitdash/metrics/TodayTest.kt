@@ -162,4 +162,10 @@ class TodayTest {
         assertEquals(36, Goals(birthYear = 1990).age(2026))
         assertNull(Goals().age(2026))
     }
+
+    @Test fun `regularity is computed from the snapshot's sleep`() {
+        val t = buildToday(history(TODAY, 14, sleepHours = 8.0) + day(TODAY, sleepHours = 8.0), time(8, 10))
+        assertEquals(100, t.regularity!!.value.sri)
+        assertNull(buildToday(history(TODAY, 3, sleepHours = 8.0), time(8, 10)).regularity)
+    }
 }

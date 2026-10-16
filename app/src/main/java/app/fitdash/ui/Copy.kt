@@ -9,6 +9,7 @@ import app.fitdash.metrics.Component
 import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.LoadBand
 import app.fitdash.metrics.MissingInput
+import app.fitdash.metrics.regularityWordBand
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.RangeStatus
@@ -394,6 +395,14 @@ fun fitnessCardName(card: FitnessCard): String = when (card) {
     FitnessCard.SLEEP_DEBT -> "Sleep debt"
     FitnessCard.TRAINING_LOAD -> "Training load"
     FitnessCard.CALORIES -> "Resting kcal"
+    FitnessCard.REGULARITY -> "Sleep regularity"
 }
 
 fun formatHoursShort(h: Double): String = if (h == 0.0) "0 h" else String.format(Locale.ENGLISH, "%.1f h", h)
+
+fun regularityWord(sri: Int): String = when (regularityWordBand(sri)) {
+    0 -> "very regular"
+    1 -> "regular"
+    2 -> "varies"
+    else -> "irregular"
+}
