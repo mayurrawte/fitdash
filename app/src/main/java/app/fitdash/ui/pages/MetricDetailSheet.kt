@@ -47,6 +47,7 @@ import app.fitdash.metrics.normalRange
 import app.fitdash.metrics.rangeStatus
 import app.fitdash.metrics.rangeWord
 import app.fitdash.metrics.scoreStatus
+import app.fitdash.metrics.sleepScoreStatus
 import app.fitdash.ui.GENERIC_EXPLAIN
 import app.fitdash.ui.components.SmoothArea
 import app.fitdash.ui.components.SegmentedControl
@@ -97,7 +98,6 @@ fun metricDescription(ref: MetricRef) = when (ref) {
 private const val MILES_PER_KM = 0.621371
 
 private val LINE_KINDS = setOf(MetricKind.RESTING_HR, MetricKind.HRV, MetricKind.HEART_RATE, MetricKind.SPO2, MetricKind.RESPIRATORY, MetricKind.SKIN_TEMP, MetricKind.EFFICIENCY)
-private val CALM_KINDS = setOf(MetricKind.SLEEP_SCORE, MetricKind.SLEEP_HOURS, MetricKind.EFFICIENCY, MetricKind.AWAKENINGS)
 private val RANGE_KINDS = setOf(MetricKind.RESTING_HR, MetricKind.HRV, MetricKind.SPO2, MetricKind.RESPIRATORY, MetricKind.SKIN_TEMP)
 private const val LB_PER_KG = 2.20462
 
@@ -185,7 +185,8 @@ fun MetricDetailSheet(ref: MetricRef, data: TodayData, miles: Boolean, onDismiss
     }
     val status: Status? = when {
         selected == null -> null
-        kind == MetricKind.RECOVERY || kind == MetricKind.SLEEP_SCORE -> scoreStatus(selected.roundToInt())
+        kind == MetricKind.RECOVERY -> scoreStatus(selected.roundToInt())
+        kind == MetricKind.SLEEP_SCORE -> sleepScoreStatus(selected.roundToInt())
         kind == MetricKind.EFFICIENCY -> efficiencyStatus(selected / 100)
         kind == MetricKind.AWAKENINGS -> awakeningsStatus(selected.roundToInt())
         range != null -> rangeWord(rangeStatus(selected, range.first, range.second))
@@ -206,7 +207,7 @@ fun MetricDetailSheet(ref: MetricRef, data: TodayData, miles: Boolean, onDismiss
             } else {
                 Text("—", Modifier.padding(horizontal = Space.xl), style = Type.hero.copy(fontSize = 56.sp), color = Palette.Faint)
             }
-            if (status != null) StatusText(status, Modifier.padding(horizontal = Space.xl), calm = kind in CALM_KINDS)
+            if (status != null) StatusText(status, Modifier.padding(horizontal = Space.xl))
             if (kind == MetricKind.BMI && data.bmiBand != null) {
                 Text(bmiWord(data.bmiBand), Modifier.padding(horizontal = Space.xl), style = Type.tiny.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Medium), color = bmiColour(data.bmiBand))
             }

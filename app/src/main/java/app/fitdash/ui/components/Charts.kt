@@ -666,15 +666,11 @@ fun SemiGauge(
     from: Color = Palette.Deep,
     to: Color = Palette.Rem,
     numeric: Long? = null,
-    calm: Boolean = false,
+    chip: Color = statusColour(status),
 ) {
     val progress = rememberDrawProgress(key, Motion.DRAW)
     val track = Chart.track
-    val chipText = when (status) {
-        Status.OPTIMAL, Status.GOOD -> Palette.Good
-        Status.FAIR -> Palette.Warn
-        Status.ATTENTION -> if (calm) Palette.Warn else Palette.Bad
-    }
+    val chipText = chip
     Box(modifier.fillMaxWidth().height(176.dp), contentAlignment = Alignment.TopCenter) {
         Canvas(Modifier.size(256.dp, 176.dp)) {
             val s = 12.dp.toPx()

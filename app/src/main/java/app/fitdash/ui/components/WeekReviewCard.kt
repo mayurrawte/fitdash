@@ -49,7 +49,7 @@ private fun change(r: WeekRow): String? {
 
 // Last seven complete days against the seven before: one sentence on the biggest change, then a row per metric.
 @Composable
-fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier) {
+fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier, regularity: Int? = null, regularityLast: Int? = null) {
     SectionCard("LAST 7 DAYS", modifier, trailing = "vs week before") {
         review.headline?.let { Text(it, style = Type.body, color = Palette.Text, modifier = Modifier.padding(bottom = Space.s)) }
         review.rows.forEach { r ->
@@ -63,11 +63,11 @@ fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier) {
                 }
             }
         }
-        review.regularity?.let { (now, last) ->
+        if (regularity != null) {
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Sleep regularity", Modifier.weight(1f), style = Type.small, color = Palette.Muted)
-                Text(now.toString(), style = Type.small, color = Palette.Text)
-                val d = last?.let { now - it }?.takeIf { it != 0 }
+                Text(regularity.toString(), style = Type.small, color = Palette.Text)
+                val d = regularityLast?.let { regularity - it }?.takeIf { it != 0 }
                 if (d != null) {
                     DeltaArrow(d > 0, Modifier.padding(start = Space.s, end = 4.dp))
                     Text("${if (d > 0) "+" else "−"}${abs(d)}", style = Type.secondary, color = Palette.Muted)

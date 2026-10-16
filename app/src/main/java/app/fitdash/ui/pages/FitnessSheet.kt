@@ -33,6 +33,7 @@ import app.fitdash.ui.fitnessCardName
 import app.fitdash.ui.formatHoursShort
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.loadWord
+import app.fitdash.metrics.regularityBand
 import app.fitdash.ui.regularityWord
 import app.fitdash.ui.theme.LocalReduceMotion
 import app.fitdash.ui.theme.LocalTheme
@@ -54,7 +55,7 @@ fun FitnessSheet(card: FitnessCard, data: TodayData, onDismiss: () -> Unit) {
         FitnessCard.SLEEP_DEBT -> f.sleepDebt.let { Shown(formatHoursShort(it.value.hours).removeSuffix(" h"), "h", "over the last 7 nights", it.explanation) }
         FitnessCard.TRAINING_LOAD -> f.trainingLoad?.let { Shown(String.format(Locale.ENGLISH, "%.1f", it.value.ratio), null, loadWord(it.value.band), it.explanation) }
         FitnessCard.CALORIES -> f.calories?.let { Shown(formatSteps(it.value.resting.toLong()), "kcal at rest", "${formatSteps(it.value.daily.toLong())} kcal a day with your steps", it.explanation) }
-        FitnessCard.REGULARITY -> data.regularity?.let { Shown(it.value.sri.toString(), null, regularityWord(it.value.sri), it.explanation) }
+        FitnessCard.REGULARITY -> data.regularity?.let { Shown(it.value.sri.toString(), null, regularityWord(regularityBand(it.value.sri)), it.explanation) }
     } ?: Shown("—", null, null, null)
     val reduce = LocalReduceMotion.current
     var showFormula by remember { mutableStateOf(reduce) }

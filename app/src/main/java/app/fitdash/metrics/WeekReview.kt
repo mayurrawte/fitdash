@@ -7,7 +7,7 @@ import kotlin.math.roundToInt
 // One line of the weekly review: the mean of the last seven days and of the seven before, over days that have a value.
 data class WeekRow(val kind: MetricKind, val thisWeek: Double, val lastWeek: Double?)
 
-data class WeekReview(val end: LocalDate, val rows: List<WeekRow>, val headline: String?, val regularity: Pair<Int, Int?>? = null)
+data class WeekReview(val end: LocalDate, val rows: List<WeekRow>, val headline: String?)
 
 val REVIEW_KINDS = listOf(MetricKind.RECOVERY, MetricKind.SLEEP_HOURS, MetricKind.STEPS, MetricKind.ACTIVE_MINUTES)
 
@@ -19,15 +19,15 @@ private fun mean(values: List<DayValue>, from: LocalDate, to: LocalDate): Double
         .takeIf { it.size >= MIN_DAYS }?.average()
 
 // The seven days ending on `end` against the seven before. Null when no metric has a week of data.
-fun weekReview(series: Map<MetricKind, List<DayValue>>, end: LocalDate, regularityThisWeek: Int? = null, regularityLastWeek: Int? = null): WeekReview? {
+fun weekReview(series: Map<MetricKind, List<DayValue>>, end: LocalDate): WeekReview? {
     val start = end.minusDays(6)
     val rows = REVIEW_KINDS.mapNotNull { kind ->
         val values = series[kind] ?: return@mapNotNull null
         val now = mean(values, start, end) ?: return@mapNotNull null
         WeekRow(kind, now, mean(values, start.minusDays(7), start.minusDays(1)))
     }
-    if (rows.isEmpty() && regularityThisWeek == null) return null
-    return WeekReview(end, rows, headline(rows), regularityThisWeek?.let { it to regularityLastWeek })
+    if (rows.isEmpty()) return null
+    return WeekReview(end, rows, headline(rows))
 }
 
 // One plain sentence on the biggest change; small wobbles are not news.

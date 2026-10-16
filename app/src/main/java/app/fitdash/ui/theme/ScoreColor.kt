@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
 import app.fitdash.metrics.BmiBand
+import app.fitdash.metrics.RegularityBand
 import kotlin.math.roundToInt
 
 fun scoreColor(score: Int, bad: Color, warn: Color, good: Color): Color {
@@ -24,6 +25,21 @@ fun scoreColor(score: Int, t: ThemeTokens): Color =
 @Composable
 @ReadOnlyComposable
 fun scoreColor(score: Int): Color = scoreColor(score, LocalTheme.current)
+
+// A single night's score never reaches the alarm colour.
+@Composable
+@ReadOnlyComposable
+fun sleepScoreColour(score: Int): Color = scoreColor(score.coerceAtLeast(50))
+
+@Composable
+@ReadOnlyComposable
+fun regularityColour(band: RegularityBand): Color = LocalTheme.current.let {
+    when (band) {
+        RegularityBand.VERY_REGULAR -> it.good
+        RegularityBand.REGULAR -> it.accent
+        RegularityBand.VARIES, RegularityBand.IRREGULAR -> it.warn
+    }
+}
 
 @Composable
 @ReadOnlyComposable

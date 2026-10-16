@@ -56,7 +56,6 @@ import androidx.compose.ui.unit.sp
 import app.fitdash.metrics.Status
 import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.LocalTheme
-import app.fitdash.ui.calmStatusWord
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
@@ -201,17 +200,20 @@ fun statusWord(status: Status) = when (status) {
     Status.GOOD -> "GOOD"
     Status.FAIR -> "FAIR"
     Status.ATTENTION -> "NEEDS ATTENTION"
+    Status.BELOW_USUAL -> "BELOW YOUR USUAL"
 }
 
 @Composable
-fun StatusText(status: Status, modifier: Modifier = Modifier, calm: Boolean = false) {
-    val colour = when (status) {
-        Status.OPTIMAL, Status.GOOD -> Palette.Good
-        Status.FAIR -> Palette.Warn
-        Status.ATTENTION -> if (calm) Palette.Warn else Palette.Bad
-    }
-    val word = if (calm) calmStatusWord(status) else statusWord(status)
-    Text(noteCase(word, upper = false), modifier, style = Type.status, color = colour)
+@ReadOnlyComposable
+fun statusColour(status: Status): Color = when (status) {
+    Status.OPTIMAL, Status.GOOD -> Palette.Good
+    Status.FAIR, Status.BELOW_USUAL -> Palette.Warn
+    Status.ATTENTION -> Palette.Bad
+}
+
+@Composable
+fun StatusText(status: Status, modifier: Modifier = Modifier) {
+    Text(noteCase(statusWord(status), upper = false), modifier, style = Type.status, color = statusColour(status))
 }
 
 @Composable

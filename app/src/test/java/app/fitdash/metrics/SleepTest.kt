@@ -129,10 +129,15 @@ class SleepQualityTest {
         assertEquals(Status.OPTIMAL, efficiencyStatus(0.92))
         assertEquals(Status.GOOD, efficiencyStatus(0.86))
         assertEquals(Status.FAIR, efficiencyStatus(0.80))
-        assertEquals(Status.ATTENTION, efficiencyStatus(0.60))
+        assertEquals(Status.BELOW_USUAL, efficiencyStatus(0.60))
         assertEquals(Status.OPTIMAL, awakeningsStatus(2))
         assertEquals(Status.GOOD, awakeningsStatus(4))
         assertEquals(Status.FAIR, awakeningsStatus(6))
-        assertEquals(Status.ATTENTION, awakeningsStatus(7))
+        assertEquals(Status.BELOW_USUAL, awakeningsStatus(7))
+    }
+
+    @Test fun `goal percent is asleep time against the target, capped at 100`() {
+        assertEquals(75, summarizeSleep(TODAY, listOf(night(TODAY, 6.0)), IST, 8.0)!!.goalPercent)
+        assertEquals(100, summarizeSleep(TODAY, listOf(night(TODAY, 9.0)), IST, 8.0)!!.goalPercent)
     }
 }

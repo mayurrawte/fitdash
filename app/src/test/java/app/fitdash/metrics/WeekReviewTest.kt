@@ -41,11 +41,4 @@ class WeekReviewTest {
         val sparse = (13 downTo 0).map { DayValue(end.minusDays(it.toLong()), if (it < 2) 9000.0 else null) }
         assertNull(weekReview(mapOf(MetricKind.STEPS to sparse), end))
     }
-
-    @Test fun `regularity row carries this week and last week`() {
-        val r = weekReview(mapOf(MetricKind.STEPS to twoWeeks(8000.0, 9000.0)), end, regularityThisWeek = 82, regularityLastWeek = 75)!!
-        assertEquals(82 to 75, r.regularity)
-        val only = weekReview(mapOf(MetricKind.STEPS to twoWeeks(8000.0, 9000.0)), end, regularityThisWeek = 82)!!
-        assertEquals(82 to null, only.regularity)
-    }
 }

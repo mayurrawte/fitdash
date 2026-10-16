@@ -9,8 +9,7 @@ import app.fitdash.metrics.Component
 import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.LoadBand
 import app.fitdash.metrics.MissingInput
-import app.fitdash.metrics.Status
-import app.fitdash.metrics.regularityWordBand
+import app.fitdash.metrics.RegularityBand
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.RangeStatus
@@ -401,17 +400,9 @@ fun fitnessCardName(card: FitnessCard): String = when (card) {
 
 fun formatHoursShort(h: Double): String = if (h == 0.0) "0 h" else String.format(Locale.ENGLISH, "%.1f h", h)
 
-fun regularityWord(sri: Int): String = when (regularityWordBand(sri)) {
-    0 -> "very regular"
-    1 -> "regular"
-    2 -> "varies"
-    else -> "irregular"
-}
-
-// Single-night sleep values never alarm: the lowest band reads as a comparison, not a verdict.
-fun calmStatusWord(status: Status): String = when (status) {
-    Status.OPTIMAL -> "Optimal"
-    Status.GOOD -> "Good"
-    Status.FAIR -> "Fair"
-    Status.ATTENTION -> "below your usual"
+fun regularityWord(band: RegularityBand): String = when (band) {
+    RegularityBand.VERY_REGULAR -> "very regular"
+    RegularityBand.REGULAR -> "regular"
+    RegularityBand.VARIES -> "varies"
+    RegularityBand.IRREGULAR -> "irregular"
 }

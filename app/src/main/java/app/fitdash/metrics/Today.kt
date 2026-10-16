@@ -94,6 +94,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         ?: prevActivity?.goalPercent?.coerceAtMost(100)
     val week = trend.takeLast(Tuning.WEEK_DAYS.toInt())
     val bmiValue = snap.weightKg?.let { w -> snap.heightMeters?.let { h -> bmi(w, h) } }
+    val reg = regularity(snap.sleep, date, zone)
     return TodayData(
         date = date,
         isToday = isToday,
@@ -143,8 +144,8 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         latestData = snap.latestDataTime(),
         syncApp = snap.syncApp(),
         fitness = fitness(snap, date, zone, goals),
-        regularity = regularity(snap.sleep, date, zone),
-        regularityProgress = regularityProgress(snap.sleep, date, zone),
-        regularityLastWeek = regularity(snap.sleep, date.minusDays(7), zone)?.value?.sri,
+        regularity = reg.value,
+        regularityProgress = reg.progress,
+        regularityLastWeek = regularity(snap.sleep, date.minusDays(7), zone).value?.value?.sri,
     )
 }

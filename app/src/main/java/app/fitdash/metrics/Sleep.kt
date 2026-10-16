@@ -29,6 +29,7 @@ data class SleepSummary(
     val awakenings: Int?,
     val latency: Duration?,
     val parts: SleepScoreParts? = null,
+    val goalPercent: Int = 100,
 )
 
 fun nightEnding(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): SleepSession? =
@@ -144,5 +145,6 @@ fun summarizeSleep(
         awakenings = awakenings(night),
         latency = sleepLatency(night),
         parts = sleepScoreParts(night, targetHours),
+        goalPercent = (asleepDuration(night).toMinutes() * 100 / (targetHours * 60)).toInt().coerceAtMost(100),
     )
 }

@@ -6,6 +6,8 @@ import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.LoadBand
 import app.fitdash.metrics.MissingInput
 import app.fitdash.metrics.Status
+import app.fitdash.metrics.regularityBand
+import app.fitdash.ui.components.statusWord
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
@@ -139,13 +141,12 @@ class IssueUrlTest {
     }
 
     @Test fun `regularity and calm words`() {
-        assertEquals("very regular", regularityWord(85))
-        assertEquals("regular", regularityWord(72))
-        assertEquals("varies", regularityWord(65))
-        assertEquals("irregular", regularityWord(40))
+        assertEquals("very regular", regularityWord(regularityBand(85)))
+        assertEquals("regular", regularityWord(regularityBand(72)))
+        assertEquals("varies", regularityWord(regularityBand(65)))
+        assertEquals("irregular", regularityWord(regularityBand(40)))
         assertEquals("Short night", sleepWord(40))
         assertEquals("Good", sleepWord(70))
-        assertEquals("below your usual", calmStatusWord(Status.ATTENTION))
-        assertEquals("Fair", calmStatusWord(Status.FAIR))
+        assertEquals("BELOW YOUR USUAL", statusWord(Status.BELOW_USUAL))
     }
 }

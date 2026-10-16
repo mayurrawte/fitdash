@@ -19,4 +19,11 @@ class StatusTest {
         assertEquals(Status.OPTIMAL, shareStatus(0.15, TYPICAL_DEEP))
         assertEquals(Status.FAIR, shareStatus(0.08, TYPICAL_DEEP))
     }
+
+    @Test fun `single-night sleep statuses never reach attention`() {
+        assertEquals(Status.BELOW_USUAL, sleepScoreStatus(49))
+        assertEquals(Status.FAIR, sleepScoreStatus(50))
+        assertEquals(Status.BELOW_USUAL, efficiencyStatus(0.70))
+        assertEquals(Status.BELOW_USUAL, awakeningsStatus(7))
+    }
 }

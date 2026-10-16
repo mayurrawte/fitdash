@@ -1,6 +1,7 @@
 package app.fitdash.metrics
 
-enum class Status { OPTIMAL, GOOD, FAIR, ATTENTION }
+// BELOW_USUAL is the lowest band for a single night of sleep: a comparison, never an alarm.
+enum class Status { OPTIMAL, GOOD, FAIR, ATTENTION, BELOW_USUAL }
 
 val TYPICAL_DEEP = 0.13..0.23
 val TYPICAL_LIGHT = 0.45..0.60
@@ -13,6 +14,8 @@ fun scoreStatus(score: Int): Status = when {
     score >= 50 -> Status.FAIR
     else -> Status.ATTENTION
 }
+
+fun sleepScoreStatus(score: Int): Status = scoreStatus(score).let { if (it == Status.ATTENTION) Status.BELOW_USUAL else it }
 
 fun rangeWord(status: RangeStatus): Status = when (status) {
     RangeStatus.GOOD_SIDE -> Status.OPTIMAL
@@ -27,12 +30,12 @@ fun efficiencyStatus(efficiency: Double): Status = when {
     efficiency >= 0.90 -> Status.OPTIMAL
     efficiency >= 0.85 -> Status.GOOD
     efficiency >= 0.75 -> Status.FAIR
-    else -> Status.ATTENTION
+    else -> Status.BELOW_USUAL
 }
 
 fun awakeningsStatus(count: Int): Status = when {
     count <= 2 -> Status.OPTIMAL
     count <= 4 -> Status.GOOD
     count <= 6 -> Status.FAIR
-    else -> Status.ATTENTION
+    else -> Status.BELOW_USUAL
 }

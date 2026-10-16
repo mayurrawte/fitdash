@@ -59,6 +59,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.regularityWord
+import app.fitdash.metrics.regularityBand
+import app.fitdash.ui.theme.regularityColour
+import app.fitdash.ui.theme.sleepScoreColour
 import app.fitdash.ui.clock
 import app.fitdash.ui.components.pressScale
 import app.fitdash.ui.components.tappable
@@ -418,15 +421,22 @@ private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, o
     val tiles = listOf<@Composable (Modifier) -> Unit>(
         { m ->
             val s = data.sleep
-            val showScore = LocalPrefs.current.showSleepScore
-            GlanceTile(
-                "Sleep", if (showScore) s?.score?.toString() ?: "—" else s?.let { formatDuration(it.asleep) } ?: "—", null, m, icon = NavIcons.moonSmall,
-                ring = s?.let { if (showScore) it.score / 100f else (it.asleep.toMinutes() / (data.goals.sleepHours * 60)).toFloat().coerceAtMost(1f) },
-                ringColor = if (showScore) s?.score?.let { scoreColor(it) } ?: Palette.Faint else data.regularity?.let { regularityColour(it.value.sri) } ?: Palette.Accent,
-                note = if (showScore) s?.let { formatDuration(it.asleep) } ?: "no night yet" else data.regularity?.let { regularityWord(it.value.sri) } ?: (s?.let { "calibrating" } ?: "no night yet"),
-                delta = if (showScore) sleepDelta else null,
-                ringKey = "glance-sleep-${data.date}", onClick = { onOpen(1) }, description = "Sleep page", tint = Tint.SKY,
-            )
+            if (LocalPrefs.current.showSleepScore) {
+                GlanceTile(
+                    "Sleep", s?.score?.toString() ?: "—", null, m, icon = NavIcons.moonSmall,
+                    ring = s?.score?.div(100f), ringColor = s?.score?.let { sleepScoreColour(it) } ?: Palette.Faint,
+                    note = s?.let { formatDuration(it.asleep) } ?: "no night yet", delta = sleepDelta,
+                    ringKey = "glance-sleep-${data.date}", onClick = { onOpen(1) }, description = "Sleep page", tint = Tint.SKY,
+                )
+            } else {
+                val band = data.regularity?.let { regularityBand(it.value.sri) }
+                GlanceTile(
+                    "Sleep", s?.let { formatDuration(it.asleep) } ?: "—", null, m, icon = NavIcons.moonSmall,
+                    ring = s?.let { it.goalPercent / 100f }, ringColor = band?.let { regularityColour(it) } ?: Palette.Accent,
+                    note = band?.let(::regularityWord) ?: (s?.let { "calibrating" } ?: "no night yet"),
+                    ringKey = "glance-sleep-${data.date}", onClick = { onOpen(1) }, description = "Sleep page", tint = Tint.SKY,
+                )
+            }
         },
         { m ->
             GlanceTile(
