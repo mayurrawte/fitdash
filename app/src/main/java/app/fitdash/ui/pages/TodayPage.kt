@@ -663,17 +663,16 @@ private fun SoftHero(data: TodayData, heroScore: Int?, heroLabel: String, pageOf
     }
 }
 
-// The hero's word and its line: the morning readout when recovery is ready, the countdown while calibrating.
-private fun heroWords(data: TodayData): Pair<String, String> {
-    val readout = if (data.isToday) morningReadout(data.sleep?.asleep, data.heart?.restingHr, data.heart?.restingHrRange, data.heart?.hrv, data.heart?.hrvRange, data.suggestions.firstOrNull()) else null
-    val usable = listOfNotNull(data.sleep?.let { "sleep" }, data.activity?.let { "steps" }, if (data.regularity != null) "sleep regularity" else null)
-    return when (val r = data.readiness) {
-        is ReadinessResult.Ready -> bandWord(r.band) to (readout ?: bandAdvice(r.band))
-        is ReadinessResult.Calibrating -> {
-            val left = Tuning.MIN_NIGHTS - r.nights
-            "Recovery · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to
-                if (data.isToday) "Your baseline is forming: $left more ${if (left == 1) "night" else "nights"} of sleep, HRV and resting heart rate." + (if (usable.isNotEmpty()) " Usable now: ${usable.joinToString(", ")}." else "") else "Not enough earlier data for this day"
-        }
-        ReadinessResult.NoData -> "No data for last night" to "Sync your watch, then pull down to refresh."
+private fun heroWords(data: TodayData): Pair<String, String> = when (val r = data.readiness) {
+    // The suggestion is left out here: the action card below the hero already shows it when the person wants it.
+    is ReadinessResult.Ready -> bandWord(r.band) to ((if (data.isToday) morningReadout(data.sleep?.asleep, data.heart, null) else null) ?: bandAdvice(r.band))
+    is ReadinessResult.Calibrating -> {
+        val left = Tuning.MIN_NIGHTS - r.nights
+        val usable = listOfNotNull(data.sleep?.let { "sleep" }, data.activity?.let { "steps" }, data.regularity?.let { "sleep regularity" })
+        "Recovery · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to if (!data.isToday) "Not enough earlier data for this day" else listOfNotNull(
+            "Your baseline is forming: ${if (left == 1) "1 more night" else "$left more nights"} of sleep, HRV and resting heart rate.",
+            if (usable.isEmpty()) null else "Usable now: ${usable.joinToString(", ")}.",
+        ).joinToString(" ")
     }
+    ReadinessResult.NoData -> "No data for last night" to "Sync your watch, then pull down to refresh."
 }

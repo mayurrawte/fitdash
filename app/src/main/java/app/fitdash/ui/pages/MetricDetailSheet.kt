@@ -48,10 +48,11 @@ import app.fitdash.metrics.rangeStatus
 import app.fitdash.metrics.rangeWord
 import app.fitdash.metrics.scoreStatus
 import app.fitdash.metrics.sleepScoreStatus
-import app.fitdash.ui.BASELINE_LINE
-import app.fitdash.ui.GENERIC_EXPLAIN
 import app.fitdash.metrics.NSF_SLEEP
 import app.fitdash.metrics.sleepGuideline
+import app.fitdash.ui.BASELINE_LINE
+import app.fitdash.ui.GENERIC_EXPLAIN
+import app.fitdash.ui.NOT_MEDICAL
 import app.fitdash.ui.components.SmoothArea
 import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.StatusText
@@ -219,8 +220,9 @@ fun MetricDetailSheet(ref: MetricRef, data: TodayData, miles: Boolean, onDismiss
                 Text(BASELINE_LINE, Modifier.padding(horizontal = Space.xl), style = Type.tiny, color = Palette.Faint)
             }
             if (kind == MetricKind.SLEEP_HOURS) {
-                prefs.birthYear?.let { sleepGuideline(java.time.Year.now().value - it) }?.let { g ->
+                data.goals.age(data.date.year)?.let(::sleepGuideline)?.let { g ->
                     Text("Guideline for your age: ${g.first}–${g.last} h a night (${NSF_SLEEP.title}).", Modifier.padding(horizontal = Space.xl), style = Type.tiny, color = Palette.Faint)
+                    Text(NOT_MEDICAL, Modifier.padding(horizontal = Space.xl, vertical = Space.xs), style = Type.tiny, color = Palette.Faint)
                 }
             }
             if (kind == MetricKind.SLEEP_SCORE) {

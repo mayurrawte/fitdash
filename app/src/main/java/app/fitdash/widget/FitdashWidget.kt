@@ -84,7 +84,7 @@ class FitdashWidget : GlanceAppWidget() {
                 buildToday(it.snapshot, ZonedDateTime.now(), goals = Goals(settings.stepGoal, settings.sleepHours, settings.waterGoalMl / 1000.0, settings.activeGoal))
             }
         }
-        provideContent { WidgetContent(theme, data) }
+        provideContent { WidgetContent(theme, data, settings.showSuggestions) }
     }
 }
 
@@ -99,7 +99,7 @@ private fun open(context: Context, page: Int) = actionStartActivity(
 private fun color(c: Color) = ColorProvider(c)
 
 @Composable
-private fun WidgetContent(t: ThemeTokens, data: TodayData?) {
+private fun WidgetContent(t: ThemeTokens, data: TodayData?, showSuggestions: Boolean) {
     val context = LocalContext.current
     val wide = LocalSize.current.width >= WIDE.width
     // Soft sits as a white card on the wallpaper; the dark themes keep their ground.
@@ -124,7 +124,7 @@ private fun WidgetContent(t: ThemeTokens, data: TodayData?) {
                 Ring(t, score, label, 84)
                 Spacer(GlanceModifier.width(14.dp))
                 Column(GlanceModifier.defaultWeight()) {
-                    morningReadout(data.sleep?.asleep, data.heart?.restingHr, data.heart?.restingHrRange, data.heart?.hrv, data.heart?.hrvRange, data.suggestions.firstOrNull())?.let {
+                    morningReadout(data.sleep?.asleep, data.heart, data.suggestions.firstOrNull().takeIf { showSuggestions })?.let {
                         Text(it, style = TextStyle(color = color(t.text), fontSize = 12.sp), maxLines = 2)
                         Spacer(GlanceModifier.height(4.dp))
                     }
