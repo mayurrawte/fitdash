@@ -226,14 +226,7 @@ fun TodayPage(
                         Text(heroLabel, style = Type.label)
                     }
                 }
-                val readout = if (data.isToday) morningReadout(data.sleep?.asleep, data.heart?.restingHr, data.heart?.restingHrRange, data.heart?.hrv, data.heart?.hrvRange, data.suggestions.firstOrNull()) else null
-                val usable = listOfNotNull(data.sleep?.let { "sleep" }, data.activity?.let { "steps" }, if (data.regularity != null) "sleep regularity" else null)
-                val (word, advice) = when (r) {
-                    is ReadinessResult.Ready -> bandWord(r.band) to (readout ?: bandAdvice(r.band))
-                    is ReadinessResult.Calibrating -> "Recovery · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to
-                        if (data.isToday) "Your baseline is forming: ${Tuning.MIN_NIGHTS - r.nights} more ${if (Tuning.MIN_NIGHTS - r.nights == 1) "night" else "nights"} of sleep, HRV and resting heart rate." + (if (usable.isNotEmpty()) " Usable now: ${usable.joinToString(", ")}." else "") else "Not enough earlier data for this day"
-                    ReadinessResult.NoData -> "No data for last night" to "Sync your watch, then pull down to refresh."
-                }
+                val (word, advice) = heroWords(data)
                 Text(word.uppercase(), style = Type.label, color = score?.let { scoreColor(it) } ?: Palette.Muted, modifier = Modifier.padding(top = Space.m))
                 // Seven dots that fill night by night, so calibrating reads as progress rather than waiting.
                 if (r is ReadinessResult.Calibrating) {
@@ -629,12 +622,7 @@ private fun HeartDayCard(data: TodayData, hd: HeartDay, zone: ZoneId, onOpen: ()
 private fun SoftHero(data: TodayData, heroScore: Int?, heroLabel: String, pageOffset: () -> Float, onClick: () -> Unit) {
     val r = data.readiness
     val score = (r as? ReadinessResult.Ready)?.score
-    val (word, advice) = when (r) {
-        is ReadinessResult.Ready -> bandWord(r.band) to bandAdvice(r.band)
-        is ReadinessResult.Calibrating -> "Recovery · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to
-            if (data.isToday) "Recovery needs ${Tuning.MIN_NIGHTS} nights of sleep, HRV and resting heart rate. Until then the ring shows your ${if (data.sleep != null) "sleep score" else "steps"}." else "Not enough earlier data for this day"
-        ReadinessResult.NoData -> "No data for last night" to "Sync your watch, then pull down to refresh."
-    }
+    val (word, advice) = heroWords(data)
     val name = heroLabel.trim('›', ' ').lowercase()
     Row(
         Modifier
@@ -672,5 +660,20 @@ private fun SoftHero(data: TodayData, heroScore: Int?, heroLabel: String, pageOf
             (r as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.used)?.let { Text(it, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s)) } }
             if (data.isToday) missingRecoveryLine(data.sources)?.let { Text(it, style = Type.secondary, color = Palette.Warn, modifier = Modifier.padding(top = Space.s)) }
         }
+    }
+}
+
+// The hero's word and its line: the morning readout when recovery is ready, the countdown while calibrating.
+private fun heroWords(data: TodayData): Pair<String, String> {
+    val readout = if (data.isToday) morningReadout(data.sleep?.asleep, data.heart?.restingHr, data.heart?.restingHrRange, data.heart?.hrv, data.heart?.hrvRange, data.suggestions.firstOrNull()) else null
+    val usable = listOfNotNull(data.sleep?.let { "sleep" }, data.activity?.let { "steps" }, if (data.regularity != null) "sleep regularity" else null)
+    return when (val r = data.readiness) {
+        is ReadinessResult.Ready -> bandWord(r.band) to (readout ?: bandAdvice(r.band))
+        is ReadinessResult.Calibrating -> {
+            val left = Tuning.MIN_NIGHTS - r.nights
+            "Recovery · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to
+                if (data.isToday) "Your baseline is forming: $left more ${if (left == 1) "night" else "nights"} of sleep, HRV and resting heart rate." + (if (usable.isNotEmpty()) " Usable now: ${usable.joinToString(", ")}." else "") else "Not enough earlier data for this day"
+        }
+        ReadinessResult.NoData -> "No data for last night" to "Sync your watch, then pull down to refresh."
     }
 }
