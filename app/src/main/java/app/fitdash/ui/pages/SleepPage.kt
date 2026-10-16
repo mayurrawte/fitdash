@@ -89,16 +89,18 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
             item(key = "empty") { EmptyState(if (data.isToday) "No sleep last night" else "No sleep that night", "Wear your device to bed and sync it. Your night will show up here.") }
         } else {
             item(key = "gauge") {
-                val colour = scoreColor(s.score)
+                // One night never shows red: a sub-50 score takes the watch colour on the arc and the chip.
+                val colour = if (s.score < 50) Palette.Warn else scoreColor(s.score)
                 Column(Modifier.fillMaxWidth().padding(top = Space.m).clip(CardShape).tappable(opener(MetricKind.SLEEP_SCORE), "Sleep score details"), horizontalAlignment = Alignment.CenterHorizontally) {
                     if (showScore) {
-                        SemiGauge(s.score, "Sleep", scoreStatus(s.score), from = Palette.Deep, to = colour, tag = sleepWord(s.score))
+                        SemiGauge(s.score, "Sleep", scoreStatus(s.score), from = Palette.Deep, to = colour, tag = sleepWord(s.score), calm = true)
                     } else {
                         val mins = s.asleep.toMinutes()
+                        val sri = data.regularity?.value?.sri
                         SemiGauge(
-                            ((mins / (data.goals.sleepHours * 60)) * 100).roundToInt().coerceIn(0, 100), "Sleep", Status.GOOD,
-                            key = "gauge-hours-${data.date}", value = formatDuration(s.asleep), from = Palette.Deep, to = colour,
-                            tag = data.regularity?.let { regularityWord(it.value.sri) } ?: "calibrating",
+                            ((mins / (data.goals.sleepHours * 60)) * 100).roundToInt().coerceIn(0, 100), "Sleep", sri?.let(::regularityStatus) ?: Status.FAIR,
+                            key = "gauge-hours-${data.date}", value = formatDuration(s.asleep), from = Palette.Deep, to = sri?.let { regularityColour(it) } ?: Palette.Accent,
+                            tag = sri?.let(::regularityWord) ?: "calibrating", calm = true,
                         )
                     }
                     Text(

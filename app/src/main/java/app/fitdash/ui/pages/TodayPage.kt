@@ -422,8 +422,8 @@ private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, o
             GlanceTile(
                 "Sleep", if (showScore) s?.score?.toString() ?: "—" else s?.let { formatDuration(it.asleep) } ?: "—", null, m, icon = NavIcons.moonSmall,
                 ring = s?.let { if (showScore) it.score / 100f else (it.asleep.toMinutes() / (data.goals.sleepHours * 60)).toFloat().coerceAtMost(1f) },
-                ringColor = s?.score?.let { scoreColor(it) } ?: Palette.Faint,
-                note = if (showScore) s?.let { formatDuration(it.asleep) } ?: "no night yet" else data.regularity?.let { regularityWord(it.value.sri) } ?: (s?.let { "no score shown" } ?: "no night yet"),
+                ringColor = if (showScore) s?.score?.let { scoreColor(it) } ?: Palette.Faint else data.regularity?.let { regularityColour(it.value.sri) } ?: Palette.Accent,
+                note = if (showScore) s?.let { formatDuration(it.asleep) } ?: "no night yet" else data.regularity?.let { regularityWord(it.value.sri) } ?: (s?.let { "calibrating" } ?: "no night yet"),
                 delta = if (showScore) sleepDelta else null,
                 ringKey = "glance-sleep-${data.date}", onClick = { onOpen(1) }, description = "Sleep page", tint = Tint.SKY,
             )

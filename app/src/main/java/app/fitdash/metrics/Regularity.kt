@@ -41,11 +41,23 @@ private fun minutesFromEvening(t: Instant, zone: ZoneId): Int {
     return if (m >= 18 * 60) m - 18 * 60 else m + 6 * 60
 }
 
+// Sample standard deviation (n − 1) of the clock time, in minutes.
 fun clockSpreadMinutes(times: List<Instant>, zone: ZoneId): Int? {
     if (times.size < 3) return null
     val xs = times.map { minutesFromEvening(it, zone).toDouble() }
     val mean = xs.average()
-    return sqrt(xs.sumOf { (it - mean) * (it - mean) } / xs.size).roundToInt()
+    return sqrt(xs.sumOf { (it - mean) * (it - mean) } / (xs.size - 1)).roundToInt()
+}
+
+const val NIGHT_AXIS_START_MIN = 20 * 60   // the chart axis runs 20:00 to 12:00
+const val NIGHT_AXIS_SPAN_MIN = 16 * 60
+
+// Where a clock time sits on the 20:00–12:00 night axis, 0..1. Times outside it pin to the nearer edge, measured on the
+// same evening-first scale as the spreads, so 19:45 pins left and 13:00 pins right.
+fun nightAxisFraction(minuteOfDay: Int): Float {
+    val sinceEvening = if (minuteOfDay >= 18 * 60) minuteOfDay - 18 * 60 else minuteOfDay + 6 * 60
+    val sinceStart = sinceEvening - (NIGHT_AXIS_START_MIN - 18 * 60)
+    return (sinceStart.coerceIn(0, NIGHT_AXIS_SPAN_MIN).toFloat() / NIGHT_AXIS_SPAN_MIN)
 }
 
 private data class Pairing(val nights: List<NightSpan>, val matches: Long, val pairs: Long, val dayPairs: Int)

@@ -60,8 +60,8 @@ class RegularityTest {
     @Test fun `bedtime spread wraps midnight`() {
         val d = TODAY
         val times = listOf(at(d.minusDays(1), 23, 30), at(d, 0, 30), at(d.minusDays(1), 23, 0))
-        // minutes from 18:00: 330, 390, 300 → mean 340, population SD = sqrt((100+2500+1600)/3) = 37.4 → 37
-        assertEquals(37, clockSpreadMinutes(times, IST))
+        // minutes from 18:00: 330, 390, 300 → mean 340, sample SD = sqrt((100+2500+1600)/2) = 45.8 → 46
+        assertEquals(46, clockSpreadMinutes(times, IST))
         assertNull(clockSpreadMinutes(times.take(2), IST))
     }
 
@@ -73,6 +73,16 @@ class RegularityTest {
         val r = regularity(sessions, end, london)!!
         // the night across the change is one hour longer, so one pair mismatches by an hour each side: still rounds above 98
         assert(r.value.sri >= 98) { "sri ${r.value.sri}" }
+    }
+
+    @Test fun `axis fraction pins early bedtimes and late wakes to the edges`() {
+        assertEquals(0f, nightAxisFraction(19 * 60 + 45), 1e-6f)   // before the 20:00 axis start
+        assertEquals(0f, nightAxisFraction(20 * 60), 1e-6f)
+        assertEquals(0.25f, nightAxisFraction(0), 1e-6f)           // midnight is 4 h into a 16 h axis
+        assertEquals(0.6875f, nightAxisFraction(7 * 60), 1e-6f)     // 07:00
+        assertEquals(1f, nightAxisFraction(12 * 60), 1e-6f)
+        assertEquals(1f, nightAxisFraction(13 * 60), 1e-6f)         // after 12:00 pins to the right edge
+        assertEquals(1f, nightAxisFraction(14 * 60), 1e-6f)         // an afternoon time is late on the evening-first scale
     }
 
     @Test fun `word bands`() {

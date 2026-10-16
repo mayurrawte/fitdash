@@ -27,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.MIN_PAIRS
 import app.fitdash.metrics.NightSpan
+import app.fitdash.metrics.Status
+import app.fitdash.metrics.nightAxisFraction
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.regularityWordBand
 import app.fitdash.ui.components.Chart
@@ -43,27 +45,31 @@ import java.time.ZoneId
 
 // Three colours only; regularity never shows red.
 @Composable
-private fun bandColour(band: Int): Color = when (band) {
+fun regularityColour(sri: Int): Color = when (regularityWordBand(sri)) {
     0 -> Palette.Good
     1 -> Palette.Accent
     else -> Palette.Warn
 }
 
-private const val AXIS_START_MIN = 20 * 60        // 20:00 the evening before
-private const val AXIS_SPAN_MIN = 16 * 60         // to 12:00
+// For a gauge chip: the band as a status that never reaches ATTENTION.
+fun regularityStatus(sri: Int): Status = when (regularityWordBand(sri)) {
+    0 -> Status.OPTIMAL
+    1 -> Status.GOOD
+    else -> Status.FAIR
+}
 
 @Composable
 fun RegularityCard(data: TodayData, zone: ZoneId) {
     val r = data.regularity
     if (r == null) {
         SectionCard("REGULARITY", trailing = "last 14 nights") {
-            Text("Calibrating · ${data.regularityProgress} of $MIN_PAIRS nights", style = Type.body, color = Palette.Muted)
-            Text("Regularity needs five nights in a row. It compares when you are asleep with the same time the day before.", style = Type.tiny, color = Palette.Faint, modifier = Modifier.padding(top = Space.xs))
+            Text("Calibrating · ${data.regularityProgress} of $MIN_PAIRS night pairs", style = Type.body, color = Palette.Muted)
+            Text("Regularity needs five pairs of back-to-back nights. It compares when you are asleep with the same time the day before.", style = Type.tiny, color = Palette.Faint, modifier = Modifier.padding(top = Space.xs))
         }
         return
     }
     val v = r.value
-    val colour = bandColour(regularityWordBand(v.sri))
+    val colour = regularityColour(v.sri)
     val open = metricOpener(MetricRef.Fitness(FitnessCard.REGULARITY))
     SectionCard("REGULARITY", trailing = "last 14 nights · tap for the formula", onClick = open, description = metricDescription(MetricRef.Fitness(FitnessCard.REGULARITY))) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -91,16 +97,14 @@ private fun NightBars(nights: List<NightSpan>, zone: ZoneId, colour: Color, modi
                 val w = maxWidth
                 Box(Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Chart.track))
                 if (n.start != null && n.end != null) {
-                    val s = axisFraction(n.start.atZone(zone).let { it.hour * 60 + it.minute })
-                    val e = axisFraction(n.end.atZone(zone).let { it.hour * 60 + it.minute })
-                    if (e > s) Box(Modifier.offset(x = w * s).width(w * (e - s) * progress.value).height(4.dp).clip(RoundedCornerShape(2.dp)).background(colour))
+                    val s = nightAxisFraction(n.start.atZone(zone).let { it.hour * 60 + it.minute })
+                    val e = nightAxisFraction(n.end.atZone(zone).let { it.hour * 60 + it.minute })
+                    // A night that falls outside the axis (an afternoon sleeper) still gets a visible stub at its start.
+                    val span = (e - s).coerceAtLeast(0.03f)
+                    Box(Modifier.offset(x = w * s.coerceAtMost(1f - span)).width(w * span * progress.value).height(4.dp).clip(RoundedCornerShape(2.dp)).background(colour))
                 }
             }
         }
     }
 }
 
-private fun axisFraction(minuteOfDay: Int): Float {
-    val sinceStart = ((minuteOfDay - AXIS_START_MIN) % (24 * 60) + 24 * 60) % (24 * 60)
-    return (sinceStart.toFloat() / AXIS_SPAN_MIN).coerceIn(0f, 1f)
-}
