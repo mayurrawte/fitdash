@@ -14,9 +14,9 @@ import app.fitdash.metrics.Good
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.RangeStatus
 import app.fitdash.metrics.Suggestion
+import app.fitdash.metrics.rangeStatus
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.Tuning
-import app.fitdash.metrics.rangeStatus
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -405,4 +405,32 @@ fun regularityWord(band: RegularityBand): String = when (band) {
     RegularityBand.REGULAR -> "regular"
     RegularityBand.VARIES -> "varies"
     RegularityBand.IRREGULAR -> "irregular"
+}
+
+const val BASELINE_LINE = "Compared with your own last 30 days, not with other people."
+
+// One sentence for the top of Today and the widget: last night, one vital against the person's range, the first suggestion.
+fun morningReadout(
+    asleep: Duration?,
+    restingHr: Double?,
+    restingHrRange: ClosedFloatingPointRange<Double>?,
+    hrv: Double?,
+    hrvRange: ClosedFloatingPointRange<Double>?,
+    suggestion: Suggestion?,
+): String? {
+    val vital = when {
+        restingHr != null && restingHrRange != null -> "Resting heart rate " + when (rangeStatus(restingHr, restingHrRange, Good.LOWER)) {
+            RangeStatus.IN -> "in your normal range."
+            RangeStatus.GOOD_SIDE -> "a little lower than your usual."
+            RangeStatus.BAD_SIDE -> "higher than your usual."
+        }
+        hrv != null && hrvRange != null -> "HRV " + when (rangeStatus(hrv, hrvRange, Good.HIGHER)) {
+            RangeStatus.IN -> "in your normal range."
+            RangeStatus.GOOD_SIDE -> "higher than your usual."
+            RangeStatus.BAD_SIDE -> "lower than your usual."
+        }
+        else -> null
+    }
+    val parts = listOfNotNull(asleep?.let { "Slept ${formatDuration(it)}." }, vital, suggestion?.let(::suggestionText))
+    return parts.joinToString(" ").ifEmpty { null }
 }

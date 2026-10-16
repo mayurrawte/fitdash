@@ -140,4 +140,13 @@ class SleepQualityTest {
         assertEquals(75, summarizeSleep(TODAY, listOf(night(TODAY, 6.0)), IST, 8.0)!!.goalPercent)
         assertEquals(100, summarizeSleep(TODAY, listOf(night(TODAY, 9.0)), IST, 8.0)!!.goalPercent)
     }
+
+    @Test fun `sleep guideline follows the NSF 2015 age bands`() {
+        assertEquals(8..10, sleepGuideline(17))
+        assertEquals(7..9, sleepGuideline(18))
+        assertEquals(7..9, sleepGuideline(64))
+        assertEquals(7..8, sleepGuideline(65))
+        assertNull(sleepGuideline(13))
+        assertEquals("National Sleep Foundation 2015", NSF_SLEEP.title)
+    }
 }

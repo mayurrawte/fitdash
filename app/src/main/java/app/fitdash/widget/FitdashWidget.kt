@@ -46,6 +46,7 @@ import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.buildToday
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.formatDuration
+import app.fitdash.ui.morningReadout
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.ThemeTokens
 import app.fitdash.ui.theme.resolveTheme
@@ -123,6 +124,10 @@ private fun WidgetContent(t: ThemeTokens, data: TodayData?) {
                 Ring(t, score, label, 84)
                 Spacer(GlanceModifier.width(14.dp))
                 Column(GlanceModifier.defaultWeight()) {
+                    morningReadout(data.sleep?.asleep, data.heart?.restingHr, data.heart?.restingHrRange, data.heart?.hrv, data.heart?.hrvRange, data.suggestions.firstOrNull())?.let {
+                        Text(it, style = TextStyle(color = color(t.text), fontSize = 12.sp), maxLines = 2)
+                        Spacer(GlanceModifier.height(4.dp))
+                    }
                     MetricRow(t, "Sleep", data.sleep?.let { formatDuration(it.asleep) } ?: "—", data.week(MetricKind.SLEEP_HOURS), t.rem, open(context, 1))
                     MetricRow(t, "Steps", data.activity?.let { formatSteps(it.steps) } ?: "—", data.week(MetricKind.STEPS), t.accent, open(context, 2))
                     MetricRow(t, "Resting HR", data.heart?.restingHr?.let { "${it.roundToInt()} bpm" } ?: "—", data.week(MetricKind.RESTING_HR), t.bad, open(context, 0))

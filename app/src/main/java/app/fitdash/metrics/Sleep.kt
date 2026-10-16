@@ -148,3 +148,13 @@ fun summarizeSleep(
         goalPercent = (asleepDuration(night).toMinutes() * 100 / (targetHours * 60)).toInt().coerceAtMost(100),
     )
 }
+
+val NSF_SLEEP = Source("National Sleep Foundation 2015", "Hirshkowitz et al., National Sleep Foundation's sleep time duration recommendations. Sleep Health 1(1):40–43.")
+
+// Recommended hours a night by age; null under 14, where fitdash is not aimed.
+fun sleepGuideline(age: Int): IntRange? = when {
+    age < 14 -> null
+    age <= 17 -> 8..10
+    age <= 64 -> 7..9
+    else -> 7..8
+}

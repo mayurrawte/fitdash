@@ -48,7 +48,10 @@ import app.fitdash.metrics.rangeStatus
 import app.fitdash.metrics.rangeWord
 import app.fitdash.metrics.scoreStatus
 import app.fitdash.metrics.sleepScoreStatus
+import app.fitdash.ui.BASELINE_LINE
 import app.fitdash.ui.GENERIC_EXPLAIN
+import app.fitdash.metrics.NSF_SLEEP
+import app.fitdash.metrics.sleepGuideline
 import app.fitdash.ui.components.SmoothArea
 import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.StatusText
@@ -212,6 +215,14 @@ fun MetricDetailSheet(ref: MetricRef, data: TodayData, miles: Boolean, onDismiss
                 Text(bmiWord(data.bmiBand), Modifier.padding(horizontal = Space.xl), style = Type.tiny.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Medium), color = bmiColour(data.bmiBand))
             }
             Text(explain, Modifier.padding(horizontal = Space.xl, vertical = Space.m), style = Type.body, color = Palette.Muted)
+            if (kind == MetricKind.RECOVERY || kind in RANGE_KINDS) {
+                Text(BASELINE_LINE, Modifier.padding(horizontal = Space.xl), style = Type.tiny, color = Palette.Faint)
+            }
+            if (kind == MetricKind.SLEEP_HOURS) {
+                prefs.birthYear?.let { sleepGuideline(java.time.Year.now().value - it) }?.let { g ->
+                    Text("Guideline for your age: ${g.first}–${g.last} h a night (${NSF_SLEEP.title}).", Modifier.padding(horizontal = Space.xl), style = Type.tiny, color = Palette.Faint)
+                }
+            }
             if (kind == MetricKind.SLEEP_SCORE) {
                 data.sleep?.parts?.let { pts ->
                     Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl, vertical = Space.xs), horizontalArrangement = Arrangement.SpaceBetween) {

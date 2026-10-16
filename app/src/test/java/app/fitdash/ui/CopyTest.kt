@@ -149,4 +149,19 @@ class IssueUrlTest {
         assertEquals("Good", sleepWord(70))
         assertEquals("BELOW YOUR USUAL", statusWord(Status.BELOW_USUAL))
     }
+
+    @Test fun `morning readout reads sleep, one vital against your range, and the first suggestion`() {
+        val sleep = Duration.ofMinutes(452)
+        assertEquals(
+            "Slept 7h 32m. Resting heart rate a little lower than your usual. Good day for a hard workout.",
+            morningReadout(sleep, restingHr = 56.0, restingHrRange = 58.0..64.0, hrv = null, hrvRange = null, suggestion = Suggestion(SuggestionKind.HARD_WORKOUT)),
+        )
+        assertEquals(
+            "Slept 6h 10m. HRV in your normal range. Get to bed 30 minutes earlier tonight.",
+            morningReadout(Duration.ofMinutes(370), restingHr = null, restingHrRange = null, hrv = 42.0, hrvRange = 38.0..50.0, suggestion = Suggestion(SuggestionKind.EARLIER_BED)),
+        )
+        assertEquals("Slept 7h 32m.", morningReadout(sleep, null, null, null, null, null))
+        assertNull(morningReadout(null, null, null, null, null, null))
+        assertEquals("Resting heart rate higher than your usual.", morningReadout(null, 70.0, 58.0..64.0, null, null, null))
+    }
 }

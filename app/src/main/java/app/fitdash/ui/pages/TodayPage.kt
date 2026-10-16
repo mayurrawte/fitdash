@@ -59,6 +59,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.regularityWord
+import app.fitdash.ui.morningReadout
 import app.fitdash.metrics.regularityBand
 import app.fitdash.ui.theme.regularityColour
 import app.fitdash.ui.theme.sleepScoreColour
@@ -225,10 +226,12 @@ fun TodayPage(
                         Text(heroLabel, style = Type.label)
                     }
                 }
+                val readout = if (data.isToday) morningReadout(data.sleep?.asleep, data.heart?.restingHr, data.heart?.restingHrRange, data.heart?.hrv, data.heart?.hrvRange, data.suggestions.firstOrNull()) else null
+                val usable = listOfNotNull(data.sleep?.let { "sleep" }, data.activity?.let { "steps" }, if (data.regularity != null) "sleep regularity" else null)
                 val (word, advice) = when (r) {
-                    is ReadinessResult.Ready -> bandWord(r.band) to bandAdvice(r.band)
+                    is ReadinessResult.Ready -> bandWord(r.band) to (readout ?: bandAdvice(r.band))
                     is ReadinessResult.Calibrating -> "Recovery · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to
-                        if (data.isToday) "Recovery needs ${Tuning.MIN_NIGHTS} nights of sleep, HRV and resting heart rate. Until then the orb shows your ${if (data.sleep != null) "sleep score" else "steps"}." else "Not enough earlier data for this day"
+                        if (data.isToday) "Your baseline is forming: ${Tuning.MIN_NIGHTS - r.nights} more ${if (Tuning.MIN_NIGHTS - r.nights == 1) "night" else "nights"} of sleep, HRV and resting heart rate." + (if (usable.isNotEmpty()) " Usable now: ${usable.joinToString(", ")}." else "") else "Not enough earlier data for this day"
                     ReadinessResult.NoData -> "No data for last night" to "Sync your watch, then pull down to refresh."
                 }
                 Text(word.uppercase(), style = Type.label, color = score?.let { scoreColor(it) } ?: Palette.Muted, modifier = Modifier.padding(top = Space.m))
