@@ -47,7 +47,8 @@ Own personal developer account (SNX Studio). App `app.fitdash` created, all decl
 - Play App Signing uses a Google-generated key; the local keystore is the upload key. Play and GitHub builds therefore have different signatures.
 - Back up `~/.android/fitdash-release.jks` and `~/.android/fitdash-release-credentials.txt` to a password manager.
 - Do not edit the listing or declarations while the review runs; each edit restarts it.
-- v0.6.0 (code 6, this tree): fitness cards (`docs/superpowers/specs/2026-10-15-fitdash-fitness-cards-design.md`), gender setting, No data screen with app buttons, device-neutral copy, Soft dropdown fix. Upload to the closed track after the review approves.
+- v0.7.0 (code 7, this tree): sleep regularity card, calm single-night framing, show sleep score toggle (`docs/superpowers/specs/2026-10-16-fitdash-sleep-regularity-design.md`). Research behind the roadmap: `docs/research/2026-10-16-behaviour-science-notes.md`.
+- v0.6.0 (code 6, tagged, on GitHub): fitness cards (`docs/superpowers/specs/2026-10-15-fitdash-fitness-cards-design.md`), gender setting, No data screen with app buttons, device-neutral copy, Soft dropdown fix. Upload to the closed track after the review approves.
 
 ## Later
 
