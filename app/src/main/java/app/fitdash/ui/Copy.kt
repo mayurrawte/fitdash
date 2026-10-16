@@ -9,6 +9,7 @@ import app.fitdash.metrics.Component
 import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.LoadBand
 import app.fitdash.metrics.MissingInput
+import app.fitdash.metrics.Status
 import app.fitdash.metrics.regularityWordBand
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.MetricKind
@@ -172,7 +173,7 @@ fun sleepWord(score: Int) = when {
     score >= 85 -> "Restful"
     score >= 70 -> "Good"
     score >= 50 -> "Fair"
-    else -> "Poor"
+    else -> "Short night"
 }
 
 private val CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
@@ -405,4 +406,12 @@ fun regularityWord(sri: Int): String = when (regularityWordBand(sri)) {
     1 -> "regular"
     2 -> "varies"
     else -> "irregular"
+}
+
+// Single-night sleep values never alarm: the lowest band reads as a comparison, not a verdict.
+fun calmStatusWord(status: Status): String = when (status) {
+    Status.OPTIMAL -> "Optimal"
+    Status.GOOD -> "Good"
+    Status.FAIR -> "Fair"
+    Status.ATTENTION -> "below your usual"
 }

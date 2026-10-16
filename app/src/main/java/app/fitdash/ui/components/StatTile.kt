@@ -76,6 +76,7 @@ fun NumberTile(
     onClick: (() -> Unit)? = null,
     description: String? = null,
     tint: Tint? = null,
+    calm: Boolean = false,
 ) = TintScope(tint) {
     Column(
         modifier
@@ -89,7 +90,7 @@ fun NumberTile(
             Text(label, style = Type.secondary, color = Palette.Muted)
         }
         NumberWithUnits(parts, Modifier.padding(top = Space.s, bottom = 6.dp))
-        if (status != null) StatusText(status)
+        if (status != null) StatusText(status, calm = calm)
         if (note != null) Text(noteCase(note, upper = false), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
     }
 }

@@ -5,6 +5,7 @@ import app.fitdash.metrics.Component
 import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.LoadBand
 import app.fitdash.metrics.MissingInput
+import app.fitdash.metrics.Status
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
@@ -66,7 +67,7 @@ class CopyTest {
         assertEquals("Restful", sleepWord(85))
         assertEquals("Good", sleepWord(70))
         assertEquals("Fair", sleepWord(50))
-        assertEquals("Poor", sleepWord(49))
+        assertEquals("Short night", sleepWord(49))
         assertEquals("23:10", formatClock(Instant.parse("2026-10-10T17:40:00Z"), ZoneId.of("Asia/Kolkata")))
         assertEquals("S", dayLetter(LocalDate.of(2026, 10, 11)))
         assertEquals("M", dayLetter(LocalDate.of(2026, 10, 12)))
@@ -135,5 +136,16 @@ class IssueUrlTest {
         assertEquals("Fitness age", fitnessCardName(FitnessCard.FITNESS_AGE))
         assertEquals("3.5 h", formatHoursShort(3.5))
         assertEquals("0 h", formatHoursShort(0.0))
+    }
+
+    @Test fun `regularity and calm words`() {
+        assertEquals("very regular", regularityWord(85))
+        assertEquals("regular", regularityWord(72))
+        assertEquals("varies", regularityWord(65))
+        assertEquals("irregular", regularityWord(40))
+        assertEquals("Short night", sleepWord(40))
+        assertEquals("Good", sleepWord(70))
+        assertEquals("below your usual", calmStatusWord(Status.ATTENTION))
+        assertEquals("Fair", calmStatusWord(Status.FAIR))
     }
 }
