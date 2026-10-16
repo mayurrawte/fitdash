@@ -31,6 +31,14 @@ The honest version of "hooking" people is a daily reason to open that pays off w
 5. Praise in the weekly review against the person's own last week. (finding 3)
 6. The widget shows the same one-sentence readout, so the app earns the tap.
 
+## Comparison framing
+
+Every "vs your usual" number compares with the person's own last 30 days, never with other people, and each info sheet should say so in one line. Population references are shown only where an open, citable source exists. Sleep duration has one: the National Sleep Foundation 2015 consensus (Hirshkowitz et al., Sleep Health 1(1):40–43) gives 7–9 h for ages 18–64 and 7–8 h for 65 and over. Show it as a range beside the person's own average, never as a "percentage of ideal", which invites the anxiety in finding 3. HRV and resting-heart-rate percentile tables remain out until a verifiable source is found.
+
+## Visual system
+
+Requested 16 Oct: a near-black premium look and deliberate variety in card sizes. Graphite is already the near-black theme and Soft dark is charcoal; the cheap route is Graphite as the default dark look, Teal's base deepened towards black with teal kept for accents. Card sizes as a system of four, not ad hoc: full-width hero, half tile, compact row, and a wide-short strip card, with the hero on a larger radius so the hierarchy reads at a glance.
+
 ## Feature queue, in order
 
 1. Sleep regularity card and calm sleep framing (finding 3, 4) — spec `docs/superpowers/specs/2026-10-16-fitdash-sleep-regularity-design.md`.
@@ -38,3 +46,6 @@ The honest version of "hooking" people is a daily reason to open that pays off w
 3. One if-then plan with a next-morning check (finding 2).
 4. One receptive-moment reminder, opt-in (finding 5).
 5. Today hero rework: one hero, glance tiles (finding 6, design rules).
+6. "Your own baseline" line in every info sheet, and the NSF sleep range beside the sleep average (Comparison framing).
+7. Visual system: Graphite-default dark look, deeper Teal, four card sizes (Visual system).
+8. Loading takes over as soon as Health Connect permissions return (device check 16 Oct).

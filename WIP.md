@@ -26,6 +26,14 @@ Not done: fresh Play screenshots from this build (`fastlane/.../phoneScreenshots
 
 A light pastel theme modelled on two Dribbble references, now the default for fresh installs (existing installs keep their saved theme and Inter numbers). It has a `#F2F3F0` ground, white 28 dp cards, tiles tinted sky, sage, lavender and peach (`Tint` + `TintScope` recolour the text inside), a dark icon-only dock in place of the glass nav, a peach week-strip pill and date chip, and a white hero card with a ring in place of the orb. Outfit (OFL, bundled) is used for body and labels on Soft and is a fourth numbers option. Status-bar icons go dark on Soft, and on Android 13+ the splash colour follows the theme from the next cold start. Two Soft previews are in `PagerScreen.kt`. To check on the Pixel: every page, every sheet (they use `bgMid`), the share card, chart dots and gauge tips on white, and labels that are still uppercased in code.
 
+## Device check, 16 Oct (Pixel 9a, Play debug build of v0.7.0)
+
+Checked and fine: first-run Health Connect flow (history prompt, then the permission sheet; 23 of 24 granted, background off by design), Today with the calibration countdown, Sleep page with the one-night line and the calibrating Regularity card ("4 of 5 night pairs"), Trends Fitness tiles (VO2 estimate after setting age, sleep-debt strip, training load marker), Settings Gender dropdown and Show sleep score toggle, score hidden on Sleep (hours with "calibrating" chip), the theme menu readable on Soft in dark mode (the v0.5 bug), Soft light and Soft dark, Midnight Teal.
+
+Not checked: Fitness age and Resting kcal (no weight in Health Connect on this phone), the Regularity card past calibration and its sheet (needs a fifth night pair), Reduce motion, Graphite.
+
+Noted: the "Grant access" button can look stuck after the Health Connect sheet returns, because the first full read takes 20–30 s with no change on screen until it finishes. The loading screen should take over as soon as permissions return. Also the Height tile on Trends shows "1.5 M" (a Health Connect value) while BMI says "Add height in Settings"; worth reconciling.
+
 ## Not yet checked on a device
 
 - v0.5.0: everything above. Watch the first-run permission screen (now asks for "read older data"), the heart-rate card with Fitbit's 1-minute samples, the workout sheet, Trends 6M after granting history, and every page at 1.3x font scale with the larger labels.
