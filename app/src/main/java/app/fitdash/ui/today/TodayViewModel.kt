@@ -210,6 +210,8 @@ class TodayViewModel(
                 if (granted.none { it in source.allPermissions }) {
                     TodayUiState.NeedsPermission
                 } else {
+                    // Straight after the permission sheet there is nothing to show yet; the Welcome button must not look stuck.
+                    if (_state.value !is TodayUiState.Ready) _state.value = TodayUiState.Loading
                     val result = readFresh(source, raw, lastRead, lastFullRead, now)
                     val read = result.snapshot
                     if (result.full) lastFullRead = now.toInstant()

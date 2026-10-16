@@ -108,6 +108,18 @@ class TodayViewModelTest {
         assertEquals(TodayUiState.Failed, load(FakeSource(fail = true)).state.value)
     }
 
+    @Test fun `granting permissions shows the loading screen while the first read runs`() {
+        val source = FakeSource(granted = emptySet(), gate = CompletableDeferred())
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main)
+        vm.load()
+        assertEquals(TodayUiState.NeedsPermission, vm.state.value)
+        source.granted = setOf("read")
+        vm.load()
+        assertEquals(TodayUiState.Loading, vm.state.value)
+        source.gate!!.complete(Unit)
+        assertTrue(vm.state.value is TodayUiState.Ready)
+    }
+
     @Test fun `an overlapping load replaces the one in flight`() {
         val source = FakeSource(gate = CompletableDeferred())
         val first = source.gate!!
