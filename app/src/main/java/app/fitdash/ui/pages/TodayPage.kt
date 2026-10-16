@@ -58,6 +58,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import app.fitdash.ui.LocalPrefs
+import app.fitdash.ui.regularityWord
 import app.fitdash.ui.clock
 import app.fitdash.ui.components.pressScale
 import app.fitdash.ui.components.tappable
@@ -417,10 +418,13 @@ private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, o
     val tiles = listOf<@Composable (Modifier) -> Unit>(
         { m ->
             val s = data.sleep
+            val showScore = LocalPrefs.current.showSleepScore
             GlanceTile(
-                "Sleep", s?.score?.toString() ?: "—", null, m, icon = NavIcons.moonSmall,
-                ring = s?.score?.div(100f), ringColor = s?.score?.let { scoreColor(it) } ?: Palette.Faint,
-                note = s?.let { formatDuration(it.asleep) } ?: "no night yet", delta = sleepDelta,
+                "Sleep", if (showScore) s?.score?.toString() ?: "—" else s?.let { formatDuration(it.asleep) } ?: "—", null, m, icon = NavIcons.moonSmall,
+                ring = s?.let { if (showScore) it.score / 100f else (it.asleep.toMinutes() / (data.goals.sleepHours * 60)).toFloat().coerceAtMost(1f) },
+                ringColor = s?.score?.let { scoreColor(it) } ?: Palette.Faint,
+                note = if (showScore) s?.let { formatDuration(it.asleep) } ?: "no night yet" else data.regularity?.let { regularityWord(it.value.sri) } ?: (s?.let { "no score shown" } ?: "no night yet"),
+                delta = if (showScore) sleepDelta else null,
                 ringKey = "glance-sleep-${data.date}", onClick = { onOpen(1) }, description = "Sleep page", tint = Tint.SKY,
             )
         },

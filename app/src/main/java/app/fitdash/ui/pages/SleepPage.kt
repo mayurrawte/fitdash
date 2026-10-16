@@ -54,6 +54,9 @@ import app.fitdash.ui.clock
 import app.fitdash.ui.formatTempDelta
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.sleepWord
+import app.fitdash.ui.regularityWord
+import androidx.compose.ui.text.style.TextAlign
+import kotlin.math.roundToLong
 import app.fitdash.ui.metricName
 import app.fitdash.ui.rangeNote
 import app.fitdash.ui.theme.Palette
@@ -79,6 +82,7 @@ private fun vitalKind(label: String) = when (label) {
 fun SleepPage(data: TodayData, chrome: PageChrome) {
     val s = data.sleep
     val zone = ZoneId.systemDefault()
+    val showScore = LocalPrefs.current.showSleepScore
     @Composable fun opener(kind: MetricKind) = metricOpener(MetricRef.Kind(kind))
     PageColumn(chrome, accent = Palette.Rem) {
         if (s == null) {
@@ -87,13 +91,29 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
             item(key = "gauge") {
                 val colour = scoreColor(s.score)
                 Column(Modifier.fillMaxWidth().padding(top = Space.m).clip(CardShape).tappable(opener(MetricKind.SLEEP_SCORE), "Sleep score details"), horizontalAlignment = Alignment.CenterHorizontally) {
-                    SemiGauge(s.score, "Sleep", scoreStatus(s.score), from = Palette.Deep, to = colour, tag = sleepWord(s.score))
+                    if (showScore) {
+                        SemiGauge(s.score, "Sleep", scoreStatus(s.score), from = Palette.Deep, to = colour, tag = sleepWord(s.score))
+                    } else {
+                        val mins = s.asleep.toMinutes()
+                        SemiGauge(
+                            ((mins / (data.goals.sleepHours * 60)) * 100).roundToInt().coerceIn(0, 100), "Sleep", Status.GOOD,
+                            key = "gauge-hours-${data.date}", value = formatDuration(s.asleep), from = Palette.Deep, to = colour,
+                            tag = data.regularity?.let { regularityWord(it.value.sri) } ?: "calibrating",
+                        )
+                    }
                     Text(
                         "${formatDuration(s.asleep)} asleep · ${(s.efficiency * 100).roundToInt()}% efficient".uppercase(),
                         Modifier.padding(top = Space.s),
                         style = Type.tiny,
                         color = Palette.Muted,
                     )
+                    if (s.asleep.toMinutes() < (data.goals.sleepHours * 60).roundToInt()) {
+                        val avg = data.sleepWeek.mapNotNull { it.hours }.takeIf { it.size >= 3 }?.average()
+                        Text(
+                            "One night on its own says little." + (avg?.let { " Your 7-night average is ${formatDuration(Duration.ofMinutes((it * 60).roundToLong()))}." } ?: ""),
+                            Modifier.padding(top = Space.s, start = Space.xl, end = Space.xl), style = Type.body, color = Palette.Muted, textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
             item(key = "span") {
@@ -101,17 +121,18 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                     SpanBar(clock(s.start, zone), clock(s.end, zone))
                 }
             }
+            item(key = "regularity") { RegularityCard(data, zone) }
             item(key = "last-night") { Heading(if (data.isToday) "Last night" else "That night") }
             item(key = "sleep-tiles") {
                 val hrCeiling = data.heart?.restingHrRange?.endInclusive
                 val all = listOf<@Composable (Modifier) -> Unit>(
-                        { m -> NumberTile("Total sleep", NavIcons.moonSmall, hoursMins(s.asleep), m, scoreStatus(s.score), onClick = opener(MetricKind.SLEEP_HOURS), description = "Total sleep details", tint = Tint.SKY) },
-                        { m -> NumberTile("Time in bed", NavIcons.clock, hoursMins(s.timeInBed), m, if (s.timeInBed >= Duration.ofMinutes((data.goals.sleepHours * 60).roundToInt().toLong())) Status.GOOD else Status.FAIR, onClick = opener(MetricKind.SLEEP_HOURS), description = "Time in bed details", tint = Tint.LAVENDER) },
+                        { m -> NumberTile("Total sleep", NavIcons.moonSmall, hoursMins(s.asleep), m, scoreStatus(s.score), onClick = opener(MetricKind.SLEEP_HOURS), description = "Total sleep details", tint = Tint.SKY, calm = true) },
+                        { m -> NumberTile("Time in bed", NavIcons.clock, hoursMins(s.timeInBed), m, if (s.timeInBed >= Duration.ofMinutes((data.goals.sleepHours * 60).roundToInt().toLong())) Status.GOOD else Status.FAIR, onClick = opener(MetricKind.SLEEP_HOURS), description = "Time in bed details", tint = Tint.LAVENDER, calm = true) },
                         { m ->
                             NumberTile(
                                 "Efficiency", NavIcons.bed, listOf((s.efficiency * 100).roundToInt().toString() to "%"), m,
                                 efficiencyStatus(s.efficiency),
-                                onClick = opener(MetricKind.EFFICIENCY), description = "Sleep efficiency details", tint = Tint.SAGE,
+                                onClick = opener(MetricKind.EFFICIENCY), description = "Sleep efficiency details", tint = Tint.SAGE, calm = true,
                             )
                         },
                         { m ->
@@ -119,7 +140,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                                 "Restorative", NavIcons.moonSmall,
                                 listOf((s.restorative?.let { (it * 100).roundToInt().toString() } ?: "—") to if (s.restorative != null) "%" else ""),
                                 m, s.restorative?.let { shareStatus(it, 0.33..0.48) },
-                                onClick = opener(MetricKind.SLEEP_SCORE), description = "Restorative sleep details", tint = Tint.PEACH,
+                                onClick = opener(MetricKind.SLEEP_SCORE), description = "Restorative sleep details", tint = Tint.PEACH, calm = true,
                             )
                         },
                         { m ->
@@ -127,7 +148,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                                 "Awakenings", NavIcons.sun,
                                 listOf((s.awakenings?.toString() ?: "—") to if (s.awakenings != null) (if (s.awakenings == 1) "time" else "times") else ""),
                                 m, s.awakenings?.let { awakeningsStatus(it) },
-                                onClick = opener(MetricKind.AWAKENINGS), description = "Awakenings details", tint = Tint.LAVENDER,
+                                onClick = opener(MetricKind.AWAKENINGS), description = "Awakenings details", tint = Tint.LAVENDER, calm = true,
                             )
                         },
                         { m ->

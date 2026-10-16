@@ -97,6 +97,7 @@ fun metricDescription(ref: MetricRef) = when (ref) {
 private const val MILES_PER_KM = 0.621371
 
 private val LINE_KINDS = setOf(MetricKind.RESTING_HR, MetricKind.HRV, MetricKind.HEART_RATE, MetricKind.SPO2, MetricKind.RESPIRATORY, MetricKind.SKIN_TEMP, MetricKind.EFFICIENCY)
+private val CALM_KINDS = setOf(MetricKind.SLEEP_SCORE, MetricKind.SLEEP_HOURS, MetricKind.EFFICIENCY, MetricKind.AWAKENINGS)
 private val RANGE_KINDS = setOf(MetricKind.RESTING_HR, MetricKind.HRV, MetricKind.SPO2, MetricKind.RESPIRATORY, MetricKind.SKIN_TEMP)
 private const val LB_PER_KG = 2.20462
 
@@ -205,7 +206,7 @@ fun MetricDetailSheet(ref: MetricRef, data: TodayData, miles: Boolean, onDismiss
             } else {
                 Text("—", Modifier.padding(horizontal = Space.xl), style = Type.hero.copy(fontSize = 56.sp), color = Palette.Faint)
             }
-            if (status != null) StatusText(status, Modifier.padding(horizontal = Space.xl))
+            if (status != null) StatusText(status, Modifier.padding(horizontal = Space.xl), calm = kind in CALM_KINDS)
             if (kind == MetricKind.BMI && data.bmiBand != null) {
                 Text(bmiWord(data.bmiBand), Modifier.padding(horizontal = Space.xl), style = Type.tiny.copy(fontSize = 9.5.sp, fontWeight = FontWeight.Medium), color = bmiColour(data.bmiBand))
             }

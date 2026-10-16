@@ -63,5 +63,16 @@ fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier) {
                 }
             }
         }
+        review.regularity?.let { (now, last) ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Sleep regularity", Modifier.weight(1f), style = Type.small, color = Palette.Muted)
+                Text(now.toString(), style = Type.small, color = Palette.Text)
+                val d = last?.let { now - it }?.takeIf { it != 0 }
+                if (d != null) {
+                    DeltaArrow(d > 0, Modifier.padding(start = Space.s, end = 4.dp))
+                    Text("${if (d > 0) "+" else "−"}${abs(d)}", style = Type.secondary, color = Palette.Muted)
+                }
+            }
+        }
     }
 }

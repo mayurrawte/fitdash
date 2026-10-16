@@ -76,7 +76,8 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
             item(key = "empty") { EmptyState("No trends yet", "A few days of data from your device and your trends will build up here.") }
             return@PageColumn
         }
-        weekReview(data.series, if (data.isToday) data.date.minusDays(1) else data.date)?.let { review ->
+        val reviewEnd = if (data.isToday) data.date.minusDays(1) else data.date
+        weekReview(data.series, reviewEnd, regularityThisWeek = data.regularity?.value?.sri, regularityLastWeek = data.regularityLastWeek)?.let { review ->
             item(key = "week-review") { WeekReviewCard(review, Modifier.padding(bottom = Space.s)) }
         }
         item(key = "toggle") { SegmentedControl(if (history) listOf("Week", "Month", "6M") else listOf("Week", "Month"), segment, { segment = it }) }
