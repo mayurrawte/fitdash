@@ -1,6 +1,6 @@
 # WIP — handoff
 
-Last updated: 2026-10-13 (00:30). Everything below up to "Release steps" is committed as one commit on `main` and verified on a Pixel unless stated. Released: **v0.4.0** (tag `v0.4.0`, APK + Play AAB on GitHub Releases). Site: https://mayurrawte.is-a.dev/fitdash/
+Last updated: 2026-10-18. Everything below is committed on `main`. Released: **v0.7.1** (tag `v0.7.1`, code 8, on GitHub and on both Play test tracks). Site: https://mayurrawte.is-a.dev/fitdash/
 
 ## v0.5.0 in the working tree, uncommitted
 
@@ -47,6 +47,15 @@ Noted: the "Grant access" button can look stuck after the Health Connect sheet r
 ## Waiting on data
 
 - The Fitbit Air has only written Sleep, Steps and raw heart rate so far. After a full night's sleep, open the Fitbit app, then check fitdash's ⓘ Data sources for HRV, SpO2 and resting heart rate. If they come through, tune `metrics/Tuning.kt`.
+
+## Play status (18 Oct)
+
+- v0.7.1 (code 8) is live on both the internal track and the closed "Alpha" track; Google approved the closed release within the hour on 18 Oct. Testers get it as a normal Play update.
+- The dashboard shows the "at least 12 testers opted in" criterion met; the 14-day clock runs from about 17 Oct, so "Apply for production" should unlock around 1 Nov if the count holds. The tester list has 21 addresses.
+- Installed audience was 4 devices as of 17 Oct (statistics lag a day or two). Nudge testers to install from the Play listing after opting in; the production criterion counts opt-ins, not installs.
+- GitHub release v0.7.1 is published; `main` is pushed and in sync.
+- Backlog is on GitHub as issues #3–#21 (`docs/issues/` is the archive). Next in order: accessibility pass (#16), visual system with new icon (#20, #14), if-then plan (#21), reminder (#12), Today hero with contributors (#5), journal tags (#8).
+- Phone: the Pixel 9a has the v0.7.1 Play debug build with age and gender set; its screen timeout was raised to 10 min during the device check and not restored.
 
 ## Play (15 Oct)
 
