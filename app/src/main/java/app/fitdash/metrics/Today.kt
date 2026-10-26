@@ -59,6 +59,7 @@ data class TodayData(
     val regularity: FitnessValue<Regularity>? = null,
     val regularityProgress: Int = 0,
     val regularityLastWeek: Int? = null,
+    val streaks: List<Streak> = emptyList(),
     val fitness: FitnessData = FitnessData(null, emptyList(), null, emptyList(), false, null, FitnessValue(SleepDebt(0.0, emptyList()), Explanation("", emptyList(), SLEEP_DEBT_SOURCE)), null, emptyMap()),
 )
 
@@ -71,6 +72,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
     val snap = if (augmented) snapshot else withEstimatedRestingHr(snapshot, zone, now.toLocalDate())
     val isToday = date == now.toLocalDate()
     val readiness = readiness(snap, date, zone, goals)
+    val series = MetricKind.entries.associateWith { metricSeries(snap, it, date, zone, goals) }
     val sleep = summarizeSleep(date, snap.sleep, zone, goals.sleepHours, snap.heartRate)
     val heart = heartSummary(snap, date, zone)
     val activity = activitySummary(snap, date, zone, goals.steps)
@@ -129,7 +131,8 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
             snap.dailyActivity.filter { it.steps > 0 }.map { it.date } +
             snap.hourlySteps.filter { it.steps > 0 }.map { it.start.atZone(zone).toLocalDate() }).toSet(),
         estimatedRestingHrDates = snap.estimatedRestingHrDates,
-        series = MetricKind.entries.associateWith { metricSeries(snap, it, date, zone, goals) },
+        series = series,
+        streaks = streaks(series, goals),
         genericDaily = snap.generic.filter { it.points.isNotEmpty() }.associate { it.label to genericDailySeries(it.points, date, zone, snap.windowDays) },
         waterLiters = snap.waterDaily[date] ?: 0.0,
         waterGoal = goals.waterLiters,
