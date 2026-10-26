@@ -1,6 +1,16 @@
 # WIP — handoff
 
-Last updated: 2026-10-18. Everything below is committed on `main`. Released: **v0.7.1** (tag `v0.7.1`, code 8, on GitHub and on both Play test tracks). Site: https://mayurrawte.is-a.dev/fitdash/
+Last updated: 2026-10-26. Everything below is committed on `main`. Released: **v0.7.1** (tag `v0.7.1`, code 8, on GitHub and on both Play test tracks). Site: https://mayurrawte.is-a.dev/fitdash/
+
+## 26 Oct: three local branches off main, not pushed, not run on a device
+
+- `loading-progress` (2 commits): the reader reports each record type as it lands; the first-run screen fills a ring around the orb with "Sleep · 7 of 24", and the sync row shows a small filling ring, then "Up to date ✓" for 2 s. Then microinteractions: MiniRing glides to new values, NumberWithUnits rolls numbers on change, pull-to-refresh haptic at the threshold.
+- `reminders` (2 commits): Settings → Reminders. Water reminder (hourly worker, waking window from today's wake-up and the sleep goal, only when behind pace, 2 h apart, "+250 ml" action writes from a receiver) and Move nudge (needs background access; under 250 steps in the last hour with step data under 30 min old). Adds POST_NOTIFICATIONS. Then streak chips on Today (steps, sleep, water; milestones 3/7/14/21/30… pop once).
+- `icon` (1 commit): option A, an ink ring with a glowing spark on a peach gradient squircle; splash and fastlane icon.png match. `docs/logo.png` still shows the old ring and the old name.
+
+To check on the Pixel: number roll keeps the baseline with the units, the sync-row ring, whether the +250 ml write works from the background (Health Connect may refuse; it then says "Couldn't log water"), the icon under every launcher mask and as a themed icon.
+
+Rename: display name to change (package stays app.fitdash); name not picked yet. Edit the Play listing only after applying for production (~1 Nov), as a title like "Name: Health & Sleep Dashboard". Research 26 Oct: Fitbit's move to Google Health (May 2026) lost Sleep Profile, badges, hourly move reminders and the stress number, which suggests positioning fitdash as the calm dashboard Fitbit users lost.
 
 ## v0.5.0 in the working tree, uncommitted
 
