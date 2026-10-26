@@ -4,6 +4,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import app.fitdash.health.ReadProgress
+import app.fitdash.metrics.Streak
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import app.fitdash.ui.components.LocalRevealed
+import app.fitdash.ui.theme.LocalReduceMotion
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -263,6 +269,7 @@ fun TodayPage(
         if (data.isToday && data.date.dayOfWeek == java.time.DayOfWeek.MONDAY) {
             weekReview(data.series, data.date.minusDays(1))?.let { review -> item(key = "week-review") { WeekReviewCard(review) } }
         }
+        if (data.streaks.isNotEmpty()) item(key = "streaks") { StreakRow(data.streaks) }
         item(key = "glance") { GlanceGrid(data, score, onOpen, openSteps, openRhr, metricOpener(MetricRef.Kind(MetricKind.ACTIVE_MINUTES)), metricOpener(MetricRef.Kind(MetricKind.HEART_RATE))) }
         // Action first: the one thing to do today sits right under the numbers, the rest fold under it.
         if (prefs.showSuggestions && data.suggestions.isNotEmpty()) {
@@ -377,6 +384,37 @@ private fun WorkoutsRow(data: TodayData, miles: Boolean, onOpenWorkout: (Workout
                     workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24),
                     Modifier.padding(top = Space.s).semantics { contentDescription = "${workoutTitle(w)} details" },
                 ) { onOpenWorkout(w) }
+            }
+        }
+    }
+}
+
+// "5 days · steps" chips for goals met in a row; a milestone (3, 7, 14…) is filled and pops once when it first shows.
+@Composable
+private fun StreakRow(streaks: List<Streak>) {
+    val revealed = LocalRevealed.current
+    val still = LocalReduceMotion.current
+    val soft = LocalTheme.current.soft
+    Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl, vertical = Space.xs), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterHorizontally)) {
+        streaks.forEach { s ->
+            val key = "streak-${s.kind}-${s.days}"
+            val pop = remember(key) { Animatable(if (s.milestone && key !in revealed && !still) 0.6f else 1f) }
+            LaunchedEffect(key) {
+                pop.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                revealed += key
+            }
+            val what = when (s.kind) { MetricKind.STEPS -> "steps"; MetricKind.SLEEP_HOURS -> "sleep"; else -> "water" }
+            Row(
+                Modifier
+                    .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+                    .clip(RoundedCornerShape(50))
+                    .background(if (s.milestone) Palette.Accent.copy(alpha = 0.18f) else Palette.Chip)
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .semantics(mergeDescendants = true) { contentDescription = "${s.days} days in a row meeting your $what goal" },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(NavIcons.flame, null, Modifier.padding(end = 4.dp).size(12.dp), tint = if (s.milestone) Palette.Accent else Palette.Muted)
+                Text("${s.days} days · $what".let { if (soft) it else it.uppercase() }, style = Type.tiny, color = if (s.milestone) Palette.Accent else Palette.Muted)
             }
         }
     }

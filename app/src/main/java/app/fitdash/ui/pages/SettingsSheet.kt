@@ -1,5 +1,8 @@
 package app.fitdash.ui.pages
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -104,6 +107,7 @@ fun SettingsSheet(
     onDismiss: () -> Unit,
 ) {
     val settings by store.flow.collectAsState()
+    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val uri = LocalUriHandler.current
     val context = LocalContext.current
     var showInfo by remember { mutableStateOf(false) }
@@ -167,6 +171,22 @@ fun SettingsSheet(
             item { ToggleRow("Heart rate", settings.showHeartRate, { v -> store.update { it.copy(showHeartRate = v) } }) }
             item { ToggleRow("Suggestions", settings.showSuggestions, { v -> store.update { it.copy(showSuggestions = v) } }, "Do this today") }
             item { ToggleRow("Body and fitness on Trends", settings.showBody, { v -> store.update { it.copy(showBody = v) } }, "BMI, body composition, fitness age and calories") }
+            item { Label("REMINDERS") }
+            item {
+                ToggleRow("Water", settings.waterReminders, { v ->
+                    store.update { it.copy(waterReminders = v) }
+                    if (v && Build.VERSION.SDK_INT >= 33) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }, "When you fall behind your goal, with a +250 ml button")
+            }
+            if (background != BackgroundAccess.UNSUPPORTED) {
+                item {
+                    ToggleRow("Move", settings.moveNudge && background == BackgroundAccess.GRANTED, { v ->
+                        store.update { it.copy(moveNudge = v) }
+                        if (v && Build.VERSION.SDK_INT >= 33) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        if (v && background != BackgroundAccess.GRANTED) onAskBackground()
+                    }, "After an hour under 250 steps, in your waking hours")
+                }
+            }
             item { Label("FEEL") }
             item { ToggleRow("Haptics", settings.haptics, { v -> store.update { it.copy(haptics = v) } }, "A light tick on taps") }
             item { ToggleRow("Reduce motion", settings.reduceMotion, { v -> store.update { it.copy(reduceMotion = v) } }, "No draw-in or count-up animations, still orb") }

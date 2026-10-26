@@ -33,6 +33,9 @@ data class Settings(
     val gender: Gender? = null,
     // Read Health Connect every few hours while closed, for the widget and a fresh cold open.
     val backgroundRefresh: Boolean = false,
+    val waterReminders: Boolean = false,
+    // Needs background access: it reads the last hour's steps while fitdash is closed.
+    val moveNudge: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -63,6 +66,8 @@ class SettingsStore(context: Context) {
         birthYear = prefs.getInt("birthYear", 0).takeIf { it > 0 },
         gender = prefs.getString("gender", null)?.let { runCatching { Gender.valueOf(it) }.getOrNull() },
         backgroundRefresh = prefs.getBoolean("backgroundRefresh", false),
+        waterReminders = prefs.getBoolean("waterReminders", false),
+        moveNudge = prefs.getBoolean("moveNudge", false),
         numbersFont = runCatching { NumbersFont.valueOf(prefs.getString("numbersFont", null) ?: if (prefs.contains("theme")) "INTER" else "OUTFIT") }.getOrDefault(NumbersFont.OUTFIT),
     )
 
@@ -75,7 +80,8 @@ class SettingsStore(context: Context) {
             .putBoolean("reduceMotion", s.reduceMotion).putBoolean("haptics", s.haptics)
             .putBoolean("showWater", s.showWater).putBoolean("showWorkouts", s.showWorkouts).putBoolean("showHeartRate", s.showHeartRate)
             .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody).putBoolean("showSleepScore", s.showSleepScore)
-            .putString("numbersFont", s.numbersFont.name).putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh).apply()
+            .putString("numbersFont", s.numbersFont.name).putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh)
+            .putBoolean("waterReminders", s.waterReminders).putBoolean("moveNudge", s.moveNudge).apply()
         _flow.value = s
     }
 
