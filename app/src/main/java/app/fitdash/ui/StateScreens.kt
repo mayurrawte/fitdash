@@ -4,8 +4,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -35,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import app.fitdash.health.ReadProgress
 import app.fitdash.ui.components.MiniRing
 import app.fitdash.ui.components.Orb
-import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Type
 
@@ -44,10 +41,9 @@ import app.fitdash.ui.theme.Type
 @Composable
 fun LoadingScreen(firstRun: Boolean = false, progressFlow: StateFlow<ReadProgress?> = MutableStateFlow(null)) {
     val progress by progressFlow.collectAsStateWithLifecycle()
-    val fraction by animateFloatAsState(progress?.fraction ?: 0f, tween(Motion.PAGE, easing = Motion.ease), label = "read")
     Column(Modifier.fillMaxSize().background(Palette.Background), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Box(contentAlignment = Alignment.Center) {
-            MiniRing("loading", fraction, Palette.Accent, diameter = 252.dp, stroke = 3.dp)
+            MiniRing("loading", progress?.fraction ?: 0f, Palette.Accent, diameter = 252.dp, stroke = 3.dp)
             Orb(null, intro = true) {}
         }
         if (firstRun) {

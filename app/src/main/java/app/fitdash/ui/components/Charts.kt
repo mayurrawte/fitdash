@@ -1,5 +1,7 @@
 package app.fitdash.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -743,13 +745,14 @@ fun MiniRing(
     delayMillis: Int = 0,
 ) {
     val progress = rememberDrawProgress(key, Motion.RING, delayMillis)
+    val glide by animateFloatAsState(fraction.coerceIn(0f, 1f), if (LocalReduceMotion.current) snap() else tween(Motion.PAGE, easing = Motion.ease), label = "ring-$key")
     val track = Chart.track
     Canvas(modifier.size(diameter)) {
         val s = stroke.toPx()
         val topLeft = Offset(s / 2, s / 2)
         val arc = Size(size.width - s, size.height - s)
         drawArc(track, -90f, 360f, false, topLeft, arc, style = Stroke(s))
-        drawArc(color, -90f, 360f * fraction.coerceIn(0f, 1f) * progress.value, false, topLeft, arc, style = Stroke(s, cap = StrokeCap.Round))
+        drawArc(color, -90f, 360f * glide * progress.value, false, topLeft, arc, style = Stroke(s, cap = StrokeCap.Round))
     }
 }
 

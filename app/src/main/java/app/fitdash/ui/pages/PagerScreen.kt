@@ -1,5 +1,6 @@
 package app.fitdash.ui.pages
 
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import app.fitdash.health.ReadProgress
@@ -133,6 +134,9 @@ fun PagerScreen(
         val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         // The spinner only for a pull; a background refresh shows its progress in the sync row instead.
         var pulled by remember { mutableStateOf(false) }
+        LaunchedEffect(refreshState, settings.haptics) {
+            if (settings.haptics) snapshotFlow { refreshState.distanceFraction >= 1f }.drop(1).filter { it }.collect { haptic.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) }
+        }
         LaunchedEffect(state.refreshing) { if (!state.refreshing) pulled = false }
         PullToRefreshBox(
             isRefreshing = state.refreshing && pulled,
