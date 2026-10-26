@@ -2,7 +2,7 @@
 
 Last updated: 2026-10-26. Everything below is committed on `main`. Released: **v0.7.1** (tag `v0.7.1`, code 8, on GitHub and on both Play test tracks). Site: https://mayurrawte.is-a.dev/fitdash/
 
-## 26 Oct: three local branches off main, not pushed, not run on a device
+## 26 Oct: merged into main as v0.8.0 (code 9); push the tag to send it to the Play internal track as a draft
 
 - `loading-progress` (2 commits): the reader reports each record type as it lands; the first-run screen fills a ring around the orb with "Sleep · 7 of 24", and the sync row shows a small filling ring, then "Up to date ✓" for 2 s. Then microinteractions: MiniRing glides to new values, NumberWithUnits rolls numbers on change, pull-to-refresh haptic at the threshold.
 - `reminders` (2 commits): Settings → Reminders. Water reminder (hourly worker, waking window from today's wake-up and the sleep goal, only when behind pace, 2 h apart, "+250 ml" action writes from a receiver) and Move nudge (needs background access; under 250 steps in the last hour with step data under 30 min old). Adds POST_NOTIFICATIONS. Then streak chips on Today (steps, sleep, water; milestones 3/7/14/21/30… pop once).
