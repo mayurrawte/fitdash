@@ -1,5 +1,8 @@
 package app.fitdash.ui.pages
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import app.fitdash.health.ReadProgress
 import android.content.Intent
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -71,6 +74,7 @@ private val NAV = listOf(
 fun PagerScreen(
     state: TodayUiState.Ready,
     store: SettingsStore,
+    progress: StateFlow<ReadProgress?> = MutableStateFlow(null),
     onRefresh: () -> Unit,
     onSelectDate: (LocalDate) -> Unit,
     onAddWater: (Int) -> Unit,
@@ -127,7 +131,7 @@ fun PagerScreen(
     CompositionLocalProvider(LocalRevealed provides revealed, LocalOpenMetric provides { metric = it }, LocalMiles provides settings.miles, LocalPrefs provides settings) {
         val refreshState = rememberPullToRefreshState()
         val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        // The spinner only for a pull; a background refresh shows "Updating…" in the sync row instead.
+        // The spinner only for a pull; a background refresh shows its progress in the sync row instead.
         var pulled by remember { mutableStateOf(false) }
         LaunchedEffect(state.refreshing) { if (!state.refreshing) pulled = false }
         PullToRefreshBox(
@@ -150,7 +154,7 @@ fun PagerScreen(
                 ThemedBackground()
                 HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
                     when (page) {
-                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, { sharing = true }, askAi, onAddWater, onUndoWater, settings.miles, { workout = it }, onSync, state.refreshing)
+                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, { sharing = true }, askAi, onAddWater, onUndoWater, settings.miles, { workout = it }, onSync, state.refreshing, progress)
                         1 -> SleepPage(data, chrome)
                         2 -> ActivityPage(data, chrome, settings.miles, { workout = it })
                         else -> TrendsPage(data, chrome)

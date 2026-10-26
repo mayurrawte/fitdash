@@ -1,5 +1,9 @@
 package app.fitdash.ui.pages
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import app.fitdash.health.ReadProgress
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -154,6 +158,7 @@ fun TodayPage(
     onOpenWorkout: (Workout) -> Unit = {},
     onSync: (String) -> Unit = {},
     refreshing: Boolean = false,
+    progress: StateFlow<ReadProgress?> = MutableStateFlow(null),
 ) {
     val r = data.readiness
     val score = (r as? ReadinessResult.Ready)?.score
@@ -184,7 +189,7 @@ fun TodayPage(
                 enabled = { it <= chrome.today && it >= chrome.today.minusDays(chrome.daysBack) },
             )
         }
-        if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing) }
+        if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing, progress) }
         item(key = "orb") {
             if (LocalTheme.current.soft) {
                 SoftHero(data, heroScore, heroLabel, pageOffset, when {
@@ -378,19 +383,30 @@ private fun WorkoutsRow(data: TodayData, miles: Boolean, onOpenWorkout: (Workout
 }
 
 // "DATA UP TO 9:43 PM · SYNC": tells the user how fresh the watch data is and opens the wearable app to push more.
+// While a read runs, a small ring fills and the row names the record type that just came back.
 @Composable
-private fun SyncRow(data: TodayData, onSync: (String) -> Unit, refreshing: Boolean) {
+private fun SyncRow(data: TodayData, onSync: (String) -> Unit, refreshing: Boolean, progressFlow: StateFlow<ReadProgress?>) {
+    val progress by progressFlow.collectAsStateWithLifecycle()
     val prefs = LocalPrefs.current
     val now = remember(data.date) { java.time.ZonedDateTime.now() }
     val stale = syncStale(data.latestData, now)
     // Names and dates ("Fitbit", "13 Oct") stay as written on Soft; the dark themes set the row in capitals.
     val soft = LocalTheme.current.soft
+    val fraction by animateFloatAsState(progress?.fraction ?: 0f, tween(Motion.PAGE, easing = Motion.ease), label = "sync-read")
     Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            (if (refreshing) "Updating…" else data.latestData?.let { dataUpTo(it, now, prefs.clock24) } ?: "No watch data yet").let { if (soft) it else it.uppercase() },
-            style = Type.tiny,
-            color = if (refreshing) Palette.Muted else if (stale) Palette.Warn else Palette.Faint,
-        )
+        AnimatedContent(refreshing, transitionSpec = { fadeIn(tween(Motion.PAGE)) togetherWith fadeOut(tween(Motion.PAGE)) }, label = "sync-state") { busy ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (busy) MiniRing("sync-read", fraction, Palette.Accent, Modifier.padding(end = 6.dp), diameter = 12.dp, stroke = 2.dp)
+                Text(
+                    when {
+                        busy -> progress?.let { "${it.label} · ${it.done} of ${it.total}" } ?: "Updating…"
+                        else -> data.latestData?.let { dataUpTo(it, now, prefs.clock24) } ?: "No watch data yet"
+                    }.let { if (soft) it else it.uppercase() },
+                    style = Type.tiny,
+                    color = if (busy) Palette.Muted else if (stale) Palette.Warn else Palette.Faint,
+                )
+            }
+        }
         data.syncApp?.let { pkg ->
             Text(
                 if (soft) "Sync ${sourceAppName(pkg)}" else "SYNC ${sourceAppName(pkg).uppercase()}",

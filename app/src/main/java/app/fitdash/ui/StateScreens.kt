@@ -1,5 +1,16 @@
 package app.fitdash.ui
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,17 +32,37 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.fitdash.health.ReadProgress
+import app.fitdash.ui.components.MiniRing
 import app.fitdash.ui.components.Orb
+import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Type
 
 // Only a first run (no cached snapshot) waits here, and that read can take a while with weeks of minute-level data.
+// The ring around the orb fills as each record type comes back, and the line under it names the one that just landed.
 @Composable
-fun LoadingScreen(firstRun: Boolean = false) {
+fun LoadingScreen(firstRun: Boolean = false, progressFlow: StateFlow<ReadProgress?> = MutableStateFlow(null)) {
+    val progress by progressFlow.collectAsStateWithLifecycle()
+    val fraction by animateFloatAsState(progress?.fraction ?: 0f, tween(Motion.PAGE, easing = Motion.ease), label = "read")
     Column(Modifier.fillMaxSize().background(Palette.Background), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Orb(null, intro = true) {}
+        Box(contentAlignment = Alignment.Center) {
+            MiniRing("loading", fraction, Palette.Accent, diameter = 252.dp, stroke = 3.dp)
+            Orb(null, intro = true) {}
+        }
         if (firstRun) {
             Text("READING HEALTH CONNECT", style = Type.label, color = Palette.Muted, modifier = Modifier.padding(top = 32.dp))
+            AnimatedContent(
+                progress,
+                transitionSpec = { (slideInVertically { it / 2 } + fadeIn()) togetherWith (slideOutVertically { -it / 2 } + fadeOut()) },
+                contentKey = { it?.done },
+                label = "read-step",
+            ) { p ->
+                Text(
+                    p?.let { "${it.label} · ${it.done} of ${it.total}" } ?: "Asking for your data",
+                    style = Type.tiny, color = Palette.Accent, modifier = Modifier.padding(top = 8.dp),
+                )
+            }
             Text(
                 "The first read goes through everything your watch has written. After this, fitdash opens instantly.",
                 style = Type.body, color = Palette.Muted, textAlign = TextAlign.Center,
