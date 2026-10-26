@@ -29,6 +29,7 @@ import androidx.health.connect.client.records.WeightRecord
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.AggregateGroupByDurationRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
+import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Length
@@ -54,6 +55,8 @@ const val BACKGROUND_PERMISSION = HealthPermission.PERMISSION_READ_HEALTH_DATA_I
 
 // Large, high-frequency types only ever read for the last 30 days, even with the history permission.
 private val SHORT_WINDOW_TYPES: Set<KClass<out Record>> = setOf(HeartRateRecord::class, PowerRecord::class, SpeedRecord::class)
+
+data class NudgeInputs(val waterLiters: Double, val stepsLastHour: Long, val latestSteps: Instant?)
 
 class HealthReader(private val context: Context) : HealthSource {
     private val client by lazy { HealthConnectClient.getOrCreate(context) }
@@ -238,6 +241,19 @@ class HealthReader(private val context: Context) : HealthSource {
                     app = s.metadata.dataOrigin.packageName,
                 )
             }
+    }
+
+    // A small live read for the reminder worker: today's water, the last hour's steps, and when steps last came in.
+    suspend fun nudgeInputs(now: ZonedDateTime): NudgeInputs {
+        val dayStart = now.toLocalDate().atStartOfDay(now.zone).toInstant()
+        val water = orNull("water today") {
+            client.aggregate(AggregateRequest(setOf(HydrationRecord.VOLUME_TOTAL), TimeRangeFilter.between(dayStart, now.toInstant())))[HydrationRecord.VOLUME_TOTAL]?.inLiters
+        } ?: 0.0
+        val steps = orEmptyList("recent steps") {
+            client.readRecords(ReadRecordsRequest(StepsRecord::class, TimeRangeFilter.between(now.minusHours(3).toInstant(), now.toInstant()))).records
+        }
+        val hourAgo = now.minusHours(1).toInstant()
+        return NudgeInputs(water, steps.filter { it.endTime > hourAgo }.sumOf { it.count }, steps.maxOfOrNull { it.endTime })
     }
 
     override suspend fun addWater(liters: Double, at: Instant): String? {

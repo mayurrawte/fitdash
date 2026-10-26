@@ -1,5 +1,6 @@
 package app.fitdash
 
+import app.fitdash.background.Reminders
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.glance.appwidget.updateAll
 import app.fitdash.health.BACKGROUND_PERMISSION
@@ -141,6 +142,7 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
     val settings by store.flow.collectAsStateWithLifecycle()
     val page by openPage.collectAsStateWithLifecycle()
     LaunchedEffect(settings.backgroundRefresh) { BackgroundRefresh.apply(context.applicationContext, settings.backgroundRefresh) }
+    LaunchedEffect(settings.waterReminders, settings.moveNudge) { Reminders.apply(context.applicationContext, settings.waterReminders || settings.moveNudge) }
     val state by vm.state.collectAsStateWithLifecycle()
     val askPermissions = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { vm.load() }
 
