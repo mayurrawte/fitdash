@@ -1,5 +1,9 @@
 package app.fitdash.ui.pages
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import app.fitdash.health.ReadProgress
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -154,6 +158,7 @@ fun TodayPage(
     onOpenWorkout: (Workout) -> Unit = {},
     onSync: (String) -> Unit = {},
     refreshing: Boolean = false,
+    progress: StateFlow<ReadProgress?> = MutableStateFlow(null),
 ) {
     val r = data.readiness
     val score = (r as? ReadinessResult.Ready)?.score
@@ -184,7 +189,7 @@ fun TodayPage(
                 enabled = { it <= chrome.today && it >= chrome.today.minusDays(chrome.daysBack) },
             )
         }
-        if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing) }
+        if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing, progress, chrome.error) }
         item(key = "orb") {
             if (LocalTheme.current.soft) {
                 SoftHero(data, heroScore, heroLabel, pageOffset, when {
@@ -378,19 +383,43 @@ private fun WorkoutsRow(data: TodayData, miles: Boolean, onOpenWorkout: (Workout
 }
 
 // "DATA UP TO 9:43 PM · SYNC": tells the user how fresh the watch data is and opens the wearable app to push more.
+// While a read runs, a small ring fills and the row names the record type that just came back.
 @Composable
-private fun SyncRow(data: TodayData, onSync: (String) -> Unit, refreshing: Boolean) {
+private fun SyncRow(data: TodayData, onSync: (String) -> Unit, refreshing: Boolean, progressFlow: StateFlow<ReadProgress?>, error: Boolean) {
+    val progress by progressFlow.collectAsStateWithLifecycle()
     val prefs = LocalPrefs.current
     val now = remember(data.date) { java.time.ZonedDateTime.now() }
     val stale = syncStale(data.latestData, now)
     // Names and dates ("Fitbit", "13 Oct") stay as written on Soft; the dark themes set the row in capitals.
     val soft = LocalTheme.current.soft
+    // A clean read ends on "Up to date" for two seconds before the row goes back to the data time.
+    var wasRefreshing by remember { mutableStateOf(refreshing) }
+    var justDone by remember { mutableStateOf(false) }
+    LaunchedEffect(refreshing) {
+        if (wasRefreshing && !refreshing && !error) {
+            justDone = true
+            delay(2000)
+        }
+        justDone = false
+        wasRefreshing = refreshing
+    }
+    val phase = if (refreshing) 0 else if (justDone) 1 else 2
     Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            (if (refreshing) "Updating…" else data.latestData?.let { dataUpTo(it, now, prefs.clock24) } ?: "No watch data yet").let { if (soft) it else it.uppercase() },
-            style = Type.tiny,
-            color = if (refreshing) Palette.Muted else if (stale) Palette.Warn else Palette.Faint,
-        )
+        AnimatedContent(phase, transitionSpec = { fadeIn(tween(Motion.PAGE)) togetherWith fadeOut(tween(Motion.PAGE)) }, label = "sync-state") { p ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (p == 0) MiniRing("sync-read", progress?.fraction ?: 0f, Palette.Accent, Modifier.padding(end = 6.dp), diameter = 12.dp, stroke = 2.dp)
+                if (p == 1) Icon(NavIcons.check, null, Modifier.padding(end = 4.dp).size(12.dp), tint = Palette.Accent)
+                Text(
+                    when (p) {
+                        0 -> progress?.let { "${it.label} · ${it.done} of ${it.total}" } ?: "Updating…"
+                        1 -> "Up to date"
+                        else -> data.latestData?.let { dataUpTo(it, now, prefs.clock24) } ?: "No watch data yet"
+                    }.let { if (soft) it else it.uppercase() },
+                    style = Type.tiny,
+                    color = when (p) { 0 -> Palette.Muted; 1 -> Palette.Accent; else -> if (stale) Palette.Warn else Palette.Faint },
+                )
+            }
+        }
         data.syncApp?.let { pkg ->
             Text(
                 if (soft) "Sync ${sourceAppName(pkg)}" else "SYNC ${sourceAppName(pkg).uppercase()}",

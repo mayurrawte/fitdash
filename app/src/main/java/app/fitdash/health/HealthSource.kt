@@ -14,7 +14,8 @@ interface HealthSource {
     fun availability(): Availability
     suspend fun grantedPermissions(): Set<String>
     // `since` limits record reads to that instant onwards (aggregates still cover the whole window); null reads everything.
-    suspend fun read(now: ZonedDateTime, since: Instant? = null): HealthSnapshot
+    // `onProgress` hears each record type as it lands: types done, types in all, and the one that just finished.
+    suspend fun read(now: ZonedDateTime, since: Instant? = null, onProgress: (ReadProgress) -> Unit = {}): HealthSnapshot
     suspend fun addWater(liters: Double, at: Instant): String?
     suspend fun deleteWater(id: String): Boolean
     suspend fun setHeight(meters: Double, at: Instant): Boolean

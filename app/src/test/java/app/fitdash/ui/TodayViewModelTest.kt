@@ -4,6 +4,7 @@ import app.fitdash.IST
 import app.fitdash.TODAY
 import app.fitdash.health.Availability
 import app.fitdash.health.HealthSnapshot
+import app.fitdash.health.ReadProgress
 import app.fitdash.health.SnapshotStore
 import app.fitdash.health.CachedSnapshot
 import app.fitdash.health.HealthSource
@@ -44,13 +45,15 @@ private class FakeSource(
     val waterDeleted = mutableListOf<String>()
     val heights = mutableListOf<Double>()
     var history: String? = null
+    var progress: List<ReadProgress> = emptyList()
     override val allPermissions = setOf("read", "x.WRITE_water")
     override val historyPermission: String? get() = history
     override fun availability() = status
     override suspend fun grantedPermissions() = granted
-    override suspend fun read(now: ZonedDateTime, since: Instant?): HealthSnapshot {
+    override suspend fun read(now: ZonedDateTime, since: Instant?, onProgress: (ReadProgress) -> Unit): HealthSnapshot {
         reads++
         sinces += since
+        progress.forEach(onProgress)
         gate?.await()
         if (fail) error("read failed")
         return snapshot
@@ -118,6 +121,16 @@ class TodayViewModelTest {
         assertEquals(TodayUiState.Loading, vm.state.value)
         source.gate!!.complete(Unit)
         assertTrue(vm.state.value is TodayUiState.Ready)
+    }
+
+    @Test fun `read progress shows while the read runs and clears when it ends`() {
+        val source = FakeSource(gate = CompletableDeferred())
+        source.progress = listOf(ReadProgress(1, 2, "Steps"), ReadProgress(2, 2, "Sleep"))
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main)
+        vm.load()
+        assertEquals(ReadProgress(2, 2, "Sleep"), vm.progress.value)
+        source.gate!!.complete(Unit)
+        assertEquals(null, vm.progress.value)
     }
 
     @Test fun `an overlapping load replaces the one in flight`() {

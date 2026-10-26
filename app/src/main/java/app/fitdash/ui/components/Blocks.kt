@@ -1,5 +1,13 @@
 package app.fitdash.ui.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -220,7 +228,16 @@ fun StatusText(status: Status, modifier: Modifier = Modifier) {
 fun NumberWithUnits(parts: List<Pair<String, String>>, modifier: Modifier = Modifier, style: TextStyle = Type.tile) {
     Row(modifier) {
         parts.forEachIndexed { i, (number, unit) ->
-            Text(number, Modifier.alignByBaseline(), style = style, color = Palette.Text)
+            val still = LocalReduceMotion.current
+            AnimatedContent(
+                number,
+                Modifier.alignByBaseline(),
+                transitionSpec = {
+                    if (still) EnterTransition.None togetherWith ExitTransition.None
+                    else (slideInVertically { it / 2 } + fadeIn()) togetherWith (slideOutVertically { -it / 2 } + fadeOut())
+                },
+                label = "number",
+            ) { n -> Text(n, style = style, color = Palette.Text) }
             Text(
                 noteCase(unit),
                 Modifier.alignByBaseline().padding(start = 2.dp, end = if (i < parts.lastIndex) Space.xs + 2.dp else 0.dp),

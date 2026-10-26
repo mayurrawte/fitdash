@@ -155,7 +155,7 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
 
     Box(Modifier.fillMaxSize()) {
         when (val s = state) {
-            TodayUiState.Loading -> LoadingScreen(firstRun = true)
+            TodayUiState.Loading -> LoadingScreen(firstRun = true, progressFlow = vm.progress)
             is TodayUiState.NeedsHealthConnect -> MessageScreen(
                 title = if (s.update) "Update Health Connect" else "Install Health Connect",
                 body = "fitdash reads your watch, ring or phone data through Health Connect.",
@@ -184,6 +184,7 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
             )
             is TodayUiState.Ready -> PagerScreen(
                 s, store,
+                progress = vm.progress,
                 onRefresh = { vm.load() },
                 onSelectDate = vm::select,
                 onAddWater = vm::addWater,

@@ -7,6 +7,7 @@ import app.fitdash.health.HealthSource
 import app.fitdash.health.HealthSnapshot
 import java.time.Instant
 import app.fitdash.health.readFresh
+import app.fitdash.health.ReadProgress
 import app.fitdash.health.SnapshotStore
 import app.fitdash.health.CachedSnapshot
 import app.fitdash.metrics.Goals
@@ -68,6 +69,9 @@ class TodayViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow<TodayUiState>(TodayUiState.Loading)
     val state: StateFlow<TodayUiState> = _state
+    // How far the running Health Connect read has got; null when no read is running.
+    private val _progress = MutableStateFlow<ReadProgress?>(null)
+    val progress: StateFlow<ReadProgress?> = _progress
 
     private var job: Job? = null
     private var rebuildJob: Job? = null
@@ -212,7 +216,7 @@ class TodayViewModel(
                 } else {
                     // Straight after the permission sheet there is nothing to show yet; the Welcome button must not look stuck.
                     if (_state.value !is TodayUiState.Ready) _state.value = TodayUiState.Loading
-                    val result = readFresh(source, raw, lastRead, lastFullRead, now)
+                    val result = readFresh(source, raw, lastRead, lastFullRead, now) { _progress.value = it }
                     val read = result.snapshot
                     if (result.full) lastFullRead = now.toInstant()
                     val canAskHistory = source.historyPermission?.let { it !in granted } ?: false
@@ -240,6 +244,8 @@ class TodayViewModel(
             } catch (e: Exception) {
                 onReadFailed(e)
                 (_state.value as? TodayUiState.Ready)?.copy(refreshing = false, error = true) ?: TodayUiState.Failed
+            } finally {
+                _progress.value = null
             }
         }
     }

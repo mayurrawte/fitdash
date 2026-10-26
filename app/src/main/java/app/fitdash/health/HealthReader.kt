@@ -37,6 +37,7 @@ import app.fitdash.metrics.Tuning
 import app.fitdash.metrics.overlapFraction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
@@ -94,7 +95,7 @@ class HealthReader(private val context: Context) : HealthSource {
 
     override suspend fun grantedPermissions(): Set<String> = client.permissionController.getGrantedPermissions()
 
-    override suspend fun read(now: ZonedDateTime, since: Instant?): HealthSnapshot = withContext(Dispatchers.Default) {
+    override suspend fun read(now: ZonedDateTime, since: Instant?, onProgress: (ReadProgress) -> Unit): HealthSnapshot = withContext(Dispatchers.Default) {
         val granted = grantedPermissions()
         fun can(type: KClass<out Record>) = HealthPermission.getReadPermission(type) in granted
 
@@ -108,11 +109,15 @@ class HealthReader(private val context: Context) : HealthSource {
         val shortLocal = TimeRangeFilter.between(shortStart.toLocalDateTime(), now.toLocalDateTime())
 
         // Every type is read concurrently; Health Connect serves them in parallel and this is where the time goes.
+        val done = AtomicInteger()
         val lists: Map<KClass<out Record>, List<Record>> = coroutineScope {
             types.map { info ->
                 async {
                     val range = if (info.type in SHORT_WINDOW_TYPES) shortRange else longRange
-                    info.type to (if (can(info.type)) readAllOrEmpty(info.type, range) else emptyList())
+                    val list = if (can(info.type)) readAllOrEmpty(info.type, range) else emptyList()
+                    // Count and report together so the counts arrive in order.
+                    synchronized(done) { onProgress(ReadProgress(done.incrementAndGet(), types.size, info.label)) }
+                    info.type to list
                 }
             }.awaitAll().toMap()
         }
