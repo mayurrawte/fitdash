@@ -1,8 +1,16 @@
 # WIP — handoff
 
-Last updated: 2026-10-26. Everything below is committed on `main`. Released: **v0.7.1** (tag `v0.7.1`, code 8, on GitHub and on both Play test tracks). Site: https://mayurrawte.is-a.dev/fitdash/
+Last updated: 2026-10-27. Everything below is committed on `main`. Released: **v0.8.0** (tag `v0.8.0`, code 9, on GitHub; live on the Play internal track, sent for review on the closed Alpha track 26 Oct). Site: https://mayurrawte.is-a.dev/fitdash/
 
-## 26 Oct: merged into main as v0.8.0 (code 9); push the tag to send it to the Play internal track as a draft
+## 26 Oct: v0.8.0 (code 9) released
+
+The three branches below were merged into `main` (one import conflict in `TodayPage.kt`, both sides kept), 190 unit tests pass, lint has no errors. Tagged `v0.8.0` and pushed; CI built the APK and Play AAB onto the GitHub release. Play: published to internal testing at 22:57, then promoted to Closed testing - Alpha and submitted for review (quick checks, then Google's review). Not yet checked on a phone; Mayur will test the Play build.
+
+Next, filed 26 Oct as issues and on the project board https://github.com/users/mayurrawte/projects/3: #22 bedtime reminder, #23 Sunday weekly recap notification, #24 morning readout as a notification, #25 monthly sleep profile, #26 a daily focus card on Today (the "looks stale after a few days" complaint). A medicine reminder was considered and dropped (no Health Connect data, off the calm-dashboard angle).
+
+Open questions: the streak chips shipped in 0.8.0 go against "No streaks" in `docs/research/2026-10-16-behaviour-science-notes.md`; keep, soften or remove? Issues #17, #18 and #19 shipped in v0.7.1 but are still open.
+
+What was on the branches:
 
 - `loading-progress` (2 commits): the reader reports each record type as it lands; the first-run screen fills a ring around the orb with "Sleep · 7 of 24", and the sync row shows a small filling ring, then "Up to date ✓" for 2 s. Then microinteractions: MiniRing glides to new values, NumberWithUnits rolls numbers on change, pull-to-refresh haptic at the threshold.
 - `reminders` (2 commits): Settings → Reminders. Water reminder (hourly worker, waking window from today's wake-up and the sleep goal, only when behind pace, 2 h apart, "+250 ml" action writes from a receiver) and Move nudge (needs background access; under 250 steps in the last hour with step data under 30 min old). Adds POST_NOTIFICATIONS. Then streak chips on Today (steps, sleep, water; milestones 3/7/14/21/30… pop once).
@@ -86,3 +94,5 @@ Own personal developer account (SNX Studio). App `app.fitdash` created, all decl
 ## Release steps
 
 Bump `versionCode` and `versionName` in `app/build.gradle.kts`, add `fastlane/metadata/android/en-GB/changelogs/<code>.txt`, tag `vX.Y.Z` and push the tag. Build with JDK 17.
+
+The workflow's Play upload step is skipped because the repo has no `PLAY_SERVICE_ACCOUNT_JSON` secret. Upload by hand: download `fitdash-vX.Y.Z-play.aab` from the GitHub release, then in Play Console (account rawte.mayur, developer SNX Studio) Internal testing → edit draft → Add from library (or Upload) → release notes inside `<en-GB>` tags → Next → Save and publish. For Alpha: Promote release → Closed testing - Alpha → Next → Save → Publishing overview → Submit for review. The two warnings (no deobfuscation file, no native debug symbols) are expected.
