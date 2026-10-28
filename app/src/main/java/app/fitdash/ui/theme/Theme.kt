@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -46,24 +48,12 @@ object Palette {
     val OnOrb: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.onOrb
 }
 
-val Inter = FontFamily(
-    Font(R.font.inter_extralight, FontWeight.ExtraLight),
-    Font(R.font.inter_light, FontWeight.Light),
-    Font(R.font.inter_regular, FontWeight.Normal),
-    Font(R.font.inter_medium, FontWeight.Medium),
-)
-
-val Mono = FontFamily(
-    Font(R.font.jetbrains_mono_regular, FontWeight.Normal),
-    Font(R.font.jetbrains_mono_medium, FontWeight.Medium),
-)
-
-val Outfit = FontFamily(
-    Font(R.font.outfit_light, FontWeight.ExtraLight),
-    Font(R.font.outfit_light, FontWeight.Light),
-    Font(R.font.outfit_regular, FontWeight.Normal),
-    Font(R.font.outfit_medium, FontWeight.Medium),
-    Font(R.font.outfit_semibold, FontWeight.SemiBold),
+@OptIn(ExperimentalTextApi::class)
+val Nunito = FontFamily(
+    Font(R.font.nunito_sans, FontWeight.Light, variationSettings = FontVariation.Settings(FontVariation.weight(300))),
+    Font(R.font.nunito_sans, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+    Font(R.font.nunito_sans, FontWeight.SemiBold, variationSettings = FontVariation.Settings(FontVariation.weight(600))),
+    Font(R.font.nunito_sans, FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
 )
 
 // Small labels are written in sentence case and lowercase.
@@ -85,32 +75,31 @@ fun noteCase(s: String): String = restoreAcronyms(s.lowercase())
 
 object Type {
     private val tracking = 0.01.em
-    // Outfit's light weight is too thin for big numbers on a light ground.
-    private val displayWeight = FontWeight.Normal
+    private val displayWeight = FontWeight.Light
 
     val hero: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 68.sp, fontWeight = displayWeight, letterSpacing = (-0.03).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = Nunito, fontSize = 68.sp, fontWeight = displayWeight, letterSpacing = (-0.03).em, fontFeatureSettings = "tnum")
     val title: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 30.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = Nunito, fontSize = 30.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
     val value: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 26.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = Nunito, fontSize = 26.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
     val tile: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 24.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = Nunito, fontSize = 24.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
     val body: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 14.sp, fontWeight = FontWeight.Normal, lineHeight = 21.sp)
+        TextStyle(fontFamily = Nunito, fontSize = 14.sp, fontWeight = FontWeight.Normal, lineHeight = 21.sp)
     val small: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 12.sp, fontWeight = FontWeight.Normal)
-    // 11 sp is the floor for mono labels: anything smaller is unreadable on a phone at 1.0x.
+        TextStyle(fontFamily = Nunito, fontSize = 12.sp, fontWeight = FontWeight.Normal)
+    // 11 sp is the floor for labels: anything smaller is unreadable on a phone at 1.0x.
     val label: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 11.sp, fontWeight = FontWeight.Medium, letterSpacing = tracking)
+        TextStyle(fontFamily = Nunito, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, letterSpacing = tracking)
     val tiny: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 11.sp, fontWeight = FontWeight.Normal, letterSpacing = tracking)
+        TextStyle(fontFamily = Nunito, fontSize = 11.sp, fontWeight = FontWeight.Normal, letterSpacing = tracking)
     val unit: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 14.sp, fontWeight = FontWeight.Normal, letterSpacing = tracking)
+        TextStyle(fontFamily = Nunito, fontSize = 14.sp, fontWeight = FontWeight.Normal, letterSpacing = tracking)
     val status: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 12.sp, fontWeight = FontWeight.Medium, letterSpacing = tracking)
+        TextStyle(fontFamily = Nunito, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, letterSpacing = tracking)
     val secondary: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Outfit, fontSize = 12.sp, fontWeight = FontWeight.Normal)
+        TextStyle(fontFamily = Nunito, fontSize = 12.sp, fontWeight = FontWeight.Normal)
 }
 
 object Space {
@@ -136,6 +125,11 @@ fun ThemedBackground(modifier: Modifier = Modifier) {
     val t = LocalTheme.current
     Canvas(modifier.fillMaxSize()) {
         drawRect(Brush.verticalGradient(listOf(t.bgTop, t.bgMid, t.bgBottom)))
+        val yellowR = 150.dp.toPx()
+        drawCircle(Brush.radialGradient(listOf(Color(0xFFFFF6C8), Color.Transparent), center = Offset(size.width, 0f), radius = yellowR), radius = yellowR, center = Offset(size.width, 0f))
+        val lilacR = 160.dp.toPx()
+        val lilacC = Offset(0f, size.height * 0.35f)
+        drawCircle(Brush.radialGradient(listOf(Color(0xFFD9C9F5).copy(alpha = 0.6f), Color.Transparent), center = lilacC, radius = lilacR), radius = lilacR, center = lilacC)
     }
 }
 
