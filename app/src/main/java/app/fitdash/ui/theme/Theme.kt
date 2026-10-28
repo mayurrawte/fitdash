@@ -126,10 +126,13 @@ fun ThemedBackground(modifier: Modifier = Modifier) {
     Canvas(modifier.fillMaxSize()) {
         drawRect(Brush.verticalGradient(listOf(t.bgTop, t.bgMid, t.bgBottom)))
         val yellowR = 150.dp.toPx()
-        drawCircle(Brush.radialGradient(listOf(Color(0xFFFFF6C8), Color.Transparent), center = Offset(size.width, 0f), radius = yellowR), radius = yellowR, center = Offset(size.width, 0f))
+        val yellowC = Offset(size.width, 0f)
+        val yellow = Color(0xFFFFF6C8)
+        drawCircle(Brush.radialGradient(listOf(yellow, yellow.copy(alpha = 0f)), center = yellowC, radius = yellowR), radius = yellowR, center = yellowC)
         val lilacR = 160.dp.toPx()
         val lilacC = Offset(0f, size.height * 0.35f)
-        drawCircle(Brush.radialGradient(listOf(Color(0xFFD9C9F5).copy(alpha = 0.6f), Color.Transparent), center = lilacC, radius = lilacR), radius = lilacR, center = lilacC)
+        val lilac = Color(0xFFD9C9F5)
+        drawCircle(Brush.radialGradient(listOf(lilac.copy(alpha = 0.6f), lilac.copy(alpha = 0f)), center = lilacC, radius = lilacR), radius = lilacR, center = lilacC)
     }
 }
 
