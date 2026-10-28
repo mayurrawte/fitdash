@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.heightIn
@@ -74,6 +75,10 @@ fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate
                     .clickable(interactionSource = interaction, indication = null, enabled = active, role = Role.Button) {
                         if (haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelect(day)
+                    }
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "${day.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.ENGLISH)} ${day.dayOfMonth}"
+                        this.selected = on
                     }
                     .heightIn(min = 48.dp)
                     .padding(top = 5.dp, bottom = 6.dp),

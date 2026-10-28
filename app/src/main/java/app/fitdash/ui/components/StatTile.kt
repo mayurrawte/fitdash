@@ -18,14 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.fitdash.metrics.Status
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.TintScope
-import app.fitdash.ui.theme.labelCase
 import app.fitdash.ui.theme.noteCase
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
@@ -104,51 +102,5 @@ fun TileGrid(tiles: List<@Composable (Modifier) -> Unit>) {
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }
         }
-    }
-}
-
-// A compact "at a glance" tile: label, big value, a ring for goal-type numbers, a status word or note, and an optional delta.
-@Composable
-fun GlanceTile(
-    label: String,
-    value: String,
-    unit: String?,
-    modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
-    ring: Float? = null,
-    ringColor: Color = Palette.Accent,
-    note: String? = null,
-    status: Status? = null,
-    delta: Int? = null,
-    ringKey: String = "glance-$label",
-    onClick: (() -> Unit)? = null,
-    description: String? = null,
-    tint: Tint? = null,
-) = TintScope(tint) {
-    // On a pastel tile the ring is drawn in ink, like the mockup's steps ring; colour there comes from the tile.
-    val ringPaint = if (tint != null) Palette.Text else ringColor
-    Row(
-        modifier
-            .tileSurface()
-            .tappable(onClick, description)
-            .padding(horizontal = Space.m, vertical = Space.m)
-            .semantics(mergeDescendants = true) {},
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (icon != null) Icon(icon, null, Modifier.padding(end = 5.dp).size(12.dp), tint = Palette.Muted)
-                Text(labelCase(label), style = Type.tiny, color = Palette.Muted, maxLines = 1)
-            }
-            Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                NumberWithUnits(listOf(value to (unit ?: "")), style = Type.tile)
-                if (delta != null && delta != 0) DeltaArrow(delta > 0, Modifier.padding(start = 5.dp))
-            }
-            when {
-                status != null -> StatusText(status, Modifier.padding(top = 4.dp))
-                note != null -> Text(noteCase(note), Modifier.padding(top = 4.dp), style = Type.tiny, color = Palette.Faint, maxLines = 1)
-            }
-        }
-        if (ring != null) MiniRing(ringKey, ring, ringPaint, Modifier.padding(start = Space.s), diameter = 42.dp, stroke = 4.dp)
     }
 }

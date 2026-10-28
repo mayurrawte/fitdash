@@ -202,6 +202,10 @@ private fun TodayNoSleep() = PagePreview(0, PreviewData.today(21, 30).copy(sleep
 
 @Preview(heightDp = 1500)
 @Composable
+private fun TodayNoData() = PagePreview(0, PreviewData.today(21, 30).copy(sleep = null, activity = null))
+
+@Preview(heightDp = 1500)
+@Composable
 private fun TodayPastDate() = PagePreview(0, PreviewData.today(21, 30).copy(isToday = false))
 
 @Preview(heightDp = 1500)

@@ -60,6 +60,7 @@ import app.fitdash.metrics.workoutIcon
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.bandAdvice
 import app.fitdash.ui.bandWord
+import app.fitdash.ui.basedOn
 import app.fitdash.ui.dataUpTo
 import app.fitdash.ui.formatDate
 import app.fitdash.ui.formatKm
@@ -172,6 +173,7 @@ fun TodayPage(
                 Icon(NavIcons.sparkle, null, Modifier.padding(end = Space.m).size(18.dp), tint = Palette.Accent)
                 Column {
                     Text(readout(data), style = Type.body, color = Palette.Text)
+                    (data.readiness as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.used)?.let { Text(it, style = Type.small, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs)) } }
                     if (data.isToday) missingRecoveryLine(data.sources)?.let { Text(it, style = Type.secondary, color = Palette.Warn, modifier = Modifier.padding(top = Space.xs)) }
                 }
             }
@@ -192,7 +194,7 @@ fun TodayPage(
                     Column {
                         when {
                             s != null -> NumberWithUnits(listOf(s.asleep.toHours().toString() to "h", (s.asleep.toMinutes() % 60).toString() to "m"), style = Type.tile.copy(fontSize = 46.sp))
-                            hasSteps -> NumberWithUnits(listOf(formatSteps(a!!.steps) to goalText), style = Type.tile.copy(fontSize = 46.sp))
+                            a != null && hasSteps -> NumberWithUnits(listOf(formatSteps(a.steps) to goalText), style = Type.tile.copy(fontSize = 46.sp))
                             else -> Text("No sleep recorded", style = Type.value, color = Palette.Text)
                         }
                         val line = if (s != null) sleepStreak else if (hasSteps) stepsStreak else "Check your data sources"
@@ -208,7 +210,7 @@ fun TodayPage(
             }
         }
         val tiles = buildList<@Composable (Modifier) -> Unit> {
-            // The steps hero already shows the count, so the tile only sits beside a sleep hero.
+            // Left out when the hero shows steps (no sleep, steps above zero).
             if (a != null && (data.sleep != null || !hasSteps)) add { m ->
                 StatTile("Steps", formatSteps(a.steps), goalText, null, m, icon = NavIcons.walk, onClick = metricOpener(MetricRef.Kind(MetricKind.STEPS)), description = "Steps details", tint = Tint.SKY) {
                     Bars("today-steps-${data.date}", a.hourly.dropWhile { it == 0L }.dropLastWhile { it == 0L }.map { it.toFloat() }, height = 40.dp)
