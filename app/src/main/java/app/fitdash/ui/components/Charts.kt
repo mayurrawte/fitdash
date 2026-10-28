@@ -185,10 +185,11 @@ private fun stageRow(t: StageType) = when (t) {
 }
 
 // A classic stepped hypnogram: four lanes (Awake on top, then REM, Light, Deep), a block per stage, thin risers between them.
+// With `colours` it draws bare, without lane names or tracks, for a coloured card.
 @Composable
-fun Hypnogram(key: String, stages: List<SleepStage>, modifier: Modifier = Modifier) {
+fun Hypnogram(key: String, stages: List<SleepStage>, modifier: Modifier = Modifier, colours: Map<StageType, Color>? = null) {
     val progress = rememberDrawProgress(key)
-    val colors = StageType.entries.associateWith { stageColor(it) }
+    val colors = colours ?: StageType.entries.associateWith { stageColor(it) }
     val laneText = Palette.Faint
     val track = Chart.track
     val measurer = rememberTextMeasurer()
@@ -200,11 +201,11 @@ fun Hypnogram(key: String, stages: List<SleepStage>, modifier: Modifier = Modifi
         val start = sorted.first().start
         val total = Duration.between(start, sorted.maxOf { it.end }).seconds.toFloat()
         if (total <= 0f) return@Canvas
-        val labelW = 44.dp.toPx()
+        val labelW = if (colours == null) 44.dp.toPx() else 0f
         val w = size.width - labelW
         val laneH = size.height / 4
         val blockH = laneH * 0.62f
-        lanes.forEachIndexed { i, name ->
+        if (colours == null) lanes.forEachIndexed { i, name ->
             val cy = laneH * i + laneH / 2
             val t = measurer.measure(name, labelStyle)
             drawText(t, laneText, Offset(0f, cy - t.size.height / 2))

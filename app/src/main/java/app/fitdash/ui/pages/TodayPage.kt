@@ -1,31 +1,27 @@
 package app.fitdash.ui.pages
 
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import app.fitdash.health.ReadProgress
-import app.fitdash.metrics.Streak
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import app.fitdash.ui.components.LocalRevealed
-import app.fitdash.ui.theme.LocalReduceMotion
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,106 +29,84 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
-import app.fitdash.health.Workout
-import app.fitdash.metrics.HeartDay
-import app.fitdash.metrics.workoutIcon
-import app.fitdash.ui.workoutTitle
-import app.fitdash.ui.workoutLine
-import app.fitdash.ui.components.DeltaArrow
-import app.fitdash.ui.components.HeartDayLine
-import app.fitdash.ui.components.NumberWithUnits
-import app.fitdash.ui.components.SectionCard
-import app.fitdash.ui.components.workoutIconVector
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import app.fitdash.ui.LocalPrefs
-import app.fitdash.ui.regularityWord
-import app.fitdash.ui.morningReadout
-import app.fitdash.metrics.regularityBand
-import app.fitdash.ui.theme.regularityColour
-import app.fitdash.ui.theme.sleepScoreColour
-import app.fitdash.ui.clock
-import app.fitdash.ui.components.tappable
-import app.fitdash.ui.theme.Motion
-import app.fitdash.ui.components.GlanceTile
-import app.fitdash.ui.dataUpTo
-import app.fitdash.ui.sourceAppName
-import app.fitdash.ui.syncStale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.animation.animateContentSize
-import androidx.compose.runtime.saveable.rememberSaveable
-import app.fitdash.metrics.Suggestion
-import app.fitdash.metrics.activeMinutes
-import app.fitdash.ui.formatKm
-import app.fitdash.ui.formatTime
-import app.fitdash.ui.components.CardShape
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.fitdash.health.ReadProgress
+import app.fitdash.health.StageType
+import app.fitdash.health.Workout
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.ReadinessResult
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.Tuning
-import app.fitdash.metrics.asleepDuration
+import app.fitdash.metrics.activeMinutes
 import app.fitdash.metrics.rangeStatus
 import app.fitdash.metrics.rangeWord
+import app.fitdash.metrics.weekReview
+import app.fitdash.metrics.workoutIcon
+import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.bandAdvice
 import app.fitdash.ui.bandWord
-import app.fitdash.ui.basedOn
-import app.fitdash.ui.missingRecoveryLine
-import app.fitdash.ui.components.Chart
-import app.fitdash.ui.components.CountUpText
-import app.fitdash.ui.components.EmptyTrack
-import app.fitdash.ui.components.Heading
-import app.fitdash.ui.components.ListRow
-import app.fitdash.ui.components.RowGroup
-import app.fitdash.ui.components.NavIcons
-import app.fitdash.ui.components.RangeBar
-import app.fitdash.ui.components.SectionLabel
-import app.fitdash.ui.components.StatTile
-import app.fitdash.ui.components.MiniRing
-import app.fitdash.ui.components.tappable
-import app.fitdash.ui.components.cardSurface
-import app.fitdash.ui.components.TileGrid
-import app.fitdash.ui.components.WeekStrip
-import app.fitdash.ui.formatDuration
+import app.fitdash.ui.dataUpTo
+import app.fitdash.ui.formatDate
+import app.fitdash.ui.formatKm
 import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatSteps
+import app.fitdash.ui.greeting
+import app.fitdash.ui.missingRecoveryLine
+import app.fitdash.ui.morningReadout
 import app.fitdash.ui.rangeNote
+import app.fitdash.ui.sourceAppName
+import app.fitdash.ui.streakLine
 import app.fitdash.ui.suggestionText
-import app.fitdash.ui.theme.Palette
-import app.fitdash.metrics.weekReview
+import app.fitdash.ui.syncStale
+import app.fitdash.ui.workoutLine
+import app.fitdash.ui.workoutTitle
+import app.fitdash.ui.components.Bars
+import app.fitdash.ui.components.CountUpText
+import app.fitdash.ui.components.DeltaArrow
+import app.fitdash.ui.components.EmptyTrack
+import app.fitdash.ui.components.HeartDayLine
+import app.fitdash.ui.components.HeroCard
+import app.fitdash.ui.components.Hypnogram
+import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.MiniRing
+import app.fitdash.ui.components.NavIcons
+import app.fitdash.ui.components.NumberWithUnits
+import app.fitdash.ui.components.RangeBar
+import app.fitdash.ui.components.RowGroup
+import app.fitdash.ui.components.StatTile
+import app.fitdash.ui.components.StripCard
+import app.fitdash.ui.components.TileGrid
 import app.fitdash.ui.components.WeekReviewCard
-import app.fitdash.ui.theme.Tint
+import app.fitdash.ui.components.WeekStrip
+import app.fitdash.ui.components.tappable
+import app.fitdash.ui.components.workoutIconVector
+import app.fitdash.ui.theme.Motion
+import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
+import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Type
 import app.fitdash.ui.theme.scoreColor
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 private const val UNDO_MILLIS = 5000L
@@ -150,7 +124,6 @@ private fun suggestionIcon(kind: SuggestionKind) = when (kind) {
 fun TodayPage(
     data: TodayData,
     chrome: PageChrome,
-    pageOffset: () -> Float,
     onOpen: (Int) -> Unit,
     onSelectDate: (LocalDate) -> Unit,
     onShareDay: () -> Unit,
@@ -165,24 +138,25 @@ fun TodayPage(
 ) {
     val r = data.readiness
     val score = (r as? ReadinessResult.Ready)?.score
-    // While recovery calibrates the orb shows the best score we do have, so day one is not a dash.
-    val hasSteps = (data.activity?.steps ?: 0L) > 0L
-    val heroScore = score ?: data.sleep?.score ?: data.movementScore?.takeIf { hasSteps }
-    val heroLabel = when {
-        score != null -> "RECOVERY ›"
-        data.sleep != null -> "SLEEP ›"
-        hasSteps -> "STEPS ›"
-        r is ReadinessResult.Calibrating -> "CALIBRATING"
-        else -> "NO DATA"
-    }
+    val a = data.activity
+    val h = data.heart
+    val hasSteps = (a?.steps ?: 0L) > 0L
     val zone = ZoneId.systemDefault()
-    val openRecovery = metricOpener(MetricRef.Kind(MetricKind.RECOVERY))
-    val openSleep = metricOpener(MetricRef.Kind(MetricKind.SLEEP_HOURS))
-    val openSteps = metricOpener(MetricRef.Kind(MetricKind.STEPS))
-    val openHrv = metricOpener(MetricRef.Kind(MetricKind.HRV))
-    val openRhr = metricOpener(MetricRef.Kind(MetricKind.RESTING_HR))
     val prefs = LocalPrefs.current
+    val sleepStreak = data.streaks.firstOrNull { it.kind == MetricKind.SLEEP_HOURS }?.let { streakLine(it.days) }
+    val stepsStreak = data.streaks.firstOrNull { it.kind == MetricKind.STEPS }?.let { streakLine(it.days) }
+    val waterStreak = data.streaks.firstOrNull { it.kind == MetricKind.WATER }?.let { streakLine(it.days) }
+    val goal = data.goals.steps
+    val goalText = if (goal % 1000 == 0) "of ${goal / 1000}k" else "of ${formatSteps(goal.toLong())}"
     PageColumn(chrome, accent = score?.let { scoreColor(it) } ?: Palette.Calibrating) {
+        item(key = "greeting") {
+            Text(
+                if (data.isToday) greeting(LocalTime.now().hour) else formatDate(data.date),
+                Modifier.padding(horizontal = Space.xl, vertical = Space.xs),
+                style = Type.title,
+                color = Palette.Text,
+            )
+        }
         item(key = "strip") {
             WeekStrip(
                 (6L downTo 0L).map { data.date.minusDays(it) },
@@ -193,77 +167,82 @@ fun TodayPage(
             )
         }
         if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing, progress, chrome.error) }
-        item(key = "orb") {
-            SoftHero(data, heroScore, heroLabel, pageOffset, when {
-                score != null -> openRecovery
-                data.sleep != null -> { { onOpen(1) } }
-                else -> { { onOpen(2) } }
-            })
-        }
-        // Monday: last week in one card, the week-over-week view that otherwise lives on Trends.
-        if (data.isToday && data.date.dayOfWeek == java.time.DayOfWeek.MONDAY) {
-            weekReview(data.series, data.date.minusDays(1))?.let { review -> item(key = "week-review") { WeekReviewCard(review) } }
-        }
-        if (data.streaks.isNotEmpty()) item(key = "streaks") { StreakRow(data.streaks) }
-        item(key = "glance") { GlanceGrid(data, score, onOpen, openSteps, openRhr, metricOpener(MetricRef.Kind(MetricKind.ACTIVE_MINUTES)), metricOpener(MetricRef.Kind(MetricKind.HEART_RATE))) }
-        // Action first: the one thing to do today sits right under the numbers, the rest fold under it.
-        if (prefs.showSuggestions && data.suggestions.isNotEmpty()) {
-            item(key = "suggestions-label") { SectionLabel("DO THIS TODAY") }
-            item(key = "suggestion-0") { ActionCard(data.suggestions.first()) }
-            if (data.suggestions.size > 1) {
-                item(key = "suggestions-more") {
-                    RowGroup { data.suggestions.drop(1).forEachIndexed { i, s -> ListRow(suggestionIcon(s.kind), suggestionText(s), null, divider = i > 0) } }
+        revealItem("readout", 0) {
+            StripCard(null, null) {
+                Icon(NavIcons.sparkle, null, Modifier.padding(end = Space.m).size(18.dp), tint = Palette.Accent)
+                Column {
+                    Text(readout(data), style = Type.body, color = Palette.Text)
+                    if (data.isToday) missingRecoveryLine(data.sources)?.let { Text(it, style = Type.secondary, color = Palette.Warn, modifier = Modifier.padding(top = Space.xs)) }
                 }
             }
         }
-        val a = data.activity
-        if (data.sleep != null || data.naps.isNotEmpty() || a != null) {
-            item(key = "day-label") { Heading(if (data.isToday) "Today" else "That day") }
-            item(key = "rows-day") {
-                RowGroup {
-                    data.sleep?.let { s ->
-                        ListRow(NavIcons.bed, "Sleep", "${formatDuration(s.asleep)} · ${clock(s.start, zone)} – ${clock(s.end, zone)}", Modifier.semantics { contentDescription = "Sleep details" }, onClick = { openSleep() })
+        revealItem("hero", 1) {
+            val s = data.sleep
+            val onSteps = s == null && hasSteps
+            HeroCard(
+                when { s != null -> { { onOpen(1) } }; hasSteps -> { { onOpen(2) } }; else -> chrome.onInfo },
+                when { s != null -> "Sleep details"; hasSteps -> "Steps details"; else -> "Data sources" },
+            ) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(if (onSteps) NavIcons.walk else NavIcons.moonSmall, null, Modifier.padding(end = 6.dp).size(14.dp), tint = Palette.Muted)
+                    Text(if (onSteps) "Steps" else "Sleep", Modifier.weight(1f), style = Type.body.copy(fontSize = 13.sp), color = Palette.Muted)
+                    Icon(NavIcons.chevronRight, null, Modifier.size(16.dp), tint = Palette.Muted)
+                }
+                Row(Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(top = 28.dp), verticalAlignment = Alignment.Bottom) {
+                    Column {
+                        when {
+                            s != null -> NumberWithUnits(listOf(s.asleep.toHours().toString() to "h", (s.asleep.toMinutes() % 60).toString() to "m"), style = Type.tile.copy(fontSize = 46.sp))
+                            hasSteps -> NumberWithUnits(listOf(formatSteps(a!!.steps) to goalText), style = Type.tile.copy(fontSize = 46.sp))
+                            else -> Text("No sleep recorded", style = Type.value, color = Palette.Text)
+                        }
+                        val line = if (s != null) sleepStreak else if (hasSteps) stepsStreak else "Check your data sources"
+                        if (line != null) Text(line, style = Type.small, color = Palette.Muted)
                     }
-                    data.naps.forEachIndexed { i, nap ->
-                        ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}", onClick = { onOpen(1) }, divider = data.sleep != null || i > 0)
-                    }
-                    if (a != null) {
-                        ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%", Modifier.semantics { contentDescription = "Steps details" }, onClick = { openSteps() }, divider = data.sleep != null || data.naps.isNotEmpty())
-                    }
+                    if (s != null) Hypnogram(
+                        "hero-hypnogram-${data.date}",
+                        s.stages,
+                        Modifier.padding(start = Space.m, bottom = 6.dp).weight(1f).height(70.dp),
+                        colours = StageType.entries.associateWith { if (it == StageType.AWAKE) Palette.Sun else Color.White },
+                    )
                 }
             }
         }
-        if (prefs.showWorkouts && data.workouts.isNotEmpty()) {
-            if (data.workouts.size == 1) {
-                val w = data.workouts.first()
-                item(key = "row-workout-0") {
-                    RowGroup {
-                        ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) })
-                    }
-                }
-            } else {
-                // Several sessions fold into one row: "4 workouts · 78 min · 7.7 km", tap to expand.
-                item(key = "row-workouts") { WorkoutsRow(data, miles, onOpenWorkout) }
-            }
-        }
-        if (prefs.showWater) item(key = "row-water") { WaterCard(data, onAddWater, onUndoWater) }
-        if (prefs.showHeartRate) data.heartDay?.let { hd ->
-            item(key = "heart-day") {
-                val openHr = metricOpener(MetricRef.Kind(MetricKind.HEART_RATE))
-                HeartDayCard(data, hd, zone, openHr)
-            }
-        }
-        val h = data.heart
         val tiles = buildList<@Composable (Modifier) -> Unit> {
+            // The steps hero already shows the count, so the tile only sits beside a sleep hero.
+            if (a != null && (data.sleep != null || !hasSteps)) add { m ->
+                StatTile("Steps", formatSteps(a.steps), goalText, null, m, icon = NavIcons.walk, onClick = metricOpener(MetricRef.Kind(MetricKind.STEPS)), description = "Steps details", tint = Tint.SKY) {
+                    Bars("today-steps-${data.date}", a.hourly.dropWhile { it == 0L }.dropLastWhile { it == 0L }.map { it.toFloat() }, height = 40.dp)
+                    stepsStreak?.let { Text(it, Modifier.padding(top = Space.s), style = Type.small, color = Palette.Muted) }
+                }
+            }
+            add { m ->
+                StatTile(
+                    "Recovery", null, null,
+                    when (r) {
+                        is ReadinessResult.Ready -> bandWord(r.band)
+                        is ReadinessResult.Calibrating -> "Night ${r.nights} of ${Tuning.MIN_NIGHTS}"
+                        ReadinessResult.NoData -> "no data"
+                    },
+                    m, icon = NavIcons.today, onClick = metricOpener(MetricRef.Kind(MetricKind.RECOVERY)), description = "Recovery details", tint = Tint.ROSE,
+                ) {
+                    when (r) {
+                        is ReadinessResult.Ready -> CountUpText("recovery-${data.date}", r.score.toLong(), Type.tile.copy(fontSize = 34.sp), color = Palette.Text)
+                        is ReadinessResult.Calibrating -> Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            repeat(Tuning.MIN_NIGHTS) { i -> Box(Modifier.size(7.dp).clip(CircleShape).background(if (i < r.nights) Palette.Accent else Palette.Divider)) }
+                        }
+                        ReadinessResult.NoData -> Text("—", style = Type.tile.copy(fontSize = 34.sp), color = Palette.Faint)
+                    }
+                }
+            }
             h?.hrv?.let { v ->
                 add { m ->
                     StatTile(
                         "HRV", v.roundToInt().toString(), "ms", rangeNote(v, h.hrvRange, Good.HIGHER), m,
                         status = h.hrvRange?.let { rangeWord(rangeStatus(v, it, Good.HIGHER)) },
                         icon = NavIcons.activity,
-                        onClick = openHrv,
+                        onClick = metricOpener(MetricRef.Kind(MetricKind.HRV)),
                         description = "HRV details",
-                        tint = Tint.ROSE,
+                        tint = Tint.PEACH,
                     ) { h.hrvRange?.let { RangeBar("today-hrv", v, it, Good.HIGHER) } ?: EmptyTrack() }
                 }
             }
@@ -274,87 +253,92 @@ fun TodayPage(
                         status = h.restingHrRange?.let { rangeWord(rangeStatus(v, it, Good.LOWER)) },
                         icon = NavIcons.heart,
                         labelTag = if (data.restingHrEstimated) "EST." else null,
-                        onClick = openRhr,
+                        onClick = metricOpener(MetricRef.Kind(MetricKind.RESTING_HR)),
                         description = "Resting heart rate details",
-                        tint = Tint.PEACH,
+                        tint = Tint.SAND,
                     ) { h.restingHrRange?.let { RangeBar("today-rhr", v, it, Good.LOWER) } ?: EmptyTrack() }
                 }
             }
         }
-        if (tiles.isNotEmpty()) {
-            item(key = "contributors-label") { SectionLabel("CONTRIBUTORS") }
-            item(key = "contributors") { TileGrid(tiles) }
+        revealItem("tiles", 2) { TileGrid(tiles) }
+        val hd = data.heartDay?.takeIf { prefs.showHeartRate }
+        val workouts = data.workouts.takeIf { prefs.showWorkouts }.orEmpty()
+        if (hd != null || workouts.isNotEmpty() || prefs.showWater) revealItem("rows", 3) {
+            var expanded by rememberSaveable(data.date) { mutableStateOf(false) }
+            var adds by remember { mutableIntStateOf(0) }
+            var canUndo by remember { mutableStateOf(false) }
+            LaunchedEffect(adds) {
+                if (adds > 0) {
+                    canUndo = true
+                    delay(UNDO_MILLIS)
+                    canUndo = false
+                }
+            }
+            Column(Modifier.animateContentSize()) {
+                RowGroup {
+                    if (hd != null) {
+                        ListRow(
+                            NavIcons.heart, "Heart rate",
+                            h?.restingHr?.let { "${it.roundToInt()} bpm resting" } ?: "latest ${hd.latest.value.roundToInt()} bpm",
+                            Modifier.semantics { contentDescription = "Heart rate details" },
+                            onClick = metricOpener(MetricRef.Kind(MetricKind.HEART_RATE)),
+                            trailing = { HeartDayLine("heart-row-${data.date}", hd.line, Modifier.size(70.dp, 28.dp)) },
+                        )
+                    }
+                    if (workouts.size == 1) {
+                        val w = workouts.first()
+                        ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) }, divider = hd != null)
+                    }
+                    if (workouts.size > 1) {
+                        // Several sessions fold into one row: "4 workouts · 78 min · 7.7 km", tap to expand.
+                        val km = workouts.mapNotNull { it.distanceMeters }.sum() / 1000
+                        val subtitle = listOfNotNull("${activeMinutes(workouts)}m", km.takeIf { it > 0 }?.let { formatKm(it, miles) }).joinToString(" · ")
+                        ListRow(NavIcons.flame, "${workouts.size} workouts", subtitle, Modifier.semantics { contentDescription = "${workouts.size} workouts, ${if (expanded) "collapse" else "expand"}" }, onClick = { expanded = !expanded }, divider = hd != null)
+                        if (expanded) workouts.forEach { w ->
+                            ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) }, divider = true)
+                        }
+                    }
+                    if (prefs.showWater) {
+                        ListRow(
+                            NavIcons.drop, "Water",
+                            listOfNotNull("${formatLiters(data.waterLiters)} of ${formatLiters(data.waterGoal)} L", waterStreak).joinToString("\n"),
+                            divider = hd != null || workouts.isNotEmpty(),
+                            trailing = {
+                                if (data.isToday && canUndo) {
+                                    Text("Undo", Modifier.clip(RoundedCornerShape(8.dp)).tappable({ canUndo = false; onUndoWater() }, "Undo water").padding(Space.s), style = Type.label, color = Palette.Accent)
+                                } else if (data.isToday) {
+                                    Box(Modifier.size(48.dp).tappable({ adds++; onAddWater(250) }, "Add 250 millilitres"), contentAlignment = Alignment.Center) {
+                                        Box(Modifier.size(34.dp).clip(CircleShape).background(Palette.Accent), contentAlignment = Alignment.Center) {
+                                            Text("+", style = Type.body.copy(fontSize = 20.sp), color = Color.White)
+                                        }
+                                    }
+                                }
+                            },
+                        )
+                    }
+                }
+            }
+        }
+        if (prefs.showSuggestions && data.suggestions.isNotEmpty()) {
+            val first = data.suggestions.first()
+            revealItem("suggestion-0", 4) {
+                StripCard(null, null) {
+                    Icon(suggestionIcon(first.kind), null, Modifier.padding(end = Space.m).size(20.dp), tint = Palette.Accent)
+                    Text(suggestionText(first), style = Type.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp), color = Palette.Text)
+                }
+            }
+            if (data.suggestions.size > 1) revealItem("suggestions-more", 5) {
+                RowGroup { data.suggestions.drop(1).forEachIndexed { i, s -> ListRow(suggestionIcon(s.kind), suggestionText(s), null, divider = i > 0) } }
+            }
+        }
+        // Monday: last week in one card, the week-over-week view that otherwise lives on Trends.
+        if (data.isToday && data.date.dayOfWeek == java.time.DayOfWeek.MONDAY) {
+            weekReview(data.series, data.date.minusDays(1))?.let { review -> item(key = "week-review") { WeekReviewCard(review) } }
         }
         item(key = "pills") {
             Row(Modifier.padding(horizontal = Space.l).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Pill("SHARE DAY", Palette.Text, Palette.Divider, onShareDay, Modifier.weight(1f))
                 Pill("ASK AI", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), onAskAi, Modifier.weight(1f), icon = NavIcons.sparkle)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActionCard(s: Suggestion) {
-    Row(
-        Modifier.padding(horizontal = Space.l).fillMaxWidth().clip(CardShape).background(Palette.ChipStrong).padding(horizontal = Space.l, vertical = Space.l),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(suggestionIcon(s.kind), null, Modifier.padding(end = Space.m).size(22.dp), tint = Palette.Accent)
-        Text(suggestionText(s), style = Type.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp), color = Palette.Text)
-    }
-}
-
-@Composable
-private fun WorkoutsRow(data: TodayData, miles: Boolean, onOpenWorkout: (Workout) -> Unit) {
-    var expanded by rememberSaveable(data.date) { mutableStateOf(false) }
-    val prefs = LocalPrefs.current
-    val zone = ZoneId.systemDefault()
-    val minutes = activeMinutes(data.workouts)
-    val km = data.workouts.mapNotNull { it.distanceMeters }.sum() / 1000
-    val subtitle = listOfNotNull("${minutes}m", km.takeIf { it > 0 }?.let { formatKm(it, miles) }).joinToString(" · ")
-    Column(Modifier.animateContentSize()) {
-        RowGroup {
-            ListRow(NavIcons.flame, "${data.workouts.size} workouts", subtitle, Modifier.semantics { contentDescription = "${data.workouts.size} workouts, ${if (expanded) "collapse" else "expand"}" }, onClick = { expanded = !expanded })
-            if (expanded) {
-                data.workouts.forEach { w ->
-                    ListRow(
-                        workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24),
-                        Modifier.semantics { contentDescription = "${workoutTitle(w)} details" },
-                        onClick = { onOpenWorkout(w) },
-                        divider = true,
-                    )
-                }
-            }
-        }
-    }
-}
-
-// "5 days · steps" chips for goals met in a row; a milestone (3, 7, 14…) is filled and pops once when it first shows.
-@Composable
-private fun StreakRow(streaks: List<Streak>) {
-    val revealed = LocalRevealed.current
-    val still = LocalReduceMotion.current
-    Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl, vertical = Space.xs), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterHorizontally)) {
-        streaks.forEach { s ->
-            val key = "streak-${s.kind}-${s.days}"
-            val pop = remember(key) { Animatable(if (s.milestone && key !in revealed && !still) 0.6f else 1f) }
-            LaunchedEffect(key) {
-                pop.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
-                revealed += key
-            }
-            val what = when (s.kind) { MetricKind.STEPS -> "steps"; MetricKind.SLEEP_HOURS -> "sleep"; else -> "water" }
-            Row(
-                Modifier
-                    .graphicsLayer { scaleX = pop.value; scaleY = pop.value }
-                    .clip(RoundedCornerShape(50))
-                    .background(if (s.milestone) Palette.Accent.copy(alpha = 0.18f) else Palette.Chip)
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-                    .semantics(mergeDescendants = true) { contentDescription = "${s.days} days in a row meeting your $what goal" },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(NavIcons.flame, null, Modifier.padding(end = 4.dp).size(12.dp), tint = if (s.milestone) Palette.Accent else Palette.Muted)
-                Text("${s.days} days · $what", style = Type.tiny, color = if (s.milestone) Palette.Accent else Palette.Muted)
             }
         }
     }
@@ -412,124 +396,6 @@ private fun SyncRow(data: TodayData, onSync: (String) -> Unit, refreshing: Boole
     }
 }
 
-// Four tiles under the orb: sleep, steps, active minutes and the heart number we have.
-@Composable
-private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, openSteps: () -> Unit, openRhr: () -> Unit, openActive: () -> Unit, openHeart: () -> Unit) {
-    val a = data.activity
-    val h = data.heart
-    val sleepDelta = data.sleep?.score?.let { s -> data.previous.sleep?.let { s - it } }
-    val stepsDelta = data.movementScore?.takeIf { (a?.steps ?: 0L) > 0L }?.let { m -> data.previous.movement?.let { m - it } }
-    val tiles = listOf<@Composable (Modifier) -> Unit>(
-        { m ->
-            val s = data.sleep
-            if (LocalPrefs.current.showSleepScore) {
-                GlanceTile(
-                    "Sleep", s?.score?.toString() ?: "—", null, m, icon = NavIcons.moonSmall,
-                    ring = s?.score?.div(100f), ringColor = s?.score?.let { sleepScoreColour(it) } ?: Palette.Faint,
-                    note = s?.let { formatDuration(it.asleep) } ?: "no night yet", delta = sleepDelta,
-                    ringKey = "glance-sleep-${data.date}", onClick = { onOpen(1) }, description = "Sleep page", tint = Tint.SKY,
-                )
-            } else {
-                val band = data.regularity?.let { regularityBand(it.value.sri) }
-                GlanceTile(
-                    "Sleep", s?.let { formatDuration(it.asleep) } ?: "—", null, m, icon = NavIcons.moonSmall,
-                    ring = s?.let { it.goalPercent / 100f }, ringColor = band?.let { regularityColour(it) } ?: Palette.Accent,
-                    note = band?.let(::regularityWord) ?: (s?.let { "calibrating" } ?: "no night yet"),
-                    ringKey = "glance-sleep-${data.date}", onClick = { onOpen(1) }, description = "Sleep page", tint = Tint.SKY,
-                )
-            }
-        },
-        { m ->
-            GlanceTile(
-                "Steps", a?.let { formatSteps(it.steps) } ?: "—", null, m, icon = NavIcons.walk,
-                ring = a?.goalPercent?.coerceAtMost(100)?.div(100f), ringColor = Palette.Accent,
-                note = "of ${formatSteps(data.goals.steps.toLong())}", delta = stepsDelta,
-                ringKey = "glance-steps-${data.date}", onClick = openSteps, description = "Steps details", tint = Tint.SAND,
-            )
-        },
-        { m ->
-            val goal = data.goals.activeMinutes
-            GlanceTile(
-                "Active", a?.activeMinutes?.toString() ?: "—", if (a != null) "min" else null, m, icon = NavIcons.bolt,
-                ring = a?.let { (it.activeMinutes.toFloat() / goal).coerceAtMost(1f) }, ringColor = Palette.Good,
-                note = "goal $goal min",
-                ringKey = "glance-active-${data.date}", onClick = openActive, description = "Active minutes details", tint = Tint.ROSE,
-            )
-        },
-        { m ->
-            val rhr = h?.restingHr
-            val hd = data.heartDay
-            when {
-                rhr != null -> GlanceTile(
-                    "Resting HR", rhr.roundToInt().toString(), "bpm", m, icon = NavIcons.heart,
-                    status = h.restingHrRange?.let { rangeWord(rangeStatus(rhr, it, Good.LOWER)) },
-                    note = if (data.restingHrEstimated) "estimated" else "last night",
-                    onClick = openRhr, description = "Resting heart rate details", tint = Tint.PEACH,
-                )
-                hd != null -> GlanceTile("Heart rate", hd.avg.toString(), "bpm", m, icon = NavIcons.heart, note = "${hd.min}–${hd.max} today", onClick = openHeart, description = "Heart rate details", tint = Tint.PEACH)
-                else -> GlanceTile(
-                    "Recovery", recovery?.toString() ?: "—", null, m, icon = NavIcons.today,
-                    ring = recovery?.div(100f), ringColor = recovery?.let { scoreColor(it) } ?: Palette.Faint,
-                    note = if (recovery == null) "calibrating" else null, ringKey = "glance-recovery-${data.date}", tint = Tint.PEACH,
-                )
-            }
-        },
-    )
-    TileGrid(tiles)
-}
-
-@Composable
-private fun WaterCard(data: TodayData, onAdd: (Int) -> Unit, onUndo: () -> Unit) {
-    var adds by remember { mutableIntStateOf(0) }
-    var canUndo by remember { mutableStateOf(false) }
-    LaunchedEffect(adds) {
-        if (adds > 0) {
-            canUndo = true
-            delay(UNDO_MILLIS)
-            canUndo = false
-        }
-    }
-    Column(Modifier.padding(horizontal = Space.l).fillMaxWidth().cardSurface().padding(horizontal = Space.l, vertical = 12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(Palette.ChipStrong), contentAlignment = Alignment.Center) {
-                Icon(NavIcons.drop, null, Modifier.size(16.dp), tint = Palette.Accent)
-            }
-            Column(Modifier.weight(1f).padding(horizontal = Space.m)) {
-                Text("Water", style = Type.body.copy(fontSize = 14.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
-                Text("${formatLiters(data.waterLiters)} of ${formatLiters(data.waterGoal)} L", style = Type.secondary, color = Palette.Muted, modifier = Modifier.padding(top = 2.dp))
-            }
-            if (data.isToday && canUndo) {
-                Text(
-                    "UNDO",
-                    Modifier.clip(RoundedCornerShape(8.dp)).clickable(role = Role.Button) { canUndo = false; onUndo() }.padding(Space.s),
-                    style = Type.tiny,
-                    color = Palette.Accent,
-                )
-            } else if (data.isToday) {
-                // Compact chips instead of two full-width pills.
-                listOf(250, 500).forEach { ml ->
-                    Text(
-                        "+$ml",
-                        Modifier
-                            .padding(start = 6.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(Palette.Chip)
-                            .tappable({ adds++; onAdd(ml) }, "Add $ml millilitres")
-                            .heightIn(min = 40.dp)
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        style = Type.label,
-                        color = Palette.Accent,
-                    )
-                }
-            }
-        }
-        val fill by animateFloatAsState((data.waterLiters / data.waterGoal).toFloat().coerceIn(0f, 1f), tween(Motion.RING, easing = Motion.ease), label = "water")
-        Box(Modifier.padding(top = Space.m).fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)).background(Chart.track)) {
-            Box(Modifier.fillMaxHeight().fillMaxWidth(fill).background(Palette.Accent))
-        }
-    }
-}
-
 @Composable
 internal fun TrioStat(label: String, value: Int?, previous: Int?, modifier: Modifier, onClick: (() -> Unit)? = null) {
     val delta = if (value != null && previous != null && value != previous) value - previous else null
@@ -582,102 +448,15 @@ private fun Pill(text: String, colour: Color, border: Color, onClick: () -> Unit
     }
 }
 
-@Composable
-private fun HeartDayCard(data: TodayData, hd: HeartDay, zone: ZoneId, onOpen: () -> Unit) {
-    fun frac(t: java.time.Instant): Float {
-        val z = t.atZone(zone)
-        if (z.toLocalDate() < data.date) return 0f
-        if (z.toLocalDate() > data.date) return 1f
-        return (z.hour * 60 + z.minute) / (24f * 60f)
-    }
-    val sleepSpans = listOfNotNull(data.sleep?.let { frac(it.start) to frac(it.end) }) + data.naps.map { frac(it.start) to frac(it.end) }
-    val workoutSpans = data.workouts.map { frac(it.start) to frac(it.end) }
-    val latestLabel = if (data.isToday) "latest ${hd.latest.value.roundToInt()} bpm" else "last ${hd.latest.value.roundToInt()} bpm"
-    val clock24 = LocalPrefs.current.clock24
-    SectionCard("HEART RATE", trailing = latestLabel, onClick = onOpen, description = "Heart rate details") {
-        HeartDayLine(
-            "heart-day-${data.date}",
-            hd.line,
-            Modifier.fillMaxWidth().height(64.dp),
-            restingHr = data.heart?.restingHr,
-            sleepSpans = sleepSpans.filter { it.second > it.first },
-            workoutSpans = workoutSpans.filter { it.second > it.first },
-            readout = { slot, v ->
-                val m = slot * Tuning.HR_BUCKET_MINUTES
-                val t = data.date.atTime(m / 60, m % 60).atZone(zone).toInstant()
-                "${formatTime(t, zone, clock24)} · ${v.roundToInt()} bpm"
-            },
-        )
-        Row(Modifier.fillMaxWidth().padding(top = Space.xs), horizontalArrangement = Arrangement.SpaceBetween) {
-            listOf("00", "06", "12", "18", "24").forEach { Text(it, style = Type.tiny, color = Palette.Faint) }
-        }
-        Row(Modifier.fillMaxWidth().padding(top = Space.s), horizontalArrangement = Arrangement.SpaceBetween) {
-            listOf("MIN" to hd.min, "AVG" to hd.avg, "MAX" to hd.max).forEach { (label, v) ->
-                Column {
-                    Text(label, style = Type.tiny, color = Palette.Muted)
-                    NumberWithUnits(listOf(v.toString() to "bpm"), style = Type.tile.copy(fontSize = 20.sp))
-                }
-            }
-        }
-    }
-}
-
-// Soft's hero: a white card with a thick score ring on the left and the verdict beside it, in place of the orb.
-@Composable
-private fun SoftHero(data: TodayData, heroScore: Int?, heroLabel: String, pageOffset: () -> Float, onClick: () -> Unit) {
-    val r = data.readiness
-    val score = (r as? ReadinessResult.Ready)?.score
-    val (word, advice) = heroWords(data)
-    val name = heroLabel.trim('›', ' ').lowercase()
-    Row(
-        Modifier
-            .padding(horizontal = Space.l)
-            .fillMaxWidth()
-            .graphicsLayer {
-                val offset = pageOffset()
-                translationX = offset * size.width * 0.15f
-                alpha = 1f - abs(offset).coerceAtMost(1f)
-            }
-            .cardSurface()
-            .tappable(onClick, name.replaceFirstChar { it.uppercase() } + " details")
-            .padding(horizontal = Space.l, vertical = 18.dp)
-            .semantics(mergeDescendants = true) {},
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Box(Modifier.size(112.dp), contentAlignment = Alignment.Center) {
-            MiniRing("hero-ring-${data.date}", (heroScore ?: 0) / 100f, heroScore?.let { scoreColor(it) } ?: Palette.Faint, diameter = 112.dp, stroke = 12.dp)
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                if (heroScore != null) CountUpText("orb-score", heroScore.toLong(), Type.title.copy(fontSize = 34.sp), color = Palette.Text)
-                else Text("—", style = Type.title.copy(fontSize = 34.sp), color = Palette.Faint)
-                Text(name, style = Type.secondary, color = Palette.Muted)
-            }
-        }
-        Column(Modifier.weight(1f).padding(start = 18.dp)) {
-            Text(word, style = Type.body.copy(fontSize = 17.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
-            Text(advice, style = Type.secondary.copy(fontSize = 13.sp, lineHeight = 18.sp), color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
-            if (r is ReadinessResult.Calibrating) {
-                Row(Modifier.padding(top = Space.s), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    repeat(Tuning.MIN_NIGHTS) { i ->
-                        Box(Modifier.size(7.dp).clip(CircleShape).background(if (i < r.nights) Palette.Accent else Palette.Divider))
-                    }
-                }
-            }
-            (r as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.used)?.let { Text(it, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s)) } }
-            if (data.isToday) missingRecoveryLine(data.sources)?.let { Text(it, style = Type.secondary, color = Palette.Warn, modifier = Modifier.padding(top = Space.s)) }
-        }
-    }
-}
-
-private fun heroWords(data: TodayData): Pair<String, String> = when (val r = data.readiness) {
-    // The suggestion is left out here: the action card below the hero already shows it when the person wants it.
-    is ReadinessResult.Ready -> bandWord(r.band) to ((if (data.isToday) morningReadout(data.sleep?.asleep, data.heart, null) else null) ?: bandAdvice(r.band))
+private fun readout(data: TodayData): String = when (val r = data.readiness) {
+    is ReadinessResult.Ready -> (if (data.isToday) morningReadout(data.sleep?.asleep, data.heart, null) else null) ?: bandAdvice(r.band)
     is ReadinessResult.Calibrating -> {
         val left = Tuning.MIN_NIGHTS - r.nights
         val usable = listOfNotNull(data.sleep?.let { "sleep" }, data.activity?.let { "steps" }, data.regularity?.let { "sleep regularity" })
-        "Recovery · night ${r.nights} of ${Tuning.MIN_NIGHTS}" to if (!data.isToday) "Not enough earlier data for this day" else listOfNotNull(
+        if (!data.isToday) "Not enough earlier data for this day" else listOfNotNull(
             "Your baseline is forming: ${if (left == 1) "1 more night" else "$left more nights"} of sleep, HRV and resting heart rate.",
             if (usable.isEmpty()) null else "Usable now: ${usable.joinToString(", ")}.",
         ).joinToString(" ")
     }
-    ReadinessResult.NoData -> "No data for last night" to "Sync your watch, then pull down to refresh."
+    ReadinessResult.NoData -> "No data for last night. Sync your watch, then pull down to refresh."
 }

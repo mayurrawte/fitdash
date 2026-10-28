@@ -33,9 +33,9 @@ import app.fitdash.ui.theme.Type
 @Composable
 fun StatTile(
     label: String,
-    value: String,
+    value: String?,
     unit: String?,
-    note: String,
+    note: String?,
     modifier: Modifier = Modifier,
     status: Status? = null,
     icon: ImageVector? = null,
@@ -58,11 +58,11 @@ fun StatTile(
             Text(label, style = Type.secondary, color = Palette.Muted)
             if (labelTag != null) Text(noteCase(labelTag), Modifier.padding(start = 4.dp), style = Type.tiny, color = Palette.Muted)
         }
-        ValueText(value, unit, Modifier.padding(top = Space.xs, bottom = if (status == null) Space.s else 2.dp), style = Type.tile)
+        if (value != null) ValueText(value, unit, Modifier.padding(top = Space.xs, bottom = if (status == null) Space.s else 2.dp), style = Type.tile)
         if (status != null) StatusText(status, Modifier.padding(bottom = Space.s))
         Spacer(Modifier.weight(1f))
         visual()
-        Text(noteCase(note), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s))
+        if (note != null) Text(noteCase(note), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s))
     }
 }
 

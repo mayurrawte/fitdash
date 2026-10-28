@@ -25,8 +25,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import app.fitdash.ui.theme.LocalReduceMotion
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -44,44 +48,40 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 
-// The seven days ending on the selected day, so no cell is ever a future day. The selection highlight and number colour animate.
+// The seven days ending on the selected day, so no cell is ever a future day. The selected chip lifts and turns plum.
 @Composable
 fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate>, onSelect: (LocalDate) -> Unit, modifier: Modifier = Modifier, enabled: (LocalDate) -> Boolean = { true }) {
     val haptic = LocalHapticFeedback.current
     val haptics = LocalPrefs.current.haptics
-    Row(modifier.fillMaxWidth().padding(horizontal = Space.l)) {
+    val reduce = LocalReduceMotion.current
+    val shape = RoundedCornerShape(12.dp)
+    Row(modifier.fillMaxWidth().padding(horizontal = Space.l), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         days.forEach { day ->
             val on = day == selected
             val active = enabled(day)
-            val bg by animateColorAsState(if (on) Palette.ChipStrong else Color.Transparent, tween(Motion.PAGE), label = "strip-bg")
-            val fg by animateColorAsState(Palette.Text, tween(Motion.PAGE), label = "strip-fg")
+            val lift by animateFloatAsState(if (on) 1f else 0f, if (reduce) snap() else Motion.settle, label = "strip-lift")
+            val f = lift.coerceIn(0f, 1f)
             val interaction = remember { MutableInteractionSource() }
             Column(
                 Modifier
                     .weight(1f)
                     .alpha(if (active) 1f else 0.3f)
                     .pressScale(interaction, 0.92f)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(bg)
+                    .graphicsLayer { translationY = -2.dp.toPx() * lift }
+                    .shadow(8.dp * f, shape, ambientColor = Palette.Accent.copy(alpha = 0.25f), spotColor = Palette.Accent.copy(alpha = 0.25f))
+                    .clip(shape)
+                    .background(lerp(Color.White.copy(alpha = 0.75f), Palette.Accent, f))
                     .clickable(interactionSource = interaction, indication = null, enabled = active, role = Role.Button) {
                         if (haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelect(day)
                     }
                     .heightIn(min = 48.dp)
-                    .padding(vertical = Space.m),
+                    .padding(top = 5.dp, bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).uppercase(), style = Type.tiny, color = Palette.Muted)
-                Box(
-                    Modifier
-                        .padding(top = 6.dp)
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .background(if (!on && day in hasData) Palette.ChipStrong else Color.Transparent),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(day.dayOfMonth.toString(), style = Type.small.copy(fontSize = 15.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal), color = fg)
-                }
+                Text(day.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.ENGLISH), style = Type.tiny.copy(fontWeight = FontWeight.SemiBold), color = lerp(Palette.Muted, Color.White.copy(alpha = 0.63f), f))
+                Text(day.dayOfMonth.toString(), style = Type.small.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold), color = lerp(Palette.Text, Color.White, f))
+                Box(Modifier.padding(top = 2.dp).size(4.dp).clip(CircleShape).background(if (day !in hasData) Color.Transparent else if (on) Palette.Sun else Palette.Light))
             }
         }
     }

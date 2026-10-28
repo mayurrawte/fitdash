@@ -41,7 +41,10 @@ fun HeroCard(onClick: (() -> Unit)?, description: String, modifier: Modifier = M
             .background(Brush.linearGradient(listOf(t.orb2, t.orb3)))
             .padding(horizontal = Space.l, vertical = Space.m),
     ) {
-        CompositionLocalProvider(LocalContentColor provides Color.White) { content() }
+        CompositionLocalProvider(
+            LocalContentColor provides Color.White,
+            LocalTheme provides t.copy(text = Color.White, muted = Color.White.copy(alpha = 0.85f), faint = Color.White.copy(alpha = 0.7f)),
+        ) { content() }
     }
 }
 

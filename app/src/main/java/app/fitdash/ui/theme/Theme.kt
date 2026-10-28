@@ -48,6 +48,7 @@ object Palette {
     val Group: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.group
     val GroupDivider: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.groupDivider
     val OnOrb: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.onOrb
+    val Sun = Color(0xFFFFD36E)
 }
 
 @OptIn(ExperimentalTextApi::class)

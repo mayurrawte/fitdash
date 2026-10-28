@@ -54,6 +54,8 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.share.ShareRender
 import app.fitdash.ui.theme.ThemedBackground
 import app.fitdash.health.Workout
+import app.fitdash.metrics.ReadinessResult
+import app.fitdash.metrics.TodayData
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.today.TodayUiState
 import kotlinx.coroutines.flow.drop
@@ -154,7 +156,7 @@ fun PagerScreen(
                 ThemedBackground()
                 HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
                     when (page) {
-                        0 -> TodayPage(data, chrome, { (pager.currentPage - page) + pager.currentPageOffsetFraction }, goTo, onSelectDate, { sharing = true }, askAi, onAddWater, onUndoWater, settings.miles, { workout = it }, onSync, state.refreshing, progress)
+                        0 -> TodayPage(data, chrome, goTo, onSelectDate, { sharing = true }, askAi, onAddWater, onUndoWater, settings.miles, { workout = it }, onSync, state.refreshing, progress)
                         1 -> SleepPage(data, chrome)
                         2 -> ActivityPage(data, chrome, settings.miles, { workout = it })
                         else -> TrendsPage(data, chrome)
@@ -190,22 +192,37 @@ fun PagerScreen(
     }
 }
 
-@Preview(heightDp = 900)
+@Preview(heightDp = 1500)
 @Composable
-private fun TodayLook() = PagePreview(0)
+private fun TodayFull() = PagePreview(0)
+
+@Preview(heightDp = 1500)
+@Composable
+private fun TodayNoSleep() = PagePreview(0, PreviewData.today(21, 30).copy(sleep = null))
+
+@Preview(heightDp = 1500)
+@Composable
+private fun TodayPastDate() = PagePreview(0, PreviewData.today(21, 30).copy(isToday = false))
+
+@Preview(heightDp = 1500)
+@Composable
+private fun TodayCalibrating() = PagePreview(0, PreviewData.today(21, 30).copy(readiness = ReadinessResult.Calibrating(3)))
+
+@Preview(heightDp = 1500, fontScale = 1.3f)
+@Composable
+private fun TodayLargeText() = PagePreview(0)
 
 @Preview(heightDp = 900)
 @Composable
 private fun SleepLook() = PagePreview(1)
 
 @Composable
-private fun PagePreview(page: Int) {
-    val data = PreviewData.today(21, 30)
+private fun PagePreview(page: Int, data: TodayData = PreviewData.today(21, 30)) {
     val chrome = PageChrome(data.date, data.date, false, 29, {}, {}, {}, {}, {}, {})
     FitdashTheme {
         Box(Modifier.fillMaxSize()) {
             ThemedBackground()
-            if (page == 0) TodayPage(data, chrome, { 0f }, {}, {}, {}, {}, {}, {}) else SleepPage(data, chrome)
+            if (page == 0) TodayPage(data, chrome, {}, {}, {}, {}, {}, {}) else SleepPage(data, chrome)
         }
     }
 }
