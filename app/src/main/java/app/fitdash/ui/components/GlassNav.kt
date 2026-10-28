@@ -39,7 +39,6 @@ private val DockItem = 56.dp
 private val DockGap = 6.dp
 private val DockShape = RoundedCornerShape(36.dp)
 
-// A solid plum capsule of icon-only circles; the light circle slides with the pager.
 @Composable
 private fun DockNav(items: List<NavItem>, pager: PagerState, onSelect: (Int) -> Unit, modifier: Modifier) {
     val ink = Palette.Accent

@@ -70,7 +70,6 @@ import app.fitdash.ui.theme.noteCase
 
 val CardShape: Shape = RoundedCornerShape(28.dp)
 
-// Cards are plain white on the ground, with no hairline.
 @Composable
 fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card)
 

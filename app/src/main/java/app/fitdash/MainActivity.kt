@@ -43,8 +43,6 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.graphics.Color.TRANSPARENT
-import app.fitdash.R
-import android.os.Build
 import app.fitdash.health.HealthReader
 import androidx.health.connect.client.HealthConnectClient
 import app.fitdash.health.SnapshotCache
@@ -96,14 +94,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val store = SettingsStore.get(this@MainActivity)
             val settings by store.flow.collectAsStateWithLifecycle()
-            // Dark status-bar icons. Android 13+ also remembers the splash colour for the next cold start.
             LaunchedEffect(Unit) {
                 val bars = SystemBarStyle.light(TRANSPARENT, TRANSPARENT)
                 (this@MainActivity as ComponentActivity).enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    // The splash follows the system itself through values-night.
-                    splashScreen.setSplashScreenTheme(R.style.Theme_Fitdash_Starting_Soft)
-                }
             }
             FitdashTheme {
                 CompositionLocalProvider(LocalPrefs provides settings, LocalReduceMotion provides settings.reduceMotion) { App(store, openPage) }

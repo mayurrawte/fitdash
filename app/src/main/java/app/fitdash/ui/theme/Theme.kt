@@ -58,7 +58,6 @@ val Mono = FontFamily(
     Font(R.font.jetbrains_mono_medium, FontWeight.Medium),
 )
 
-// One typeface for body, labels and numbers.
 val Outfit = FontFamily(
     Font(R.font.outfit_light, FontWeight.ExtraLight),
     Font(R.font.outfit_light, FontWeight.Light),
