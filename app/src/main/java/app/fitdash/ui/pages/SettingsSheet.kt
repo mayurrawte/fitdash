@@ -51,6 +51,7 @@ import app.fitdash.BuildConfig
 import app.fitdash.health.SourceStatus
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.SectionCard
 import app.fitdash.ui.components.SegmentedControl
@@ -123,7 +124,7 @@ fun SettingsSheet(
                 }
             }
             item {
-                ListRow(NavIcons.walk, "Height", heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set") { showHeight = true }
+                RowGroup { ListRow(NavIcons.walk, "Height", heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set", onClick = { showHeight = true }) }
             }
             item {
                 // Age sets maximum heart rate for workout zones; unset, the zones card asks for it.
@@ -170,9 +171,11 @@ fun SettingsSheet(
             item { ToggleRow("Haptics", settings.haptics, { v -> store.update { it.copy(haptics = v) } }, "A light tick on taps") }
             item { ToggleRow("Reduce motion", settings.reduceMotion, { v -> store.update { it.copy(reduceMotion = v) } }, "No draw-in or count-up animations, still orb") }
             item { Label("DATA") }
-            item { ListRow(NavIcons.info, "Data sources", null) { showInfo = true } }
-            if (canAskHistory) {
-                item { ListRow(NavIcons.trends, "Read older data", "Up to 6 months of history instead of 30 days") { onAskHistory() } }
+            item {
+                RowGroup {
+                    ListRow(NavIcons.info, "Data sources", null, onClick = { showInfo = true })
+                    if (canAskHistory) ListRow(NavIcons.trends, "Read older data", "Up to 6 months of history instead of 30 days", onClick = { onAskHistory() })
+                }
             }
             if (background != BackgroundAccess.UNSUPPORTED) {
                 item {
@@ -189,30 +192,36 @@ fun SettingsSheet(
                 }
             }
             item {
-                ListRow(NavIcons.heart, "Open Health Connect", null) {
-                    context.startActivity(HealthConnectClient.getHealthConnectManageDataIntent(context).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                RowGroup {
+                    ListRow(NavIcons.heart, "Open Health Connect", null, onClick = {
+                        context.startActivity(HealthConnectClient.getHealthConnectManageDataIntent(context).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    })
                 }
             }
             if (BuildConfig.SHOW_SUPPORT) {
                 item { Label("SUPPORT") }
-                item { ListRow(NavIcons.cup, "Buy me a coffee", null) { uri.openUri(SUPPORT_URL) } }
+                item { RowGroup { ListRow(NavIcons.cup, "Buy me a coffee", null, onClick = { uri.openUri(SUPPORT_URL) }) } }
             }
             item { Label("FEEDBACK") }
             item {
-                ListRow(NavIcons.info, "Report a problem", "Opens a GitHub issue with your device and version filled in") {
-                    uri.openUri(issueUrl(true, BuildConfig.VERSION_NAME, "${Build.MANUFACTURER} ${Build.MODEL}", Build.VERSION.RELEASE))
-                }
-            }
-            item {
-                ListRow(NavIcons.sparkle, "Request a feature", "Tell us what fitdash should do next") {
-                    uri.openUri(issueUrl(false, BuildConfig.VERSION_NAME, "${Build.MANUFACTURER} ${Build.MODEL}", Build.VERSION.RELEASE))
+                RowGroup {
+                    ListRow(NavIcons.info, "Report a problem", "Opens a GitHub issue with your device and version filled in", onClick = {
+                        uri.openUri(issueUrl(true, BuildConfig.VERSION_NAME, "${Build.MANUFACTURER} ${Build.MODEL}", Build.VERSION.RELEASE))
+                    })
+                    ListRow(NavIcons.sparkle, "Request a feature", "Tell us what fitdash should do next", onClick = {
+                        uri.openUri(issueUrl(false, BuildConfig.VERSION_NAME, "${Build.MANUFACTURER} ${Build.MODEL}", Build.VERSION.RELEASE))
+                    })
                 }
             }
             item { Label("ABOUT") }
             item { Text(WHY, Modifier.padding(horizontal = Space.xl), style = Type.body, color = Palette.Muted) }
-            item { ListRow(NavIcons.sparkle, "Open source · GPL-3.0", null) { uri.openUri(GITHUB_URL) } }
-            item { ListRow(NavIcons.today, "View on GitHub", null) { uri.openUri(GITHUB_URL) } }
-            item { ListRow(NavIcons.clock, "Version ${BuildConfig.VERSION_NAME}", null) }
+            item {
+                RowGroup {
+                    ListRow(NavIcons.sparkle, "Open source · GPL-3.0", null, onClick = { uri.openUri(GITHUB_URL) })
+                    ListRow(NavIcons.today, "View on GitHub", null, onClick = { uri.openUri(GITHUB_URL) })
+                    ListRow(NavIcons.clock, "Version ${BuildConfig.VERSION_NAME}", null)
+                }
+            }
         }
     }
     if (showInfo) InfoSheet(sources, onDismiss = { showInfo = false })

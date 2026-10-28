@@ -31,6 +31,7 @@ import androidx.core.content.FileProvider
 import app.fitdash.metrics.ReadinessResult
 import app.fitdash.metrics.TodayData
 import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.Orb
 import app.fitdash.ui.formatDate
@@ -124,7 +125,7 @@ fun ShareCard(data: TodayData) {
                 TrioStat("Recovery", score, data.previous.readiness, Modifier.weight(1f))
                 TrioStat("Movement", data.movementScore, data.previous.movement, Modifier.weight(1f))
             }
-            Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
+            RowGroup {
                 data.sleep?.let {
                     ListRow(NavIcons.bed, "Sleep", "${formatDuration(it.asleep)} · ${clock(it.start, zone)} – ${clock(it.end, zone)}")
                 }

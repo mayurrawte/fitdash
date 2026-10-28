@@ -45,6 +45,8 @@ object Palette {
     val Bad: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.bad
     val Chip: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.chip
     val ChipStrong: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.chipStrong
+    val Group: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.group
+    val GroupDivider: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.groupDivider
     val OnOrb: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.onOrb
 }
 

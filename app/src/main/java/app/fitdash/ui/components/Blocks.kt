@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -29,7 +30,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -66,13 +69,13 @@ import app.fitdash.ui.theme.Type
 import app.fitdash.ui.theme.labelCase
 import app.fitdash.ui.theme.noteCase
 
-val CardShape: Shape = RoundedCornerShape(28.dp)
+val CardShape: Shape = RoundedCornerShape(24.dp)
 
 @Composable
 fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card)
 
 @Composable
-fun Modifier.tileSurface(): Modifier = clip(CardShape).background(Palette.Card)
+fun Modifier.tileSurface(): Modifier = clip(CardShape).background(Brush.linearGradient(listOf(Palette.Card, lerp(Palette.Card, Color.Black, 0.06f))))
 
 // Every tappable surface: a soft press scale, a light tick when haptics are on, and an accessibility label.
 @Composable
@@ -248,24 +251,30 @@ fun Heading(text: String, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun ListRow(icon: ImageVector, title: String, subtitle: String?, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
+fun ListRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String?,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null,
+) {
     Row(
         modifier
-            .padding(horizontal = Space.l)
             .fillMaxWidth()
-            .cardSurface()
             .tappable(onClick, null)
-            .padding(horizontal = Space.l, vertical = 14.dp),
+            .padding(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(Palette.ChipStrong), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(36.dp).clip(CircleShape).background(Palette.ChipStrong), contentAlignment = Alignment.Center) {
             Icon(icon, null, Modifier.size(16.dp), tint = Palette.Accent)
         }
         Column(Modifier.weight(1f).padding(horizontal = Space.m)) {
             Text(title, style = Type.body.copy(fontSize = 14.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
             if (subtitle != null) Text(subtitle, style = Type.secondary, color = Palette.Muted, modifier = Modifier.padding(top = 2.dp))
         }
-        if (onClick != null) Icon(NavIcons.chevronRight, null, Modifier.size(16.dp), tint = Palette.Faint)
+        if (trailing != null) trailing()
+        else if (onClick != null) Icon(NavIcons.chevronRight, null, Modifier.size(16.dp), tint = Palette.Faint)
     }
 }
 

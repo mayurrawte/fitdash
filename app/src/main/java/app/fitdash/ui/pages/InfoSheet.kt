@@ -1,6 +1,7 @@
 package app.fitdash.ui.pages
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,7 @@ import androidx.compose.ui.platform.LocalUriHandler
 import app.fitdash.BuildConfig
 import app.fitdash.health.SourceStatus
 import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.sourceLine
 import app.fitdash.ui.missingReason
@@ -58,7 +60,9 @@ fun InfoSheet(sources: List<SourceStatus>, onDismiss: () -> Unit) {
             }
             if (BuildConfig.SHOW_SUPPORT) {
                 item {
-                    ListRow(NavIcons.cup, "Support fitdash", null, Modifier.padding(top = Space.xl)) { uri.openUri(SUPPORT_URL) }
+                    Box(Modifier.padding(top = Space.xl)) {
+                        RowGroup { ListRow(NavIcons.cup, "Support fitdash", null, onClick = { uri.openUri(SUPPORT_URL) }) }
+                    }
                 }
             }
             item {

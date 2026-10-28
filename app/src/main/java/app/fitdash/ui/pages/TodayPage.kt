@@ -107,6 +107,7 @@ import app.fitdash.ui.components.CountUpText
 import app.fitdash.ui.components.EmptyTrack
 import app.fitdash.ui.components.Heading
 import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.RangeBar
 import app.fitdash.ui.components.SectionLabel
@@ -209,34 +210,38 @@ fun TodayPage(
         if (prefs.showSuggestions && data.suggestions.isNotEmpty()) {
             item(key = "suggestions-label") { SectionLabel("DO THIS TODAY") }
             item(key = "suggestion-0") { ActionCard(data.suggestions.first()) }
-            data.suggestions.drop(1).forEachIndexed { i, s ->
-                item(key = "suggestion-${i + 1}") { ListRow(suggestionIcon(s.kind), suggestionText(s), null) }
+            if (data.suggestions.size > 1) {
+                item(key = "suggestions-more") {
+                    RowGroup { data.suggestions.drop(1).forEach { s -> ListRow(suggestionIcon(s.kind), suggestionText(s), null) } }
+                }
             }
         }
         val a = data.activity
         if (data.sleep != null || data.naps.isNotEmpty() || a != null) {
             item(key = "day-label") { Heading(if (data.isToday) "Today" else "That day") }
         }
-        data.sleep?.let { s ->
-            item(key = "row-sleep") {
-                ListRow(NavIcons.bed, "Sleep", "${formatDuration(s.asleep)} · ${clock(s.start, zone)} – ${clock(s.end, zone)}", Modifier.semantics { contentDescription = "Sleep details" }) { openSleep() }
-            }
-        }
-        data.naps.forEachIndexed { i, nap ->
-            item(key = "row-nap-$i") {
-                ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}") { onOpen(1) }
-            }
-        }
-        if (a != null) {
-            item(key = "row-steps") {
-                ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%", Modifier.semantics { contentDescription = "Steps details" }) { openSteps() }
+        if (data.sleep != null || data.naps.isNotEmpty() || a != null) {
+            item(key = "rows-day") {
+                RowGroup {
+                    data.sleep?.let { s ->
+                        ListRow(NavIcons.bed, "Sleep", "${formatDuration(s.asleep)} · ${clock(s.start, zone)} – ${clock(s.end, zone)}", Modifier.semantics { contentDescription = "Sleep details" }, onClick = { openSleep() })
+                    }
+                    data.naps.forEach { nap ->
+                        ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}", onClick = { onOpen(1) })
+                    }
+                    if (a != null) {
+                        ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%", Modifier.semantics { contentDescription = "Steps details" }, onClick = { openSteps() })
+                    }
+                }
             }
         }
         if (prefs.showWorkouts && data.workouts.isNotEmpty()) {
             if (data.workouts.size == 1) {
                 val w = data.workouts.first()
                 item(key = "row-workout-0") {
-                    ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }) { onOpenWorkout(w) }
+                    RowGroup {
+                        ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) })
+                    }
                 }
             } else {
                 // Several sessions fold into one row: "4 workouts · 78 min · 7.7 km", tap to expand.
@@ -311,13 +316,16 @@ private fun WorkoutsRow(data: TodayData, miles: Boolean, onOpenWorkout: (Workout
     val km = data.workouts.mapNotNull { it.distanceMeters }.sum() / 1000
     val subtitle = listOfNotNull("${minutes}m", km.takeIf { it > 0 }?.let { formatKm(it, miles) }).joinToString(" · ")
     Column(Modifier.animateContentSize()) {
-        ListRow(NavIcons.flame, "${data.workouts.size} workouts", subtitle, Modifier.semantics { contentDescription = "${data.workouts.size} workouts, ${if (expanded) "collapse" else "expand"}" }) { expanded = !expanded }
-        if (expanded) {
-            data.workouts.forEach { w ->
-                ListRow(
-                    workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24),
-                    Modifier.padding(top = Space.s).semantics { contentDescription = "${workoutTitle(w)} details" },
-                ) { onOpenWorkout(w) }
+        RowGroup {
+            ListRow(NavIcons.flame, "${data.workouts.size} workouts", subtitle, Modifier.semantics { contentDescription = "${data.workouts.size} workouts, ${if (expanded) "collapse" else "expand"}" }, onClick = { expanded = !expanded })
+            if (expanded) {
+                data.workouts.forEach { w ->
+                    ListRow(
+                        workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24),
+                        Modifier.semantics { contentDescription = "${workoutTitle(w)} details" },
+                        onClick = { onOpenWorkout(w) },
+                    )
+                }
             }
         }
     }

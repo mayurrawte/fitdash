@@ -40,6 +40,7 @@ import app.fitdash.ui.components.EmptyTrack
 import app.fitdash.ui.components.Heading
 import app.fitdash.ui.components.Hypnogram
 import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.NumberTile
 import app.fitdash.ui.components.RangeBar
@@ -169,9 +170,13 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                 TileGrid(if (s.hasStages) all else all.filterIndexed { i, _ -> i != 2 && i != 4 })
             }
         }
-        data.naps.forEachIndexed { i, nap ->
-            item(key = "nap-$i") {
-                ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}")
+        if (data.naps.isNotEmpty()) {
+            item(key = "naps") {
+                RowGroup {
+                    data.naps.forEach { nap ->
+                        ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}")
+                    }
+                }
             }
         }
         if (s != null) {

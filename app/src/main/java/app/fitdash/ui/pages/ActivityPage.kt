@@ -18,6 +18,7 @@ import app.fitdash.ui.workoutLine
 import app.fitdash.ui.formatDate
 import app.fitdash.ui.formatDuration
 import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.SectionLabel
 import app.fitdash.ui.components.workoutIconVector
 import androidx.compose.ui.semantics.contentDescription
@@ -124,9 +125,13 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean, onOpenWork
         }
         if (data.workouts.isNotEmpty() || data.weekWorkouts.count > 0) {
             item(key = "workouts-label") { SectionLabel("WORKOUTS") }
-            data.workouts.forEachIndexed { i, w ->
-                item(key = "workout-$i") {
-                    ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, LocalPrefs.current.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }) { onOpenWorkout(w) }
+            if (data.workouts.isNotEmpty()) {
+                item(key = "workouts") {
+                    RowGroup {
+                        data.workouts.forEach { w ->
+                            ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, LocalPrefs.current.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) })
+                        }
+                    }
                 }
             }
             item(key = "workouts-week") {
