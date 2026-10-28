@@ -212,25 +212,23 @@ fun TodayPage(
             item(key = "suggestion-0") { ActionCard(data.suggestions.first()) }
             if (data.suggestions.size > 1) {
                 item(key = "suggestions-more") {
-                    RowGroup { data.suggestions.drop(1).forEach { s -> ListRow(suggestionIcon(s.kind), suggestionText(s), null) } }
+                    RowGroup { data.suggestions.drop(1).forEachIndexed { i, s -> ListRow(suggestionIcon(s.kind), suggestionText(s), null, divider = i > 0) } }
                 }
             }
         }
         val a = data.activity
         if (data.sleep != null || data.naps.isNotEmpty() || a != null) {
             item(key = "day-label") { Heading(if (data.isToday) "Today" else "That day") }
-        }
-        if (data.sleep != null || data.naps.isNotEmpty() || a != null) {
             item(key = "rows-day") {
                 RowGroup {
                     data.sleep?.let { s ->
                         ListRow(NavIcons.bed, "Sleep", "${formatDuration(s.asleep)} · ${clock(s.start, zone)} – ${clock(s.end, zone)}", Modifier.semantics { contentDescription = "Sleep details" }, onClick = { openSleep() })
                     }
-                    data.naps.forEach { nap ->
-                        ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}", onClick = { onOpen(1) })
+                    data.naps.forEachIndexed { i, nap ->
+                        ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}", onClick = { onOpen(1) }, divider = data.sleep != null || i > 0)
                     }
                     if (a != null) {
-                        ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%", Modifier.semantics { contentDescription = "Steps details" }, onClick = { openSteps() })
+                        ListRow(NavIcons.walk, "Steps", "${formatSteps(a.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${a.goalPercent}%", Modifier.semantics { contentDescription = "Steps details" }, onClick = { openSteps() }, divider = data.sleep != null || data.naps.isNotEmpty())
                     }
                 }
             }
@@ -324,6 +322,7 @@ private fun WorkoutsRow(data: TodayData, miles: Boolean, onOpenWorkout: (Workout
                         workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24),
                         Modifier.semantics { contentDescription = "${workoutTitle(w)} details" },
                         onClick = { onOpenWorkout(w) },
+                        divider = true,
                     )
                 }
             }

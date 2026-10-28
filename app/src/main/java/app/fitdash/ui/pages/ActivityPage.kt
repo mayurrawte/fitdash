@@ -128,8 +128,8 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean, onOpenWork
             if (data.workouts.isNotEmpty()) {
                 item(key = "workouts") {
                     RowGroup {
-                        data.workouts.forEach { w ->
-                            ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, LocalPrefs.current.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) })
+                        data.workouts.forEachIndexed { i, w ->
+                            ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, LocalPrefs.current.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) }, divider = i > 0)
                         }
                     }
                 }

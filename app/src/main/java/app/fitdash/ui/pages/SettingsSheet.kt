@@ -174,7 +174,7 @@ fun SettingsSheet(
             item {
                 RowGroup {
                     ListRow(NavIcons.info, "Data sources", null, onClick = { showInfo = true })
-                    if (canAskHistory) ListRow(NavIcons.trends, "Read older data", "Up to 6 months of history instead of 30 days", onClick = { onAskHistory() })
+                    if (canAskHistory) ListRow(NavIcons.trends, "Read older data", "Up to 6 months of history instead of 30 days", onClick = { onAskHistory() }, divider = true)
                 }
             }
             if (background != BackgroundAccess.UNSUPPORTED) {
@@ -210,7 +210,7 @@ fun SettingsSheet(
                     })
                     ListRow(NavIcons.sparkle, "Request a feature", "Tell us what fitdash should do next", onClick = {
                         uri.openUri(issueUrl(false, BuildConfig.VERSION_NAME, "${Build.MANUFACTURER} ${Build.MODEL}", Build.VERSION.RELEASE))
-                    })
+                    }, divider = true)
                 }
             }
             item { Label("ABOUT") }
@@ -218,8 +218,8 @@ fun SettingsSheet(
             item {
                 RowGroup {
                     ListRow(NavIcons.sparkle, "Open source · GPL-3.0", null, onClick = { uri.openUri(GITHUB_URL) })
-                    ListRow(NavIcons.today, "View on GitHub", null, onClick = { uri.openUri(GITHUB_URL) })
-                    ListRow(NavIcons.clock, "Version ${BuildConfig.VERSION_NAME}", null)
+                    ListRow(NavIcons.today, "View on GitHub", null, onClick = { uri.openUri(GITHUB_URL) }, divider = true)
+                    ListRow(NavIcons.clock, "Version ${BuildConfig.VERSION_NAME}", null, divider = true)
                 }
             }
         }

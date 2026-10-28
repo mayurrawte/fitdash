@@ -125,12 +125,12 @@ fun ShareCard(data: TodayData) {
                 TrioStat("Recovery", score, data.previous.readiness, Modifier.weight(1f))
                 TrioStat("Movement", data.movementScore, data.previous.movement, Modifier.weight(1f))
             }
-            RowGroup {
+            if (data.sleep != null || data.activity != null) RowGroup {
                 data.sleep?.let {
                     ListRow(NavIcons.bed, "Sleep", "${formatDuration(it.asleep)} · ${clock(it.start, zone)} – ${clock(it.end, zone)}")
                 }
                 data.activity?.let {
-                    ListRow(NavIcons.walk, "Steps", "${formatSteps(it.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${it.goalPercent}%")
+                    ListRow(NavIcons.walk, "Steps", "${formatSteps(it.steps)} of ${formatSteps(data.goals.steps.toLong())} · ${it.goalPercent}%", divider = data.sleep != null)
                 }
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {

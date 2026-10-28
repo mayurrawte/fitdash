@@ -1,7 +1,6 @@
 package app.fitdash.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -14,18 +13,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
@@ -53,27 +47,13 @@ fun HeroCard(onClick: (() -> Unit)?, description: String, modifier: Modifier = M
 
 @Composable
 fun RowGroup(content: @Composable ColumnScope.() -> Unit) {
-    val dividerY = remember { mutableListOf<Int>() }
-    val divider = Palette.GroupDivider
     Column(
         Modifier
             .padding(horizontal = Space.l)
             .fillMaxWidth()
             .clip(CardShape)
             .background(Palette.Group)
-            .padding(6.dp)
-            .drawBehind { dividerY.forEach { drawRect(divider, Offset(0f, it.toFloat()), Size(size.width, 1.dp.toPx())) } },
-        verticalArrangement = object : Arrangement.Vertical {
-            override fun Density.arrange(totalSize: Int, sizes: IntArray, outPositions: IntArray) {
-                dividerY.clear()
-                var y = 0
-                sizes.forEachIndexed { i, size ->
-                    if (i > 0) dividerY.add(y - 1.dp.roundToPx())
-                    outPositions[i] = y
-                    y += size + 1.dp.roundToPx()
-                }
-            }
-        },
+            .padding(6.dp),
         content = content,
     )
 }

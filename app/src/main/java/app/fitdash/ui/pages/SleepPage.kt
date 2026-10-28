@@ -173,8 +173,8 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
         if (data.naps.isNotEmpty()) {
             item(key = "naps") {
                 RowGroup {
-                    data.naps.forEach { nap ->
-                        ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}")
+                    data.naps.forEachIndexed { i, nap ->
+                        ListRow(NavIcons.bed, "Nap", "${formatDuration(asleepDuration(nap))} · ${clock(nap.start, zone)} – ${clock(nap.end, zone)}", divider = i > 0)
                     }
                 }
             }

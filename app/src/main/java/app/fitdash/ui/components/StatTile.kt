@@ -49,7 +49,7 @@ fun StatTile(
         modifier
             .heightIn(min = 124.dp)
             .tappable(onClick, description)
-            .tileSurface()
+            .tileSurface(tint != null)
             .padding(Space.m)
             .semantics(mergeDescendants = true) {},
     ) {

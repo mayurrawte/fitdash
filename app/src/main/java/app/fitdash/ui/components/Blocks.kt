@@ -30,8 +30,11 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -75,7 +78,8 @@ val CardShape: Shape = RoundedCornerShape(24.dp)
 fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card)
 
 @Composable
-fun Modifier.tileSurface(): Modifier = clip(CardShape).background(Brush.linearGradient(listOf(Palette.Card, lerp(Palette.Card, Color.Black, 0.06f))))
+fun Modifier.tileSurface(tinted: Boolean = false): Modifier =
+    clip(CardShape).background(if (tinted) Brush.linearGradient(listOf(Palette.Card, lerp(Palette.Card, Color.Black, 0.06f))) else SolidColor(Palette.Card))
 
 // Every tappable surface: a soft press scale, a light tick when haptics are on, and an accessibility label.
 @Composable
@@ -258,11 +262,14 @@ fun ListRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
+    divider: Boolean = false,
 ) {
+    val line = Palette.GroupDivider
     Row(
         modifier
             .fillMaxWidth()
             .tappable(onClick, null)
+            .drawBehind { if (divider) drawRect(line, size = Size(size.width, 1.dp.toPx())) }
             .padding(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {

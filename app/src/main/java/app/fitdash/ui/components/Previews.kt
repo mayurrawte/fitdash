@@ -60,7 +60,7 @@ private fun CardSizesSample() {
     Spacer(Modifier.height(Space.s))
     RowGroup {
         ListRow(NavIcons.heart, "Heart rate", "62 bpm resting")
-        ListRow(NavIcons.cup, "Water", "1.25 L of 2.5 L", onClick = {}, trailing = { Text("+") })
+        ListRow(NavIcons.cup, "Water", "1.25 L of 2.5 L", onClick = {}, trailing = { Text("+") }, divider = true)
     }
     Spacer(Modifier.height(Space.s))
     StripCard(null, "Water", tint = Tint.WATER) { Text("1.25 L of 2.5 L goal") }
