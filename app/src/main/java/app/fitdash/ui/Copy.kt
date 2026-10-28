@@ -176,6 +176,14 @@ fun sleepWord(score: Int) = when {
     else -> "Short night"
 }
 
+fun greeting(hour: Int) = when (hour) {
+    in 4..11 -> "Good morning"
+    in 12..16 -> "Good afternoon"
+    else -> "Good evening"
+}
+
+fun streakLine(days: Int): String? = if (days >= 3) "$days days in a row" else null
+
 private val CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
 private val CLOCK_12 = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
 

@@ -75,6 +75,21 @@ class CopyTest {
         assertEquals("S", dayLetter(LocalDate.of(2026, 10, 11)))
         assertEquals("M", dayLetter(LocalDate.of(2026, 10, 12)))
     }
+
+    @Test fun greetingByHour() {
+        assertEquals("Good morning", greeting(4))
+        assertEquals("Good morning", greeting(11))
+        assertEquals("Good afternoon", greeting(12))
+        assertEquals("Good afternoon", greeting(16))
+        assertEquals("Good evening", greeting(17))
+        assertEquals("Good evening", greeting(3))
+    }
+
+    @Test fun streakLineOnlyFromThree() {
+        assertNull(streakLine(2))
+        assertEquals("3 days in a row", streakLine(3))
+        assertEquals("12 days in a row", streakLine(12))
+    }
 }
 
 class IssueUrlTest {
