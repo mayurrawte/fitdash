@@ -4,13 +4,10 @@ import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.content.Intent
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -41,22 +38,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
-import androidx.compose.runtime.CompositionLocalProvider
-import app.fitdash.ui.components.CardShape
-import app.fitdash.ui.components.tappable
-import app.fitdash.ui.theme.LocalNumbersFont
-import app.fitdash.ui.theme.NumbersFont
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.health.connect.client.HealthConnectClient
@@ -66,7 +53,6 @@ import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.components.ListRow
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.SectionCard
-import app.fitdash.ui.components.cardSurface
 import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.ToggleRow
 import app.fitdash.ui.formatHeight
@@ -78,13 +64,10 @@ import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
-import app.fitdash.ui.theme.THEMES
 import app.fitdash.ui.today.BackgroundAccess
 import app.fitdash.metrics.Gender
 import app.fitdash.metrics.genderLabel
 import app.fitdash.metrics.maxHrForAge
-import app.fitdash.ui.theme.ThemeId
-import app.fitdash.ui.theme.ThemeTokens
 import app.fitdash.ui.theme.Type
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -119,10 +102,6 @@ fun SettingsSheet(
         containerColor = LocalTheme.current.bgMid,
     ) {
         LazyColumn(contentPadding = PaddingValues(bottom = Space.xxl), verticalArrangement = Arrangement.spacedBy(Space.l)) {
-            item { Label("THEME") }
-            item { ThemeRow(settings.theme) { id -> store.update { it.copy(theme = id) } } }
-            item { Label("NUMBERS") }
-            item { FontRow(settings.numbersFont) { f -> store.update { it.copy(numbersFont = f) } } }
             item {
                 SectionCard("Goals") {
                     Stepper(
@@ -303,37 +282,6 @@ private fun Label(text: String) {
 }
 
 @Composable
-private fun ThemeRow(selected: ThemeId, onSelect: (ThemeId) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    val current = THEMES.getValue(selected)
-    Box(Modifier.padding(horizontal = Space.l).fillMaxWidth()) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .cardSurface()
-                .clickable(role = Role.Button) { open = true }
-                .padding(horizontal = Space.l, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            MiniOrb(current, 22.dp)
-            Text("Theme", Modifier.weight(1f).padding(horizontal = Space.m), style = Type.body.copy(fontSize = 13.5.sp, fontWeight = FontWeight.Medium), color = Palette.Text)
-            Text(selected.label, style = Type.body.copy(fontSize = 13.5.sp), color = Palette.Muted)
-            Icon(NavIcons.chevronDown, null, Modifier.padding(start = Space.s).size(14.dp), tint = Palette.Faint)
-        }
-        DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = LocalTheme.current.bgMid) {
-            THEMES.values.forEach { t ->
-                DropdownMenuItem(
-                    text = { Text(t.id.label, style = Type.body, color = Palette.Text) },
-                    leadingIcon = { MiniOrb(t, 16.dp) },
-                    trailingIcon = { if (t.id == selected) Icon(NavIcons.check, null, Modifier.size(16.dp), tint = Palette.Accent) },
-                    onClick = { open = false; onSelect(t.id) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun GenderRow(selected: Gender?, onSelect: (Gender?) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box(Modifier.fillMaxWidth().padding(top = Space.s)) {
@@ -362,18 +310,6 @@ private fun GenderRow(selected: Gender?, onSelect: (Gender?) -> Unit) {
 }
 
 @Composable
-private fun MiniOrb(t: ThemeTokens, size: Dp) {
-    Canvas(Modifier.size(size).clip(CircleShape)) {
-        val m = this.size.minDimension
-        fun blob(c: Color, at: Offset, r: Float) = Brush.radialGradient(listOf(c, c.copy(alpha = 0f)), center = at, radius = r)
-        drawRect(lerp(t.orb2, t.orb3, 0.5f))
-        drawRect(blob(t.orb3, Offset(m * 0.45f, m * 0.75f), m * 0.45f))
-        drawRect(blob(t.orb2, Offset(m * 0.7f, m * 0.4f), m * 0.3f))
-        drawRect(blob(t.orb1, Offset(m * 0.3f, m * 0.3f), m * 0.35f))
-    }
-}
-
-@Composable
 private fun Stepper(label: String, value: String, canDec: Boolean, canInc: Boolean, onDec: () -> Unit, onInc: () -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = Space.xs), verticalAlignment = Alignment.CenterVertically) {
         Text(label.uppercase(), Modifier.weight(1f), style = Type.label, color = Palette.Muted)
@@ -395,31 +331,6 @@ private fun StepButton(text: String, enabled: Boolean, onClick: () -> Unit) {
     ) {
         Box(Modifier.size(38.dp).clip(CircleShape).background(Palette.Chip), contentAlignment = Alignment.Center) {
             Text(text, style = Type.value, color = Palette.Text)
-        }
-    }
-}
-
-// Three typefaces for the big numbers, each previewed in its own face.
-@Composable
-private fun FontRow(selected: NumbersFont, onSelect: (NumbersFont) -> Unit) {
-    Row(Modifier.padding(horizontal = Space.l).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-        NumbersFont.entries.forEach { f ->
-            val on = f == selected
-            Column(
-                Modifier
-                    .weight(1f)
-                    .clip(CardShape)
-                    .background(if (on) Palette.ChipStrong else Palette.Card)
-                    .then(if (on) Modifier.border(1.dp, Palette.Accent.copy(alpha = 0.6f), CardShape) else Modifier)
-                    .tappable({ onSelect(f) }, "${f.label} numbers")
-                    .padding(vertical = Space.m),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                CompositionLocalProvider(LocalNumbersFont provides f) {
-                    Text("79", style = Type.title, color = Palette.Text)
-                }
-                Text(f.sample.uppercase(), Modifier.padding(top = Space.xs), style = Type.tiny, color = if (on) Palette.Accent else Palette.Muted)
-            }
         }
     }
 }

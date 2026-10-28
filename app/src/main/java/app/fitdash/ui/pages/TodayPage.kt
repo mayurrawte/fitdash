@@ -66,7 +66,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.regularityWord
 import app.fitdash.ui.morningReadout
@@ -74,7 +73,6 @@ import app.fitdash.metrics.regularityBand
 import app.fitdash.ui.theme.regularityColour
 import app.fitdash.ui.theme.sleepScoreColour
 import app.fitdash.ui.clock
-import app.fitdash.ui.components.pressScale
 import app.fitdash.ui.components.tappable
 import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.components.GlanceTile
@@ -110,7 +108,6 @@ import app.fitdash.ui.components.EmptyTrack
 import app.fitdash.ui.components.Heading
 import app.fitdash.ui.components.ListRow
 import app.fitdash.ui.components.NavIcons
-import app.fitdash.ui.components.Orb
 import app.fitdash.ui.components.RangeBar
 import app.fitdash.ui.components.SectionLabel
 import app.fitdash.ui.components.StatTile
@@ -124,7 +121,6 @@ import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.rangeNote
 import app.fitdash.ui.suggestionText
-import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.metrics.weekReview
 import app.fitdash.ui.components.WeekReviewCard
@@ -197,73 +193,11 @@ fun TodayPage(
         }
         if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing, progress, chrome.error) }
         item(key = "orb") {
-            if (LocalTheme.current.soft) {
-                SoftHero(data, heroScore, heroLabel, pageOffset, when {
-                    score != null -> openRecovery
-                    data.sleep != null -> { { onOpen(1) } }
-                    else -> { { onOpen(2) } }
-                })
-                return@item
-            }
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        val offset = pageOffset()
-                        translationX = offset * size.width * 0.15f
-                        alpha = 1f - abs(offset).coerceAtMost(1f)
-                    }
-                    .semantics(mergeDescendants = true) {},
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val orbInteraction = remember { MutableInteractionSource() }
-                val heroClick: () -> Unit = when {
-                    score != null -> openRecovery
-                    data.sleep != null -> { { onOpen(1) } }
-                    else -> { { onOpen(2) } }
-                }
-                Orb(
-                    heroScore,
-                    Modifier
-                        .padding(top = Space.xs)
-                        .pressScale(orbInteraction, 0.96f)
-                        .clickable(interactionSource = orbInteraction, indication = null, role = Role.Button, onClick = heroClick)
-                        .semantics { contentDescription = heroLabel.trim('›', ' ').lowercase().replaceFirstChar { it.uppercase() } + " details" },
-                    diameter = 172.dp,
-                    intro = true,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        if (heroScore != null) CountUpText("orb-score", heroScore.toLong(), Type.hero) else Text("—", style = Type.hero)
-                        Text(heroLabel, style = Type.label)
-                    }
-                }
-                val (word, advice) = heroWords(data)
-                Text(word.uppercase(), style = Type.label, color = score?.let { scoreColor(it) } ?: Palette.Muted, modifier = Modifier.padding(top = Space.m))
-                // Seven dots that fill night by night, so calibrating reads as progress rather than waiting.
-                if (r is ReadinessResult.Calibrating) {
-                    Row(Modifier.padding(top = Space.s), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        repeat(Tuning.MIN_NIGHTS) { i ->
-                            Box(
-                                Modifier
-                                    .size(if (i < r.nights) 8.dp else 6.dp)
-                                    .clip(CircleShape)
-                                    .background(if (i < r.nights) Palette.Accent else Palette.Divider),
-                            )
-                        }
-                    }
-                }
-                Text(
-                    advice,
-                    style = Type.body,
-                    color = Palette.Muted,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = Space.xxl, vertical = Space.xs),
-                )
-                (r as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.used)?.let { Text(it.uppercase(), style = Type.tiny, color = Palette.Muted) } }
-                if (data.isToday) missingRecoveryLine(data.sources)?.let {
-                    Text(it, style = Type.secondary, color = Palette.Warn, textAlign = TextAlign.Center, modifier = Modifier.padding(horizontal = Space.xxl, vertical = Space.xs))
-                }
-            }
+            SoftHero(data, heroScore, heroLabel, pageOffset, when {
+                score != null -> openRecovery
+                data.sleep != null -> { { onOpen(1) } }
+                else -> { { onOpen(2) } }
+            })
         }
         // Monday: last week in one card, the week-over-week view that otherwise lives on Trends.
         if (data.isToday && data.date.dayOfWeek == java.time.DayOfWeek.MONDAY) {
@@ -326,7 +260,7 @@ fun TodayPage(
                         icon = NavIcons.activity,
                         onClick = openHrv,
                         description = "HRV details",
-                        tint = Tint.LAVENDER,
+                        tint = Tint.ROSE,
                     ) { h.hrvRange?.let { RangeBar("today-hrv", v, it, Good.HIGHER) } ?: EmptyTrack() }
                 }
             }
@@ -394,7 +328,6 @@ private fun WorkoutsRow(data: TodayData, miles: Boolean, onOpenWorkout: (Workout
 private fun StreakRow(streaks: List<Streak>) {
     val revealed = LocalRevealed.current
     val still = LocalReduceMotion.current
-    val soft = LocalTheme.current.soft
     Row(Modifier.fillMaxWidth().padding(horizontal = Space.xl, vertical = Space.xs), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterHorizontally)) {
         streaks.forEach { s ->
             val key = "streak-${s.kind}-${s.days}"
@@ -414,7 +347,7 @@ private fun StreakRow(streaks: List<Streak>) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(NavIcons.flame, null, Modifier.padding(end = 4.dp).size(12.dp), tint = if (s.milestone) Palette.Accent else Palette.Muted)
-                Text("${s.days} days · $what".let { if (soft) it else it.uppercase() }, style = Type.tiny, color = if (s.milestone) Palette.Accent else Palette.Muted)
+                Text("${s.days} days · $what", style = Type.tiny, color = if (s.milestone) Palette.Accent else Palette.Muted)
             }
         }
     }
@@ -428,8 +361,6 @@ private fun SyncRow(data: TodayData, onSync: (String) -> Unit, refreshing: Boole
     val prefs = LocalPrefs.current
     val now = remember(data.date) { java.time.ZonedDateTime.now() }
     val stale = syncStale(data.latestData, now)
-    // Names and dates ("Fitbit", "13 Oct") stay as written on Soft; the dark themes set the row in capitals.
-    val soft = LocalTheme.current.soft
     // A clean read ends on "Up to date" for two seconds before the row goes back to the data time.
     var wasRefreshing by remember { mutableStateOf(refreshing) }
     var justDone by remember { mutableStateOf(false) }
@@ -452,7 +383,7 @@ private fun SyncRow(data: TodayData, onSync: (String) -> Unit, refreshing: Boole
                         0 -> progress?.let { "${it.label} · ${it.done} of ${it.total}" } ?: "Updating…"
                         1 -> "Up to date"
                         else -> data.latestData?.let { dataUpTo(it, now, prefs.clock24) } ?: "No watch data yet"
-                    }.let { if (soft) it else it.uppercase() },
+                    },
                     style = Type.tiny,
                     color = when (p) { 0 -> Palette.Muted; 1 -> Palette.Accent; else -> if (stale) Palette.Warn else Palette.Faint },
                 )
@@ -460,7 +391,7 @@ private fun SyncRow(data: TodayData, onSync: (String) -> Unit, refreshing: Boole
         }
         data.syncApp?.let { pkg ->
             Text(
-                if (soft) "Sync ${sourceAppName(pkg)}" else "SYNC ${sourceAppName(pkg).uppercase()}",
+                "Sync ${sourceAppName(pkg)}",
                 Modifier
                     .padding(start = Space.s)
                     .clip(RoundedCornerShape(8.dp))
@@ -506,7 +437,7 @@ private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, o
                 "Steps", a?.let { formatSteps(it.steps) } ?: "—", null, m, icon = NavIcons.walk,
                 ring = a?.goalPercent?.coerceAtMost(100)?.div(100f), ringColor = Palette.Accent,
                 note = "of ${formatSteps(data.goals.steps.toLong())}", delta = stepsDelta,
-                ringKey = "glance-steps-${data.date}", onClick = openSteps, description = "Steps details", tint = Tint.SAGE,
+                ringKey = "glance-steps-${data.date}", onClick = openSteps, description = "Steps details", tint = Tint.SAND,
             )
         },
         { m ->
@@ -515,7 +446,7 @@ private fun GlanceGrid(data: TodayData, recovery: Int?, onOpen: (Int) -> Unit, o
                 "Active", a?.activeMinutes?.toString() ?: "—", if (a != null) "min" else null, m, icon = NavIcons.bolt,
                 ring = a?.let { (it.activeMinutes.toFloat() / goal).coerceAtMost(1f) }, ringColor = Palette.Good,
                 note = "goal $goal min",
-                ringKey = "glance-active-${data.date}", onClick = openActive, description = "Active minutes details", tint = Tint.LAVENDER,
+                ringKey = "glance-active-${data.date}", onClick = openActive, description = "Active minutes details", tint = Tint.ROSE,
             )
         },
         { m ->

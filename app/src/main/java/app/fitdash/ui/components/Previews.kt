@@ -11,7 +11,6 @@ import androidx.compose.ui.unit.dp
 import app.fitdash.metrics.Status
 import app.fitdash.ui.theme.FitdashTheme
 import app.fitdash.ui.theme.Space
-import app.fitdash.ui.theme.ThemeId
 import app.fitdash.ui.theme.ThemedBackground
 import androidx.compose.foundation.layout.Box
 import java.time.LocalDate
@@ -19,8 +18,8 @@ import java.time.LocalDate
 private val SunDay = LocalDate.of(2026, 10, 11)
 
 @Composable
-private fun ThemePreview(id: ThemeId, content: @Composable () -> Unit) {
-    FitdashTheme(id) {
+private fun ThemePreview(content: @Composable () -> Unit) {
+    FitdashTheme {
         CompositionLocalProvider(LocalRevealed provides mutableSetOf("gauge-Sleep-83", "span-12:40 AM-9:56 AM")) {
             Box {
                 ThemedBackground()
@@ -47,11 +46,7 @@ private fun WeekSample() = WeekStrip((5..11).map { SunDay.withDayOfMonth(it) }, 
 @Composable
 private fun TopBarSample() = TopBar("Sun · 11 Oct", canNext = false, onPrev = {}, onNext = {}, onDate = {}, onMenu = {}, onInfo = {})
 
-@Preview(showBackground = true) @Composable private fun OrbTeal() = ThemePreview(ThemeId.TEAL) { OrbSample() }
-@Preview(showBackground = true) @Composable private fun OrbGraphite() = ThemePreview(ThemeId.GRAPHITE) { OrbSample() }
-@Preview(showBackground = true) @Composable private fun GaugeTeal() = ThemePreview(ThemeId.TEAL) { GaugeSample() }
-@Preview(showBackground = true) @Composable private fun GaugeGraphite() = ThemePreview(ThemeId.GRAPHITE) { GaugeSample() }
-@Preview(showBackground = true) @Composable private fun WeekTeal() = ThemePreview(ThemeId.TEAL) { WeekSample() }
-@Preview(showBackground = true) @Composable private fun WeekGraphite() = ThemePreview(ThemeId.GRAPHITE) { WeekSample() }
-@Preview(showBackground = true) @Composable private fun TopBarTeal() = ThemePreview(ThemeId.TEAL) { TopBarSample() }
-@Preview(showBackground = true) @Composable private fun TopBarGraphite() = ThemePreview(ThemeId.GRAPHITE) { TopBarSample() }
+@Preview(showBackground = true) @Composable private fun OrbLook() = ThemePreview { OrbSample() }
+@Preview(showBackground = true) @Composable private fun GaugeLook() = ThemePreview { GaugeSample() }
+@Preview(showBackground = true) @Composable private fun WeekLook() = ThemePreview { WeekSample() }
+@Preview(showBackground = true) @Composable private fun TopBarLook() = ThemePreview { TopBarSample() }

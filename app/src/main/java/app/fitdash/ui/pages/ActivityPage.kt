@@ -99,7 +99,7 @@ fun ActivityPage(data: TodayData, chrome: PageChrome, miles: Boolean, onOpenWork
                                 "Active", NavIcons.bolt, listOf(a.activeMinutes.toString() to "min"), m,
                                 if (data.isToday && left > 0) null else scoreStatus((a.activeMinutes * 100 / goal).toInt().coerceAtMost(100)),
                                 if (left <= 0) "GOAL $goal MIN DONE" else "$left MIN TO GO",
-                                opener(MetricKind.ACTIVE_MINUTES), "Active minutes details", tint = Tint.LAVENDER,
+                                opener(MetricKind.ACTIVE_MINUTES), "Active minutes details", tint = Tint.ROSE,
                             )
                         },
                         { m ->

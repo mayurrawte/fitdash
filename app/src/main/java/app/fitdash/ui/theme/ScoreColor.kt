@@ -14,13 +14,12 @@ fun scoreColor(score: Int, bad: Color, warn: Color, good: Color): Color {
     return Color(mix(lo.red, hi.red), mix(lo.green, hi.green), mix(lo.blue, hi.blue))
 }
 
-// Soft steps between three clear pastels: a blend of its dark text greens and ambers turns olive on white.
-fun scoreColor(score: Int, t: ThemeTokens): Color =
-    if (t.soft) when {
-        score >= 70 -> Color(0xFF8DB85A)
-        score >= 50 -> Color(0xFFE3A06F)
-        else -> Color(0xFFD9604F)
-    } else scoreColor(score, t.bad, t.warn, t.good)
+// Three clear pastels: a blend of the dark text greens and ambers turns olive on white.
+fun scoreColor(score: Int, t: ThemeTokens): Color = when {
+    score >= 70 -> Color(0xFF8DB85A)
+    score >= 50 -> Color(0xFFE3A06F)
+    else -> Color(0xFFD9604F)
+}
 
 @Composable
 @ReadOnlyComposable

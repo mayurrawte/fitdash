@@ -36,7 +36,6 @@ import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.theme.Motion
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import androidx.compose.ui.text.font.FontWeight
 import app.fitdash.ui.theme.Space
@@ -50,51 +49,39 @@ import java.util.Locale
 fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate>, onSelect: (LocalDate) -> Unit, modifier: Modifier = Modifier, enabled: (LocalDate) -> Boolean = { true }) {
     val haptic = LocalHapticFeedback.current
     val haptics = LocalPrefs.current.haptics
-    // Soft: the selected day is a tall peach pill and days with data sit in a peach circle, instead of a dot under the number.
-    val soft = LocalTheme.current.soft
     Row(modifier.fillMaxWidth().padding(horizontal = Space.l)) {
         days.forEach { day ->
             val on = day == selected
             val active = enabled(day)
             val bg by animateColorAsState(if (on) Palette.ChipStrong else Color.Transparent, tween(Motion.PAGE), label = "strip-bg")
-            val fg by animateColorAsState(if (on && !soft) Palette.Accent else Palette.Text, tween(Motion.PAGE), label = "strip-fg")
+            val fg by animateColorAsState(Palette.Text, tween(Motion.PAGE), label = "strip-fg")
             val interaction = remember { MutableInteractionSource() }
             Column(
                 Modifier
                     .weight(1f)
                     .alpha(if (active) 1f else 0.3f)
                     .pressScale(interaction, 0.92f)
-                    .clip(RoundedCornerShape(if (soft) 22.dp else 14.dp))
+                    .clip(RoundedCornerShape(22.dp))
                     .background(bg)
                     .clickable(interactionSource = interaction, indication = null, enabled = active, role = Role.Button) {
                         if (haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelect(day)
                     }
                     .heightIn(min = 48.dp)
-                    .padding(vertical = if (soft) Space.m else Space.s),
+                    .padding(vertical = Space.m),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(day.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).uppercase(), style = Type.tiny, color = Palette.Muted)
-                if (soft) {
-                    Box(
-                        Modifier
-                            .padding(top = 6.dp)
-                            .size(30.dp)
-                            .clip(CircleShape)
-                            .background(if (!on && day in hasData) Palette.ChipStrong else Color.Transparent),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(day.dayOfMonth.toString(), style = Type.small.copy(fontSize = 15.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal), color = fg)
-                    }
-                    return@Column
+                Box(
+                    Modifier
+                        .padding(top = 6.dp)
+                        .size(30.dp)
+                        .clip(CircleShape)
+                        .background(if (!on && day in hasData) Palette.ChipStrong else Color.Transparent),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(day.dayOfMonth.toString(), style = Type.small.copy(fontSize = 15.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal), color = fg)
                 }
-                Text(
-                    day.dayOfMonth.toString(),
-                    Modifier.padding(vertical = 3.dp),
-                    style = Type.small.copy(fontSize = 15.sp),
-                    color = fg,
-                )
-                Box(Modifier.size(4.dp).clip(CircleShape).background(if (day in hasData) Palette.Accent else Color.Transparent))
             }
         }
     }
@@ -111,9 +98,8 @@ private fun CircleButton(icon: ImageVector, description: String, onClick: () -> 
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        val soft = LocalTheme.current.soft
-        Box(Modifier.size(if (soft) 46.dp else 38.dp).clip(CircleShape).background(Palette.Chip), contentAlignment = Alignment.Center) {
-            Icon(icon, null, Modifier.size(if (soft) 19.dp else 17.dp), tint = Palette.Text)
+        Box(Modifier.size(46.dp).clip(CircleShape).background(Palette.Chip), contentAlignment = Alignment.Center) {
+            Icon(icon, null, Modifier.size(19.dp), tint = Palette.Text)
         }
     }
 }
@@ -129,7 +115,7 @@ private fun ArrowButton(icon: ImageVector, description: String, enabled: Boolean
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, Modifier.size(16.dp), tint = if (LocalTheme.current.soft) Palette.Text else Palette.Muted)
+        Icon(icon, null, Modifier.size(16.dp), tint = Palette.Text)
     }
 }
 
@@ -149,25 +135,15 @@ fun TopBar(
         CircleButton(NavIcons.menu, "Menu", onMenu)
         Row(verticalAlignment = Alignment.CenterVertically) {
             ArrowButton(NavIcons.chevronLeft, "Previous day", canPrev, onPrev)
-            if (LocalTheme.current.soft) {
-                Text(
-                    dateText,
-                    Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(Palette.ChipStrong)
-                        .clickable(role = Role.Button, onClick = onDate)
-                        .semantics { contentDescription = "Pick a date" }
-                        .padding(horizontal = 18.dp, vertical = 10.dp),
-                    style = Type.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium), color = Palette.Text,
-                )
-            } else Text(
-                dateText.uppercase(),
+            Text(
+                dateText,
                 Modifier
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(Palette.ChipStrong)
                     .clickable(role = Role.Button, onClick = onDate)
                     .semantics { contentDescription = "Pick a date" }
-                    .padding(horizontal = Space.s, vertical = Space.m),
-                style = Type.label, color = Palette.Muted,
+                    .padding(horizontal = 18.dp, vertical = 10.dp),
+                style = Type.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium), color = Palette.Text,
             )
             ArrowButton(NavIcons.chevronRight, "Next day", canNext, onNext)
         }

@@ -2,7 +2,6 @@ package app.fitdash.widget
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
@@ -48,8 +47,8 @@ import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.formatDuration
 import app.fitdash.ui.morningReadout
 import app.fitdash.ui.formatSteps
+import app.fitdash.ui.theme.LOOK
 import app.fitdash.ui.theme.ThemeTokens
-import app.fitdash.ui.theme.resolveTheme
 import app.fitdash.ui.theme.scoreColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -77,14 +76,12 @@ class FitdashWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val settings = SettingsStore.get(context).flow.value
-        val dark = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        val theme = resolveTheme(settings.theme, dark)
         val data = withContext(Dispatchers.IO) {
             SnapshotCache(context).load()?.takeIf { c -> c.snapshot.sources.any { it.hasData } }?.let {
                 buildToday(it.snapshot, ZonedDateTime.now(), goals = Goals(settings.stepGoal, settings.sleepHours, settings.waterGoalMl / 1000.0, settings.activeGoal))
             }
         }
-        provideContent { WidgetContent(theme, data, settings.showSuggestions) }
+        provideContent { WidgetContent(LOOK, data, settings.showSuggestions) }
     }
 }
 
@@ -102,10 +99,8 @@ private fun color(c: Color) = ColorProvider(c)
 private fun WidgetContent(t: ThemeTokens, data: TodayData?, showSuggestions: Boolean) {
     val context = LocalContext.current
     val wide = LocalSize.current.width >= WIDE.width
-    // Soft sits as a white card on the wallpaper; the dark themes keep their ground.
-    val ground = if (t.soft) t.card else t.bgMid
     Box(
-        GlanceModifier.fillMaxSize().background(color(ground)).cornerRadius(24.dp).padding(14.dp).clickable(open(context, 0)),
+        GlanceModifier.fillMaxSize().background(color(t.card)).cornerRadius(24.dp).padding(14.dp).clickable(open(context, 0)),
         contentAlignment = Alignment.Center,
     ) {
         if (data == null) {
@@ -149,7 +144,7 @@ private fun Ring(t: ThemeTokens, score: Int?, label: String, sizeDp: Int) {
     val context = LocalContext.current
     val px = (sizeDp * context.resources.displayMetrics.density).roundToInt()
     val ringColor = score?.let { scoreColor(it, t) } ?: t.faint
-    val track = if (t.soft) t.bgBottom else t.hairline
+    val track = t.bgBottom
     Box(GlanceModifier.size(sizeDp.dp), contentAlignment = Alignment.Center) {
         Image(ImageProvider(ringBitmap(px, (score ?: 0) / 100f, ringColor, track)), contentDescription = null, modifier = GlanceModifier.size(sizeDp.dp))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

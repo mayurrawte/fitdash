@@ -88,8 +88,8 @@ fun LazyListScope.fitnessSection(data: TodayData, chrome: PageChrome) {
     item(key = "fitness-tiles") {
         val tiles = buildList<@Composable (Modifier) -> Unit> {
             if (!f.watchVo2) add { m -> Vo2Tile(data, chrome, m, Tint.SKY) }
-            add { m -> SleepDebtTile(data, m, Tint.SAGE) }
-            if (f.trainingLoad != null) add { m -> LoadTile(data, m, Tint.LAVENDER) }
+            add { m -> SleepDebtTile(data, m, Tint.SAND) }
+            if (f.trainingLoad != null) add { m -> LoadTile(data, m, Tint.ROSE) }
             add { m -> CaloriesTile(data, chrome, m, Tint.PEACH) }
         }
         TileGrid(tiles)

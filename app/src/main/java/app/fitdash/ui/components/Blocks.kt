@@ -9,7 +9,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -63,24 +62,17 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import app.fitdash.metrics.Status
 import app.fitdash.ui.theme.Motion
-import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 import app.fitdash.ui.theme.labelCase
 import app.fitdash.ui.theme.noteCase
 
-private val DarkCardShape = RoundedCornerShape(20.dp)
-private val SoftCardShape = RoundedCornerShape(28.dp)
+val CardShape: Shape = RoundedCornerShape(28.dp)
 
-// Soft rounds everything further, like its pills and dock.
-val CardShape: Shape @Composable @ReadOnlyComposable get() = if (LocalTheme.current.soft) SoftCardShape else DarkCardShape
-
-// Section cards: faint fill with a hairline. Tiles: a slightly stronger fill and no line, so a grid of them reads as one calm block.
-// On Soft the cards are plain white on the grey ground, so the hairline goes.
+// Cards are plain white on the ground, with no hairline.
 @Composable
-fun Modifier.cardSurface(): Modifier =
-    if (LocalTheme.current.soft) clip(CardShape).background(Palette.Card) else clip(CardShape).background(Palette.Card).border(1.dp, Palette.Divider, CardShape)
+fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card)
 
 @Composable
 fun Modifier.tileSurface(): Modifier = clip(CardShape).background(Palette.Card)
@@ -221,7 +213,7 @@ fun statusColour(status: Status): Color = when (status) {
 
 @Composable
 fun StatusText(status: Status, modifier: Modifier = Modifier) {
-    Text(noteCase(statusWord(status), upper = false), modifier, style = Type.status, color = statusColour(status))
+    Text(noteCase(statusWord(status)), modifier, style = Type.status, color = statusColour(status))
 }
 
 @Composable

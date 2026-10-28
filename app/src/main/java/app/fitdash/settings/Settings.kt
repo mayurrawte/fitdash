@@ -2,14 +2,11 @@ package app.fitdash.settings
 
 import android.content.Context
 import app.fitdash.metrics.Gender
-import app.fitdash.ui.theme.NumbersFont
-import app.fitdash.ui.theme.ThemeId
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.roundToInt
 
 data class Settings(
-    val theme: ThemeId = ThemeId.SOFT,
     val stepGoal: Int = 9000,
     val sleepHours: Double = 8.0,
     val miles: Boolean = false,
@@ -27,7 +24,6 @@ data class Settings(
     val showSuggestions: Boolean = true,
     val showBody: Boolean = true,
     val showSleepScore: Boolean = true,
-    val numbersFont: NumbersFont = NumbersFont.OUTFIT,
     // Stored as a year so the age (and the zones from it) move on by themselves.
     val birthYear: Int? = null,
     val gender: Gender? = null,
@@ -44,7 +40,6 @@ class SettingsStore(context: Context) {
     val flow: StateFlow<Settings> = _flow
 
     private fun read() = Settings(
-        theme = runCatching { ThemeId.valueOf(prefs.getString("theme", null) ?: "SOFT") }.getOrDefault(ThemeId.TEAL),
         stepGoal = prefs.getInt("stepGoal", 9000),
         sleepHours = prefs.getInt("sleepTenths", 80) / 10.0,
         miles = prefs.getBoolean("miles", false),
@@ -62,25 +57,23 @@ class SettingsStore(context: Context) {
         showSuggestions = prefs.getBoolean("showSuggestions", true),
         showBody = prefs.getBoolean("showBody", true),
         showSleepScore = prefs.getBoolean("showSleepScore", true),
-        // Installs that saved settings before Outfit existed keep Inter; only fresh installs start on Outfit.
         birthYear = prefs.getInt("birthYear", 0).takeIf { it > 0 },
         gender = prefs.getString("gender", null)?.let { runCatching { Gender.valueOf(it) }.getOrNull() },
         backgroundRefresh = prefs.getBoolean("backgroundRefresh", false),
         waterReminders = prefs.getBoolean("waterReminders", false),
         moveNudge = prefs.getBoolean("moveNudge", false),
-        numbersFont = runCatching { NumbersFont.valueOf(prefs.getString("numbersFont", null) ?: if (prefs.contains("theme")) "INTER" else "OUTFIT") }.getOrDefault(NumbersFont.OUTFIT),
     )
 
     fun update(change: (Settings) -> Settings) {
         val s = change(_flow.value)
-        prefs.edit().putString("theme", s.theme.name).putInt("stepGoal", s.stepGoal)
+        prefs.edit().putInt("stepGoal", s.stepGoal)
             .putInt("sleepTenths", (s.sleepHours * 10).roundToInt()).putBoolean("miles", s.miles)
             .putInt("waterGoalMl", s.waterGoalMl).putInt("heightCm", s.heightCm ?: 0).putInt("activeGoal", s.activeGoal)
             .putBoolean("clock24", s.clock24).putBoolean("weightLb", s.weightLb).putBoolean("fahrenheit", s.fahrenheit)
             .putBoolean("reduceMotion", s.reduceMotion).putBoolean("haptics", s.haptics)
             .putBoolean("showWater", s.showWater).putBoolean("showWorkouts", s.showWorkouts).putBoolean("showHeartRate", s.showHeartRate)
             .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody).putBoolean("showSleepScore", s.showSleepScore)
-            .putString("numbersFont", s.numbersFont.name).putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh)
+            .putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh)
             .putBoolean("waterReminders", s.waterReminders).putBoolean("moveNudge", s.moveNudge).apply()
         _flow.value = s
     }

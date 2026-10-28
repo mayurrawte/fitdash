@@ -51,7 +51,6 @@ import app.fitdash.ui.theme.FitdashTheme
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Motion
 import app.fitdash.ui.theme.Palette
-import app.fitdash.ui.theme.ThemeId
 import app.fitdash.ui.share.ShareRender
 import app.fitdash.ui.theme.ThemedBackground
 import app.fitdash.health.Workout
@@ -197,33 +196,17 @@ fun PagerScreen(
 
 @Preview(heightDp = 900)
 @Composable
-private fun TodaySoft() = PagePreview(ThemeId.SOFT, 0)
+private fun TodayLook() = PagePreview(0)
 
 @Preview(heightDp = 900)
 @Composable
-private fun SleepSoft() = PagePreview(ThemeId.SOFT, 1)
-
-@Preview(heightDp = 900)
-@Composable
-private fun TodayTeal() = PagePreview(ThemeId.TEAL, 0)
-
-@Preview(heightDp = 900)
-@Composable
-private fun TodayGraphite() = PagePreview(ThemeId.GRAPHITE, 0)
-
-@Preview(heightDp = 900)
-@Composable
-private fun SleepTeal() = PagePreview(ThemeId.TEAL, 1)
-
-@Preview(heightDp = 900)
-@Composable
-private fun SleepGraphite() = PagePreview(ThemeId.GRAPHITE, 1)
+private fun SleepLook() = PagePreview(1)
 
 @Composable
-private fun PagePreview(theme: ThemeId, page: Int) {
+private fun PagePreview(page: Int) {
     val data = PreviewData.today(21, 30)
     val chrome = PageChrome(data.date, data.date, false, 29, {}, {}, {}, {}, {}, {})
-    FitdashTheme(theme) {
+    FitdashTheme {
         Box(Modifier.fillMaxSize()) {
             ThemedBackground()
             if (page == 0) TodayPage(data, chrome, { 0f }, {}, {}, {}, {}, {}, {}) else SleepPage(data, chrome)

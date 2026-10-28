@@ -132,12 +132,12 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                 val hrCeiling = data.heart?.restingHrRange?.endInclusive
                 val all = listOf<@Composable (Modifier) -> Unit>(
                         { m -> NumberTile("Total sleep", NavIcons.moonSmall, hoursMins(s.asleep), m, sleepScoreStatus(s.score), onClick = opener(MetricKind.SLEEP_HOURS), description = "Total sleep details", tint = Tint.SKY) },
-                        { m -> NumberTile("Time in bed", NavIcons.clock, hoursMins(s.timeInBed), m, if (s.timeInBed >= Duration.ofMinutes((data.goals.sleepHours * 60).roundToInt().toLong())) Status.GOOD else Status.FAIR, onClick = opener(MetricKind.SLEEP_HOURS), description = "Time in bed details", tint = Tint.LAVENDER) },
+                        { m -> NumberTile("Time in bed", NavIcons.clock, hoursMins(s.timeInBed), m, if (s.timeInBed >= Duration.ofMinutes((data.goals.sleepHours * 60).roundToInt().toLong())) Status.GOOD else Status.FAIR, onClick = opener(MetricKind.SLEEP_HOURS), description = "Time in bed details", tint = Tint.ROSE) },
                         { m ->
                             NumberTile(
                                 "Efficiency", NavIcons.bed, listOf((s.efficiency * 100).roundToInt().toString() to "%"), m,
                                 efficiencyStatus(s.efficiency),
-                                onClick = opener(MetricKind.EFFICIENCY), description = "Sleep efficiency details", tint = Tint.SAGE,
+                                onClick = opener(MetricKind.EFFICIENCY), description = "Sleep efficiency details", tint = Tint.SAND,
                             )
                         },
                         { m ->
@@ -153,7 +153,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                                 "Awakenings", NavIcons.sun,
                                 listOf((s.awakenings?.toString() ?: "—") to if (s.awakenings != null) (if (s.awakenings == 1) "time" else "times") else ""),
                                 m, s.awakenings?.let { awakeningsStatus(it) },
-                                onClick = opener(MetricKind.AWAKENINGS), description = "Awakenings details", tint = Tint.LAVENDER,
+                                onClick = opener(MetricKind.AWAKENINGS), description = "Awakenings details", tint = Tint.ROSE,
                             )
                         },
                         { m ->
@@ -265,4 +265,4 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
     }
 }
 
-private val VITAL_TINTS = listOf(Tint.LAVENDER, Tint.SAGE, Tint.PEACH, Tint.SKY)
+private val VITAL_TINTS = listOf(Tint.ROSE, Tint.SAND, Tint.PEACH, Tint.SKY)

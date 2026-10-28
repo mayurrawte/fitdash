@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.fitdash.metrics.Status
-import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.TintScope
@@ -61,7 +60,7 @@ fun StatTile(
         if (status != null) StatusText(status, Modifier.padding(bottom = Space.s))
         Spacer(Modifier.weight(1f))
         visual()
-        Text(noteCase(note, upper = false), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s))
+        Text(noteCase(note), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s))
     }
 }
 
@@ -90,7 +89,7 @@ fun NumberTile(
         }
         NumberWithUnits(parts, Modifier.padding(top = Space.s, bottom = 6.dp))
         if (status != null) StatusText(status)
-        if (note != null) Text(noteCase(note, upper = false), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
+        if (note != null) Text(noteCase(note), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
     }
 }
 
@@ -125,7 +124,7 @@ fun GlanceTile(
     tint: Tint? = null,
 ) = TintScope(tint) {
     // On a pastel tile the ring is drawn in ink, like the mockup's steps ring; colour there comes from the tile.
-    val ringPaint = if (tint != null && LocalTheme.current.tints.isNotEmpty()) Palette.Text else ringColor
+    val ringPaint = if (tint != null) Palette.Text else ringColor
     Row(
         modifier
             .tileSurface()
