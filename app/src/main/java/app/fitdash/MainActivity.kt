@@ -99,7 +99,7 @@ class MainActivity : ComponentActivity() {
                 (this@MainActivity as ComponentActivity).enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
             }
             FitdashTheme {
-                CompositionLocalProvider(LocalPrefs provides settings, LocalReduceMotion provides settings.reduceMotion) { App(store, openPage) }
+                CompositionLocalProvider(LocalPrefs provides settings, LocalReduceMotion provides (settings.reduceMotion || android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f)) { App(store, openPage) }
             }
         }
     }

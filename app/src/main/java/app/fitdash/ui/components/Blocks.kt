@@ -44,9 +44,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.unit.Dp
-import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material3.Switch
@@ -93,10 +91,10 @@ fun Modifier.tappable(onClick: (() -> Unit)?, description: String?): Modifier {
 }
 
 @Composable
-fun Modifier.pressScale(interaction: MutableInteractionSource, pressed: Float = 0.97f): Modifier {
+fun Modifier.pressScale(interaction: MutableInteractionSource, pressed: Float = 0.965f): Modifier {
     val isPressed by interaction.collectIsPressedAsState()
     val reduce = LocalReduceMotion.current
-    val scale by animateFloatAsState(if (isPressed && !reduce) pressed else 1f, spring(stiffness = Spring.StiffnessMediumLow, dampingRatio = 0.6f), label = "press")
+    val scale by animateFloatAsState(if (isPressed && !reduce) pressed else 1f, Motion.press, label = "press")
     return graphicsLayer { scaleX = scale; scaleY = scale }
 }
 
@@ -185,8 +183,8 @@ fun EmptyState(title: String, body: String) {
 
 @Composable
 fun Reveal(key: String, index: Int = 0, content: @Composable () -> Unit) {
-    val progress = rememberDrawProgress("reveal-$key", Motion.RISE, index * 60)
-    Box(Modifier.graphicsLayer { alpha = progress.value; translationY = (1 - progress.value) * 20.dp.toPx() }) { content() }
+    val progress = rememberDrawProgress("reveal-$key", Motion.ENTER, index * Motion.STAGGER)
+    Box(Modifier.graphicsLayer { alpha = progress.value; translationY = (1 - progress.value) * 14.dp.toPx() }) { content() }
 }
 
 @Composable
