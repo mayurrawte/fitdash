@@ -69,8 +69,6 @@ dependencies {
     implementation(libs.health.connect)
     implementation(libs.glance.appwidget)
     implementation(libs.work.runtime)
-    implementation(libs.haze)
-    implementation(libs.haze.blur)
 
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
