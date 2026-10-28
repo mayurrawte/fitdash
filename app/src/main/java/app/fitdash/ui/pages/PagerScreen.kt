@@ -43,7 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.PreviewData
-import app.fitdash.ui.components.GlassNav
+import app.fitdash.ui.components.BottomBar
 import app.fitdash.ui.components.LocalRevealed
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.NavItem
@@ -56,8 +56,6 @@ import app.fitdash.ui.theme.ThemedBackground
 import app.fitdash.health.Workout
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.today.TodayUiState
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -90,7 +88,6 @@ fun PagerScreen(
     val data = state.data
     val pager = rememberPagerState { NAV.size }
     val scope = rememberCoroutineScope()
-    val haze = rememberHazeState()
     val revealed = remember { mutableSetOf<String>() }
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -153,7 +150,7 @@ fun PagerScreen(
                 )
             },
         ) {
-            Box(Modifier.fillMaxSize().hazeSource(haze)) {
+            Box(Modifier.fillMaxSize()) {
                 ThemedBackground()
                 HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
                     when (page) {
@@ -171,15 +168,14 @@ fun PagerScreen(
                     .align(Alignment.TopCenter)
                     .background(Brush.verticalGradient(listOf(topColour, topColour.copy(alpha = 0.85f), Color.Transparent))),
             )
-            GlassNav(
+            BottomBar(
                 NAV,
                 pager,
-                haze,
                 onSelect = { i ->
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     goTo(i)
                 },
-                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 22.dp),
+                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 22.dp).padding(bottom = 22.dp),
             )
         }
         if (sharing) ShareRender(data, onDone = { sharing = false })
