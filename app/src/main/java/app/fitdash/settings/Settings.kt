@@ -4,6 +4,8 @@ import android.content.Context
 import app.fitdash.metrics.Gender
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import java.time.LocalDate
+import java.time.LocalTime
 import kotlin.math.roundToInt
 
 enum class ThemeChoice { SYSTEM, LIGHT, DARK }
@@ -37,6 +39,10 @@ data class Settings(
     val name: String? = null,
     val nameAsked: Boolean = false,
     val theme: ThemeChoice = ThemeChoice.SYSTEM,
+    val proteinGoalG: Int = 100,
+    val bedtimeTarget: LocalTime? = null,
+    val morningAlert: Boolean = false,
+    val weekReviewSeen: LocalDate? = null,
 )
 
 class SettingsStore(context: Context) {
@@ -70,6 +76,10 @@ class SettingsStore(context: Context) {
         name = prefs.getString("name", null)?.takeIf { it.isNotBlank() },
         nameAsked = prefs.getBoolean("nameAsked", false),
         theme = prefs.getString("theme", null)?.let { runCatching { ThemeChoice.valueOf(it) }.getOrNull() } ?: ThemeChoice.SYSTEM,
+        proteinGoalG = prefs.getInt("proteinGoalG", 100),
+        bedtimeTarget = prefs.getInt("bedtimeMinutes", -1).takeIf { it >= 0 }?.let { LocalTime.of(it / 60, it % 60) },
+        morningAlert = prefs.getBoolean("morningAlert", false),
+        weekReviewSeen = prefs.getLong("weekReviewSeen", 0L).takeIf { it > 0 }?.let { LocalDate.ofEpochDay(it) },
     )
 
     fun update(change: (Settings) -> Settings) {
@@ -84,7 +94,9 @@ class SettingsStore(context: Context) {
             .putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh)
             .putBoolean("waterReminders", s.waterReminders).putBoolean("moveNudge", s.moveNudge)
             .putString("name", s.name).putBoolean("nameAsked", s.nameAsked)
-            .putString("theme", s.theme.name).apply()
+            .putString("theme", s.theme.name)
+            .putInt("proteinGoalG", s.proteinGoalG).putInt("bedtimeMinutes", s.bedtimeTarget?.let { it.hour * 60 + it.minute } ?: -1)
+            .putBoolean("morningAlert", s.morningAlert).putLong("weekReviewSeen", s.weekReviewSeen?.toEpochDay() ?: 0L).apply()
         _flow.value = s
     }
 
