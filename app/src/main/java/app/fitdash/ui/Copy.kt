@@ -1,6 +1,5 @@
 package app.fitdash.ui
 
-import app.fitdash.health.SleepSession
 import app.fitdash.health.SourceStatus
 import app.fitdash.health.Workout
 import app.fitdash.metrics.ExerciseType
@@ -22,8 +21,6 @@ import app.fitdash.metrics.Status
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.Tuning
-import app.fitdash.metrics.asleepDuration
-import app.fitdash.metrics.sleepScoreParts
 import app.fitdash.metrics.rangeStatus
 import app.fitdash.ui.components.ScoreChip
 import java.text.BreakIterator
@@ -218,10 +215,10 @@ fun recoveryChips(r: ReadinessResult.Ready, heart: HeartSummary?, sleep: SleepSu
     return chips
 }
 
-fun sleepChips(night: SleepSession, goalHours: Double): List<ScoreChip> {
-    val parts = sleepScoreParts(night, goalHours)
+fun sleepChips(night: SleepSummary, goalHours: Double): List<ScoreChip> {
+    val parts = night.parts
     if (parts == null) {
-        val share = minOf(asleepDuration(night).seconds / 3600.0 / goalHours, 1.0)
+        val share = minOf(night.asleep.seconds / 3600.0 / goalHours, 1.0)
         val status = if (share >= 0.8) Status.GOOD else if (share >= 0.5) Status.BELOW_USUAL else Status.ATTENTION
         return listOf(ScoreChip("Duration only", status, MetricKind.SLEEP_HOURS))
     }
