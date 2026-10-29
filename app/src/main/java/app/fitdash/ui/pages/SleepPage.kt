@@ -72,6 +72,7 @@ import androidx.compose.ui.text.style.TextAlign
 import kotlin.math.roundToLong
 import app.fitdash.ui.metricName
 import app.fitdash.ui.rangeNote
+import app.fitdash.ui.vitalKind
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Space
@@ -84,12 +85,6 @@ import kotlin.math.roundToInt
 private fun hoursMins(d: Duration): List<Pair<String, String>> =
     if (d.toHours() == 0L) listOf((d.toMinutes() % 60).toString() to "mins")
     else listOf(d.toHours().toString() to "hrs", (d.toMinutes() % 60).toString() to "mins")
-
-private fun vitalKind(label: String) = when (label) {
-    "SpO₂" -> MetricKind.SPO2
-    "Respiratory rate" -> MetricKind.RESPIRATORY
-    else -> MetricKind.SKIN_TEMP
-}
 
 @Composable
 fun SleepPage(data: TodayData, chrome: PageChrome) {

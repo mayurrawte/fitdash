@@ -295,6 +295,14 @@ fun formatClock(t: Instant, zone: ZoneId): String = CLOCK.format(t.atZone(zone))
 
 fun dayLetter(d: LocalDate): String = d.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.ENGLISH)
 
+fun vitalKind(label: String) = when (label) {
+    "Resting HR" -> MetricKind.RESTING_HR
+    "HRV" -> MetricKind.HRV
+    "SpO₂" -> MetricKind.SPO2
+    "Respiratory rate" -> MetricKind.RESPIRATORY
+    else -> MetricKind.SKIN_TEMP
+}
+
 fun metricName(kind: MetricKind) = when (kind) {
     MetricKind.RECOVERY -> "Recovery"
     MetricKind.SLEEP_SCORE -> "Sleep score"

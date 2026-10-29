@@ -62,6 +62,7 @@ import app.fitdash.ui.formatDate
 import app.fitdash.ui.formatKm
 import app.fitdash.ui.formatNumber
 import app.fitdash.ui.metricName
+import app.fitdash.ui.vitalKind
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.greeting
 import app.fitdash.ui.initial
@@ -182,13 +183,7 @@ fun TodayPage(
         }
         if (data.isToday) data.morningAlert.forEach { r ->
             revealItem("alert-${r.label}", 1) {
-                val kind = when (r.label) {
-                    "Resting HR" -> MetricKind.RESTING_HR
-                    "HRV" -> MetricKind.HRV
-                    "SpO₂" -> MetricKind.SPO2
-                    "Respiratory rate" -> MetricKind.RESPIRATORY
-                    else -> MetricKind.SKIN_TEMP
-                }
+                val kind = vitalKind(r.label)
                 val range = r.range!!
                 val side = if (r.value > range.endInclusive) "above" else "below"
                 StripCard(metricOpener(MetricRef.Kind(kind)), "${metricName(kind)} details", tint = Tint.ROSE) {
