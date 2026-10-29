@@ -50,6 +50,7 @@ private fun minutesFromEvening(t: Instant, zone: ZoneId): Int {
 }
 
 fun medianBedtime(starts: List<Instant>, zone: ZoneId, nights: Int = REGULARITY_NIGHTS.toInt()): LocalTime? {
+    if (starts.size < Tuning.MIN_BEDTIME_NIGHTS) return null
     val m = median(starts.sorted().takeLast(nights).map { minutesFromEvening(it, zone).toDouble() })?.toInt() ?: return null
     return LocalTime.of((m + EVENING_MIN) % DAY_MINUTES / 60, (m + EVENING_MIN) % 60)
 }

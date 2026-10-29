@@ -4,6 +4,7 @@ object Tuning {
     const val BASELINE_DAYS = 30L
     const val HISTORY_DAYS = 180L
     const val MIN_NIGHTS = 7
+    const val MIN_BEDTIME_NIGHTS = 3
 
     const val WEIGHT_HRV = 0.4
     const val WEIGHT_RHR = 0.3

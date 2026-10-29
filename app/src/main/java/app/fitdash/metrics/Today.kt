@@ -9,6 +9,7 @@ import app.fitdash.health.latestDataTime
 import app.fitdash.health.syncApp
 import app.fitdash.settings.DayJournal
 import app.fitdash.settings.Tag
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -108,7 +109,12 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
     val reg = regularity(snap.sleep, date, zone)
     val vitals = vitals(snap, date, zone)
     val dayHr = heartDay(snap, date, zone)
-    val bedtime = goals.bedtime ?: medianBedtime(reg.value?.value?.nights.orEmpty().mapNotNull { it.start }, zone)
+    val bedtime = goals.bedtime ?: medianBedtime(
+        snap.sleep
+            .filter { Duration.between(it.start, it.end).seconds >= Tuning.MIN_NIGHT_HOURS * 3600 && !it.end.atZone(zone).toLocalDate().isAfter(date) }
+            .map { it.start },
+        zone,
+    )
     val days = window(date)
     return TodayData(
         date = date,

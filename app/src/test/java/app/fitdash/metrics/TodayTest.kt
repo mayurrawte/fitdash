@@ -168,4 +168,18 @@ class TodayTest {
         assertEquals(100, t.regularity!!.value.sri)
         assertNull(buildToday(history(TODAY, 3, sleepHours = 8.0), time(8, 10)).regularity)
     }
+
+    @Test fun `bedtime falls back to the median of three nights before regularity calibrates`() {
+        val nights = HealthSnapshot(sleep = listOf(
+            SleepSession(at("2026-10-08", "23:00"), at("2026-10-09", "07:00"), emptyList()),
+            SleepSession(at("2026-10-09", "23:30"), at("2026-10-10", "07:30"), emptyList()),
+            SleepSession(at("2026-10-11", "01:00"), at("2026-10-11", "07:00"), emptyList()),
+        ))
+        val nap = HealthSnapshot(sleep = listOf(SleepSession(at("2026-10-10", "14:00"), at("2026-10-10", "14:40"), emptyList())))
+        val later = HealthSnapshot(sleep = listOf(SleepSession(at("2026-10-11", "23:50"), at("2026-10-12", "07:00"), emptyList())))
+        val t = buildToday(nights + nap + later, time(8, 10))
+        assertNull(t.regularity)
+        assertEquals(java.time.LocalTime.of(23, 30), t.bedtime)
+        assertNull(buildToday(HealthSnapshot(sleep = nights.sleep.take(2)) + nap + later, time(8, 10)).bedtime)
+    }
 }

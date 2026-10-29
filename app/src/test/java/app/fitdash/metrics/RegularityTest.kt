@@ -93,4 +93,10 @@ class RegularityTest {
         assertEquals(RegularityBand.VARIES, regularityBand(69))
         assertEquals(RegularityBand.IRREGULAR, regularityBand(59))
     }
+
+    @Test fun `medianBedtime needs three nights`() {
+        val starts = listOf(at("2026-10-09", "23:00"), at("2026-10-10", "23:30"), at("2026-10-11", "01:00"))
+        assertNull(medianBedtime(starts.take(2), IST))
+        assertEquals(java.time.LocalTime.of(23, 30), medianBedtime(starts, IST))
+    }
 }
