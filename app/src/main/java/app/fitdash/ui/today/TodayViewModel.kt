@@ -79,14 +79,12 @@ class TodayViewModel(
     private val _progress = MutableStateFlow<ReadProgress?>(null)
     val progress: StateFlow<ReadProgress?> = _progress
 
-    private val _rawSnapshot = MutableStateFlow<HealthSnapshot?>(null)
-    val rawSnapshot: StateFlow<HealthSnapshot?> = _rawSnapshot
-
     private var job: Job? = null
     private var rebuildJob: Job? = null
     private var snapshot: HealthSnapshot? = null
-    // The un-augmented snapshot: what incremental reads merge into and what the cache stores.
-    private var raw: HealthSnapshot? = null
+    // The un-augmented snapshot: what incremental reads merge into, what the cache stores and what the export writes.
+    private val raw = MutableStateFlow<HealthSnapshot?>(null)
+    val rawSnapshot: StateFlow<HealthSnapshot?> = raw
     private var lastNow: ZonedDateTime? = null
     private var lastRead: Instant? = null
     private var lastFullRead: Instant? = null
@@ -201,13 +199,11 @@ class TodayViewModel(
         journal.add(date, kind, Entry(at, amount, null))
         viewModelScope.launch {
             val id = source.addNutrient(kind, amount, at)
-            val day = journal.flow.value[date]
-            val kept = (if (kind == NutrientKind.PROTEIN) day?.protein else day?.caffeine).orEmpty().any { it.at == at }
+            val kept = journal.flow.value[date]?.entries(kind).orEmpty().any { it.at == at }
             if (id == null) {
                 writeFailed()
             } else if (kept) {
-                journal.remove(date, kind, at)
-                journal.add(date, kind, Entry(at, amount, id))
+                journal.setRecordId(date, kind, at, id)
             } else {
                 // Removed while the write was running: the record it named must go too.
                 source.deleteNutrient(id)
@@ -218,8 +214,7 @@ class TodayViewModel(
     fun removeNutrient(kind: NutrientKind, at: Instant) {
         val journal = journal ?: return
         val date = at.atZone(clock().zone).toLocalDate()
-        val day = journal.flow.value[date]
-        val entry = (if (kind == NutrientKind.PROTEIN) day?.protein else day?.caffeine).orEmpty().firstOrNull { it.at == at }
+        val entry = journal.flow.value[date]?.entries(kind).orEmpty().firstOrNull { it.at == at }
         journal.remove(date, kind, at)
         val id = entry?.recordId ?: return
         viewModelScope.launch {
@@ -267,11 +262,10 @@ class TodayViewModel(
             val back = snapshot?.windowDays?.minus(1) ?: (Tuning.BASELINE_DAYS - 1)
             if (selectedDate.value?.isBefore(now.toLocalDate().minusDays(back)) == true) selectedDate.value = null
             // Cold start: put the cached dashboard up first, then refresh it.
-            if (raw == null && store != null && _state.value !is TodayUiState.Ready) {
+            if (raw.value == null && store != null && _state.value !is TodayUiState.Ready) {
                 val cached = withContext(work) { store.load() }
                 if (cached != null && cached.snapshot.sources.any { it.hasData }) {
-                    raw = cached.snapshot
-                    _rawSnapshot.value = cached.snapshot
+                    raw.value = cached.snapshot
                     lastRead = cached.readAt
                     lastFullRead = cached.fullReadAt
                     val date = selectedDate.value ?: now.toLocalDate()
@@ -294,7 +288,7 @@ class TodayViewModel(
                     // Straight after the permission sheet there is nothing to show yet; the Welcome button must not look stuck.
                     if (_state.value !is TodayUiState.Ready) _state.value = TodayUiState.Loading
                     val seen = confirmedWater
-                    val result = readFresh(source, raw, lastRead, lastFullRead, now) { _progress.value = it }
+                    val result = readFresh(source, raw.value, lastRead, lastFullRead, now) { _progress.value = it }
                     val read = result.snapshot
                     if (result.full) lastFullRead = now.toInstant()
                     val canAskHistory = source.historyPermission?.let { it !in granted } ?: false
@@ -305,8 +299,7 @@ class TodayViewModel(
                         val augmented = withEstimatedRestingHr(read, now.zone, now.toLocalDate())
                         augmented to build(augmented, now, date, goals, pendingWater - seen)
                     }
-                    raw = read
-                    _rawSnapshot.value = read
+                    raw.value = read
                     snapshot = augmented
                     pendingWater -= seen
                     confirmedWater -= seen

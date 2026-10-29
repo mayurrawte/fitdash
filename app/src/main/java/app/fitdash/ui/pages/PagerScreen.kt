@@ -3,6 +3,7 @@ package app.fitdash.ui.pages
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.ReadProgress
 import android.content.Intent
 import androidx.compose.animation.core.tween
@@ -26,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import app.fitdash.health.HealthSnapshot
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,7 +42,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import app.fitdash.BuildConfig
 import app.fitdash.settings.JournalStore
 import app.fitdash.settings.NutrientKind
 import app.fitdash.settings.SettingsStore
@@ -172,7 +171,7 @@ fun PagerScreen(
                         0 -> TodayPage(data, chrome, goTo, onSelectDate, { sharing = true }, askAi, settings.miles, { workout = it }, onSync, state.refreshing, progress) { store.update { it.copy(weekReviewSeen = today) } }
                         1 -> SleepPage(data, chrome)
                         2 -> ActivityPage(data, chrome, settings.miles, { workout = it })
-                        3 -> LogPage(data, chrome, journal, onAddWater, onUndoWater, onAddNutrient, onRemoveNutrient, BuildConfig.FLAVOR == "play")
+                        3 -> LogPage(data, chrome, journal, onAddWater, onUndoWater, onAddNutrient, onRemoveNutrient)
                         else -> TrendsPage(data, chrome)
                     }
                 }
@@ -281,7 +280,7 @@ private fun PagePreview(page: Int, data: TodayData = PreviewData.today(21, 30), 
             ThemedBackground()
             when (page) {
                 0 -> TodayPage(data, chrome, {}, {}, {}, {})
-                3 -> LogPage(data, chrome, JournalStore(File("journal-preview.json")), {}, {}, { _, _ -> }, { _, _ -> }, false, initialSegment)
+                3 -> LogPage(data, chrome, JournalStore(File("journal-preview.json")), {}, {}, { _, _ -> }, { _, _ -> }, initialSegment = initialSegment)
                 4 -> TrendsPage(data, chrome)
                 else -> SleepPage(data, chrome)
             }

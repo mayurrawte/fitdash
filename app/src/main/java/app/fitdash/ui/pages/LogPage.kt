@@ -39,6 +39,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import app.fitdash.BuildConfig
 import app.fitdash.health.SleepSession
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.wakingWindow
@@ -92,13 +93,18 @@ fun LogPage(
     onUndoWater: () -> Unit,
     onAddNutrient: (NutrientKind, Double) -> Unit,
     onRemoveNutrient: (NutrientKind, Instant) -> Unit,
-    playBuild: Boolean,
     initialSegment: Int = 0,
 ) {
     val prefs = LocalPrefs.current
     val haptic = LocalHapticFeedback.current
-    val segments = if (playBuild) listOf("Water", "Tags") else listOf("Water", "Protein", "Caffeine", "Tags")
+    val segments = if (BuildConfig.FLAVOR == "play") listOf("Water", "Tags") else listOf("Water", "Protein", "Caffeine", "Tags")
     var segment by rememberSaveable { mutableIntStateOf(initialSegment) }
+    val kind = when (segments[segment]) {
+        "Protein" -> NutrientKind.PROTEIN
+        "Caffeine" -> NutrientKind.CAFFEINE
+        else -> null
+    }
+    val pillBorder = Palette.Accent.copy(alpha = 0.45f)
     // This session's adds only: Health Connect does not hand back which water records are ours.
     var entries by rememberSaveable { mutableStateOf(listOf<String>()) }
     var lastMl by remember { mutableIntStateOf(0) }
@@ -150,8 +156,8 @@ fun LogPage(
                 if (data.isToday) {
                     item(key = "water-add") {
                         Row(Modifier.padding(horizontal = Space.l).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Pill("+250", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { add(250) }, Modifier.weight(1f))
-                            Pill("+500", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { add(500) }, Modifier.weight(1f))
+                            Pill("+250", Palette.Accent, pillBorder, { add(250) }, Modifier.weight(1f))
+                            Pill("+500", Palette.Accent, pillBorder, { add(500) }, Modifier.weight(1f))
                             Pill("Custom", Palette.Text, Palette.Divider, { custom = true }, Modifier.weight(1f))
                         }
                     }
@@ -161,9 +167,8 @@ fun LogPage(
                         }
                     }
                 }
-            } else if (segments[segment] == "Protein" || segments[segment] == "Caffeine") {
-                val kind = if (segments[segment] == "Protein") NutrientKind.PROTEIN else NutrientKind.CAFFEINE
-                val list = (if (kind == NutrientKind.PROTEIN) day?.protein else day?.caffeine).orEmpty()
+            } else if (kind != null) {
+                val list = day?.entries(kind).orEmpty()
                 if (kind == NutrientKind.PROTEIN) revealItem("protein", 0) {
                     val grams = list.sumOf { it.amount }
                     HeroCard(null, "Protein", tint = Tint.PEACH) {
@@ -186,12 +191,12 @@ fun LogPage(
                 if (data.isToday) item(key = "${kind.name}-add") {
                     Row(Modifier.padding(horizontal = Space.l).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         if (kind == NutrientKind.PROTEIN) {
-                            Pill("+10 g", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { onAddNutrient(kind, 10.0) }, Modifier.weight(1f))
-                            Pill("+25 g", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { onAddNutrient(kind, 25.0) }, Modifier.weight(1f))
+                            Pill("+10 g", Palette.Accent, pillBorder, { onAddNutrient(kind, 10.0) }, Modifier.weight(1f))
+                            Pill("+25 g", Palette.Accent, pillBorder, { onAddNutrient(kind, 25.0) }, Modifier.weight(1f))
                             Pill("Custom", Palette.Text, Palette.Divider, { custom = true }, Modifier.weight(1f))
                         } else {
-                            Pill("+1 coffee", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { onAddNutrient(kind, 95.0) }, Modifier.weight(1f))
-                            Pill("+1 tea", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { onAddNutrient(kind, 47.0) }, Modifier.weight(1f))
+                            Pill("+1 coffee", Palette.Accent, pillBorder, { onAddNutrient(kind, 95.0) }, Modifier.weight(1f))
+                            Pill("+1 tea", Palette.Accent, pillBorder, { onAddNutrient(kind, 47.0) }, Modifier.weight(1f))
                         }
                     }
                 }
@@ -255,7 +260,7 @@ fun LogPage(
         }
     }
     if (custom) {
-        val protein = segments[segment] == "Protein"
+        val protein = kind == NutrientKind.PROTEIN
         var ml by remember { mutableStateOf("") }
         val amount = ml.toIntOrNull()?.takeIf { it > 0 }
         AlertDialog(
