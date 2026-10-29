@@ -1,16 +1,16 @@
 # WIP — handoff
 
-Last updated: 2026-10-29. Everything below is committed on `main`, except the 0.9.0 section, which is on branch `polish-0.9` until it merges. Released: **v0.8.0** (tag `v0.8.0`, code 9, on GitHub; live on the Play internal track, sent for review on the closed Alpha track 26 Oct). Site: https://mayurrawte.is-a.dev/fitdash/
+Last updated: 2026-10-29. Everything below is committed on `main`. Released: **v0.9.0** (tag `v0.9.0`, code 10, on GitHub; Play upload is manual, see `docs/play/PUBLISHING.md`). Site: https://mayurrawte.is-a.dev/fitdash/
 
-## 29 Oct: v0.9.0 (code 10) ready
+## 29 Oct: v0.9.0 (code 10) released
 
-Branch `polish-0.9`, not merged, not tagged. Shipped since v0.8.0: first-run name with a greeting and an initial avatar; dark mode (system, light, dark) with the widget following; a Log tab with instant water logging and journal tags (protein and caffeine on the GitHub build only); score chips that show what moved recovery, sleep and regularity, tappable to the metric; tag patterns on Trends after ten tagged days; a sleep debt chip and a bedtime target on Sleep; a weekly review on Today at the start of the week; an opt-in morning check for overnight vitals outside your usual range; a day timeline card on Today; CSV export of the daily table and raw data from Settings.
+The `redesign` and `polish-0.9` branches were merged into `main`, 263 unit tests pass, lint has no errors, both flavours build. Tagged `v0.9.0` and pushed; CI builds the APK and Play AAB onto the GitHub release. Not yet uploaded to Play. Shipped since v0.8.0: first-run name with a greeting and an initial avatar; dark mode (system, light, dark) with the widget following; a Log tab with instant water logging and journal tags (protein and caffeine on the GitHub build only); score chips that show what moved recovery, sleep and regularity, tappable to the metric; tag patterns on Trends after ten tagged days; a sleep debt chip and a bedtime target on Sleep; a weekly review on Today at the start of the week; an opt-in morning check for overnight vitals outside your usual range; a day timeline card on Today; CSV export of the daily table and raw data from Settings.
 
 Polish in this release: the alert quotes the same usual range as the metric sheets and respects °F; the journal saves off the main thread and a damaged file no longer crashes the app; the splash follows the app's theme on Android 13 and later; the bedtime target appears after three nights.
 
 Migration: existing users on the old Teal or Graphite themes now follow the system setting. The name step shows once after the update. On the GitHub build, protein and caffeine logged before the nutrition permission are written once it is granted.
 
-Device checks owed (not yet run on the Pixel): light and dark at 1.0 and 1.3 font scale, the dark splash, the week review "×", the timeline at 1.3, the bedtime picker on a small screen. To be updated after the checks.
+Checked on the Pixel 9a (Android 16) in dark at the phone's font scale: installs over 0.8.0 with data kept, the name step shows once, Today, the timeline, the Sleep page, chips and the bedtime line render; a tap 8 dp above a chip opens its sheet. The check found two dark-mode bugs (bottom bar label leak, near-white day tiles) and the duplicate date control on Today; all three are fixed in this release but not yet re-checked on the phone. Still owed: light mode, 1.3 font scale, the dark splash with the phone in light, the week review "×", chip taps in the gap between rows and below the last row, the bedtime picker on a small screen.
 
 ## 26 Oct: v0.8.0 (code 9) released
 
