@@ -30,6 +30,12 @@ fun weekReview(series: Map<MetricKind, List<DayValue>>, end: LocalDate): WeekRev
     return WeekReview(end, rows, headline(rows))
 }
 
+// Monday to Wednesday, until the review has been dismissed this week.
+fun showWeekReview(today: LocalDate, seen: LocalDate?): Boolean {
+    val monday = today.with(java.time.DayOfWeek.MONDAY)
+    return today.dayOfWeek <= java.time.DayOfWeek.WEDNESDAY && (seen == null || seen.isBefore(monday))
+}
+
 // One plain sentence on the biggest change; small wobbles are not news.
 private fun headline(rows: List<WeekRow>): String? {
     val changes = rows.mapNotNull { r -> r.lastWeek?.takeIf { it > 0 }?.let { r to (r.thisWeek - it) / it } }

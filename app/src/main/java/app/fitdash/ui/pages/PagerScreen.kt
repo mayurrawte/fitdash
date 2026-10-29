@@ -167,7 +167,7 @@ fun PagerScreen(
                 ThemedBackground()
                 HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
                     when (page) {
-                        0 -> TodayPage(data, chrome, goTo, onSelectDate, { sharing = true }, askAi, settings.miles, { workout = it }, onSync, state.refreshing, progress)
+                        0 -> TodayPage(data, chrome, goTo, onSelectDate, { sharing = true }, askAi, settings.miles, { workout = it }, onSync, state.refreshing, progress) { store.update { it.copy(weekReviewSeen = today) } }
                         1 -> SleepPage(data, chrome)
                         2 -> ActivityPage(data, chrome, settings.miles, { workout = it })
                         3 -> LogPage(data, chrome, journal, onAddWater, onUndoWater, onAddNutrient, onRemoveNutrient, BuildConfig.FLAVOR == "play")
@@ -215,6 +215,10 @@ private fun TodayNoSleep() = PagePreview(0, PreviewData.today(21, 30).copy(sleep
 @Preview(heightDp = 1500)
 @Composable
 private fun TodayNoData() = PagePreview(0, PreviewData.today(21, 30).copy(sleep = null, activity = null))
+
+@Preview(heightDp = 1500)
+@Composable
+private fun TodayWeekReview() = PagePreview(0, PreviewData.today(21, 30).copy(date = LocalDate.of(2026, 10, 12)))
 
 @Preview(heightDp = 1500)
 @Composable

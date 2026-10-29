@@ -1,5 +1,6 @@
 package app.fitdash.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -7,6 +8,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.WeekReview
@@ -49,9 +53,15 @@ private fun change(r: WeekRow): String? {
 
 // Last seven complete days against the seven before: one sentence on the biggest change, then a row per metric.
 @Composable
-fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier, regularity: Int? = null, regularityLast: Int? = null) {
+fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier, regularity: Int? = null, regularityLast: Int? = null, onDismiss: (() -> Unit)? = null) {
     SectionCard("LAST 7 DAYS", modifier, trailing = "vs week before") {
-        review.headline?.let { Text(it, style = Type.body, color = Palette.Text, modifier = Modifier.padding(bottom = Space.s)) }
+        if (review.headline != null || onDismiss != null) Row(Modifier.fillMaxWidth().padding(bottom = Space.s), verticalAlignment = Alignment.Top) {
+            Text(review.headline.orEmpty(), Modifier.weight(1f), style = Type.body, color = Palette.Text)
+            if (onDismiss != null) Text(
+                "×", Modifier.padding(start = Space.s).clickable(role = Role.Button, onClick = onDismiss).semantics { contentDescription = "Dismiss weekly review" },
+                style = Type.body, color = Palette.Muted,
+            )
+        }
         review.rows.forEach { r ->
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(name(r.kind), Modifier.weight(1f), style = Type.small, color = Palette.Muted)

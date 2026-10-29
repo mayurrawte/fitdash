@@ -50,6 +50,7 @@ import app.fitdash.metrics.Tuning
 import app.fitdash.metrics.activeMinutes
 import app.fitdash.metrics.rangeStatus
 import app.fitdash.metrics.rangeWord
+import app.fitdash.metrics.showWeekReview
 import app.fitdash.metrics.weekReview
 import app.fitdash.metrics.workoutIcon
 import app.fitdash.ui.LocalPrefs
@@ -131,6 +132,7 @@ fun TodayPage(
     onSync: (String) -> Unit = {},
     refreshing: Boolean = false,
     progress: StateFlow<ReadProgress?> = MutableStateFlow(null),
+    onDismissWeekReview: () -> Unit = {},
 ) {
     val r = data.readiness
     val score = (r as? ReadinessResult.Ready)?.score
@@ -185,7 +187,10 @@ fun TodayPage(
                 }
             }
         }
-        revealItem("hero", 1) {
+        if (data.isToday && showWeekReview(data.date, prefs.weekReviewSeen)) weekReview(data.series, data.date.minusDays(1))?.let { review ->
+            revealItem("week", 1) { WeekReviewCard(review, onDismiss = onDismissWeekReview) }
+        }
+        revealItem("hero", 2) {
             val s = data.sleep
             val onSteps = s == null && hasSteps
             HeroCard(
@@ -274,10 +279,10 @@ fun TodayPage(
                 }
             }
         }
-        revealItem("tiles", 2) { TileGrid(tiles) }
+        revealItem("tiles", 3) { TileGrid(tiles) }
         val hd = data.heartDay?.takeIf { prefs.showHeartRate }
         val workouts = data.workouts.takeIf { prefs.showWorkouts }.orEmpty()
-        if (hd != null || workouts.isNotEmpty()) revealItem("rows", 3) {
+        if (hd != null || workouts.isNotEmpty()) revealItem("rows", 4) {
             var expanded by rememberSaveable(data.date) { mutableStateOf(false) }
             Column(Modifier.animateContentSize()) {
                 RowGroup {
@@ -308,19 +313,15 @@ fun TodayPage(
         }
         if (prefs.showSuggestions && data.suggestions.isNotEmpty()) {
             val first = data.suggestions.first()
-            revealItem("suggestion-0", 4) {
+            revealItem("suggestion-0", 5) {
                 StripCard(null, null) {
                     Icon(suggestionIcon(first.kind), null, Modifier.padding(end = Space.m).size(20.dp), tint = Palette.Accent)
                     Text(suggestionText(first), style = Type.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp), color = Palette.Text)
                 }
             }
-            if (data.suggestions.size > 1) revealItem("suggestions-more", 5) {
+            if (data.suggestions.size > 1) revealItem("suggestions-more", 6) {
                 RowGroup { data.suggestions.drop(1).forEachIndexed { i, s -> ListRow(suggestionIcon(s.kind), suggestionText(s), null, divider = i > 0) } }
             }
-        }
-        // Monday: last week in one card, the week-over-week view that otherwise lives on Trends.
-        if (data.isToday && data.date.dayOfWeek == java.time.DayOfWeek.MONDAY) {
-            weekReview(data.series, data.date.minusDays(1))?.let { review -> item(key = "week-review") { WeekReviewCard(review) } }
         }
         item(key = "pills") {
             Row(Modifier.padding(horizontal = Space.l).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {

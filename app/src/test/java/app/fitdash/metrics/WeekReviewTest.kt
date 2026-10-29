@@ -1,7 +1,9 @@
 package app.fitdash.metrics
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
 
@@ -40,5 +42,23 @@ class WeekReviewTest {
     @Test fun `too few days gives no review`() {
         val sparse = (13 downTo 0).map { DayValue(end.minusDays(it.toLong()), if (it < 2) 9000.0 else null) }
         assertNull(weekReview(mapOf(MetricKind.STEPS to sparse), end))
+    }
+
+    private val monday = LocalDate.of(2026, 10, 12)
+
+    @Test fun `review shows Monday to Wednesday when unseen`() {
+        (0L..2L).forEach { assertTrue(showWeekReview(monday.plusDays(it), null)) }
+    }
+
+    @Test fun `review is hidden from Thursday`() {
+        assertFalse(showWeekReview(monday.plusDays(3), null))
+    }
+
+    @Test fun `review is hidden once seen this week`() {
+        assertFalse(showWeekReview(monday.plusDays(1), monday))
+    }
+
+    @Test fun `review returns when last seen the week before`() {
+        assertTrue(showWeekReview(monday, monday.minusDays(7)))
     }
 }
