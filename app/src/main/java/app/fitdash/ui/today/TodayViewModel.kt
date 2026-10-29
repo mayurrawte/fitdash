@@ -83,7 +83,7 @@ class TodayViewModel(
     private var rebuildJob: Job? = null
     private var retryJob: Job? = null
     // Nutrient adds whose own write is still running; their entries have no id yet but must not be retried.
-    private val adding = mutableSetOf<Instant>()
+    private val adding = mutableSetOf<Pair<NutrientKind, Instant>>()
     private var snapshot: HealthSnapshot? = null
     // The un-augmented snapshot: what incremental reads merge into, what the cache stores and what the export writes.
     private val raw = MutableStateFlow<HealthSnapshot?>(null)
@@ -199,11 +199,10 @@ class TodayViewModel(
         val now = clock()
         val date = now.toLocalDate()
         val at = now.toInstant()
+        adding += kind to at
         journal.add(date, kind, Entry(at, amount, null))
-        adding += at
         viewModelScope.launch {
-            val id = source.addNutrient(kind, amount, at)
-            adding -= at
+            val id = try { source.addNutrient(kind, amount, at) } finally { adding -= kind to at }
             val kept = journal.flow.value[date]?.entries(kind).orEmpty().any { it.at == at }
             if (id == null) {
                 writeFailed()
@@ -331,8 +330,10 @@ class TodayViewModel(
             val journal = journal
             if (fresh && journal != null && retryJob?.isActive != true) retryJob = viewModelScope.launch {
                 for ((date, day) in journal.flow.value) for (kind in NutrientKind.entries) for (entry in day.entries(kind)) {
-                    if (entry.recordId != null || entry.at in adding) continue
-                    val id = source.addNutrient(kind, entry.amount, entry.at) ?: continue
+                    // The loop walks a copy taken at the start; the entry may have changed during an earlier write.
+                    val live = journal.flow.value[date]?.entries(kind).orEmpty().firstOrNull { it.at == entry.at }
+                    if (live == null || live.recordId != null || (kind to live.at) in adding) continue
+                    val id = source.addNutrient(kind, live.amount, live.at) ?: continue
                     if (journal.flow.value[date]?.entries(kind).orEmpty().any { it.at == entry.at }) journal.setRecordId(date, kind, entry.at, id)
                     else source.deleteNutrient(id)
                 }

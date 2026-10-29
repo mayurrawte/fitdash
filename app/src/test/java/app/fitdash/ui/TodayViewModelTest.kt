@@ -57,6 +57,9 @@ private class FakeSource(
     val heights = mutableListOf<Double>()
     val nutrientsAdded = mutableListOf<Pair<NutrientKind, Double>>()
     val nutrientTimes = mutableListOf<Instant>()
+    // When set, each addNutrient call waits on its own deferred, completed by the test with the record id.
+    var gateNutrients = false
+    val nutrientGates = mutableListOf<CompletableDeferred<String?>>()
     val nutrientsDeleted = mutableListOf<String>()
     var history: String? = null
     var progress: List<ReadProgress> = emptyList()
@@ -84,10 +87,10 @@ private class FakeSource(
         return canWrite
     }
     override suspend fun addNutrient(kind: NutrientKind, amount: Double, at: Instant): String? {
-        delay(writeDelay)
+        nutrientTimes += at
+        if (gateNutrients) return CompletableDeferred<String?>().also { nutrientGates += it }.await()
         if (!canWrite) return null
         nutrientsAdded += kind to amount
-        nutrientTimes += at
         return "nutrition-${nutrientsAdded.size}"
     }
     override suspend fun deleteNutrient(id: String): Boolean { nutrientsDeleted += id; return true }
@@ -447,30 +450,75 @@ class TodayViewModelTest {
         assertEquals(null, withTimeoutOrNull(200) { vm.messages.first() })
     }
 
-    @Test fun `a load during an add does not write that entry again`() = runTest {
+    @Test fun `a load during an add does not write that entry again`() {
         val source = FakeSource()
-        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
-        val vm = TodayViewModel(source, { now }, work = UnconfinedTestDispatcher(testScheduler), journal = journal)
-        vm.load(); advanceUntilIdle()
-        source.writeDelay = 100
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal).also { it.load() }
+        source.gateNutrients = true
         vm.addNutrient(NutrientKind.PROTEIN, 25.0)
         vm.load()
-        advanceUntilIdle()
+        source.nutrientGates[0].complete("r1")
         assertEquals(listOf(now.toInstant()), source.nutrientTimes)
-        assertEquals(listOf(Entry(now.toInstant(), 25.0, "nutrition-1")), journal.flow.value[TODAY]!!.protein)
+        assertEquals(listOf(Entry(now.toInstant(), 25.0, "r1")), journal.flow.value[TODAY]!!.protein)
     }
 
-    @Test fun `overlapping loads retry each entry once`() = runTest {
-        val source = FakeSource(writeDelay = 100)
-        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
+    @Test fun `overlapping loads retry each entry once`() {
+        val source = FakeSource()
+        source.gateNutrients = true
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
         val protein = now.minusHours(3).toInstant()
         val caffeine = now.minusHours(2).toInstant()
         journal.add(TODAY, NutrientKind.PROTEIN, Entry(protein, 30.0, null))
         journal.add(TODAY.minusDays(1), NutrientKind.CAFFEINE, Entry(caffeine, 95.0, null))
-        val vm = TodayViewModel(source, { now }, work = UnconfinedTestDispatcher(testScheduler), journal = journal)
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal)
         vm.load()
         vm.load()
-        advanceUntilIdle()
+        source.nutrientGates[0].complete("r1")
+        source.nutrientGates[1].complete("r2")
         assertEquals(listOf(protein, caffeine).sorted(), source.nutrientTimes.sorted())
+    }
+
+    @Test fun `an add that lands while the retry runs is not written again`() {
+        val source = FakeSource()
+        source.gateNutrients = true
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
+        val a = now.minusHours(2).toInstant()
+        journal.add(TODAY, NutrientKind.PROTEIN, Entry(a, 30.0, null))
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal)
+        vm.addNutrient(NutrientKind.PROTEIN, 25.0)
+        vm.load()
+        assertEquals(listOf(now.toInstant(), a), source.nutrientTimes)
+        source.nutrientGates[0].complete("r1")
+        source.nutrientGates[1].complete("rA")
+        assertEquals(listOf(now.toInstant(), a), source.nutrientTimes)
+        assertEquals(listOf(Entry(a, 30.0, "rA"), Entry(now.toInstant(), 25.0, "r1")), journal.flow.value[TODAY]!!.protein)
+    }
+
+    @Test fun `an entry removed before the retry reaches it is not written`() {
+        val source = FakeSource()
+        source.gateNutrients = true
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
+        val a = now.minusHours(3).toInstant()
+        val b = now.minusHours(2).toInstant()
+        journal.add(TODAY, NutrientKind.PROTEIN, Entry(a, 30.0, null))
+        journal.add(TODAY, NutrientKind.PROTEIN, Entry(b, 20.0, null))
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal).also { it.load() }
+        vm.removeNutrient(NutrientKind.PROTEIN, b)
+        source.nutrientGates[0].complete("rA")
+        assertEquals(listOf(a), source.nutrientTimes)
+        assertEquals(listOf(Entry(a, 30.0, "rA")), journal.flow.value[TODAY]!!.protein)
+    }
+
+    @Test fun `an entry removed while its retry write runs has its record deleted`() {
+        val source = FakeSource()
+        source.gateNutrients = true
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
+        val a = now.minusHours(2).toInstant()
+        journal.add(TODAY, NutrientKind.PROTEIN, Entry(a, 30.0, null))
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal).also { it.load() }
+        vm.removeNutrient(NutrientKind.PROTEIN, a)
+        source.nutrientGates[0].complete("r1")
+        assertEquals(listOf("r1"), source.nutrientsDeleted)
+        assertEquals(null, journal.flow.value[TODAY])
     }
 }
