@@ -44,6 +44,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.fitdash.settings.JournalStore
 import app.fitdash.settings.NutrientKind
+import app.fitdash.settings.Settings
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.PreviewData
 import app.fitdash.ui.components.BottomBar
@@ -223,7 +224,9 @@ private fun TodayWeekReview() = PagePreview(0, PreviewData.today(21, 30).copy(da
 
 @Preview(heightDp = 1500)
 @Composable
-private fun TodayAlert() = PagePreview(0, PreviewData.today(8, 0).let { d -> d.copy(heart = d.heart?.copy(restingHr = 76.0, restingHrBaseline = 66.0, restingHrRange = 62.0..70.0, hrv = 37.0, hrvBaseline = 47.0, hrvRange = 40.0..55.0)) })
+private fun TodayAlert() = CompositionLocalProvider(LocalPrefs provides Settings(morningAlert = true)) {
+    PagePreview(0, PreviewData.today(8, 0).let { d -> d.copy(heart = d.heart?.copy(restingHr = 76.0)) })
+}
 
 @Preview(heightDp = 900)
 @Composable

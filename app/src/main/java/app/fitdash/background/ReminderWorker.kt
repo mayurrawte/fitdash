@@ -44,7 +44,7 @@ private const val MORNING_ID = 3
 private const val ACTION_ADD_WATER = "app.fitdash.ADD_WATER"
 
 // Every hour in the waking day: a water reminder when behind pace, and a move nudge after a still hour.
-// The morning vitals check runs first, from 6 to 11 AM, on a fresh read since the cache may predate the night.
+// The morning vitals check runs first, once a day from 6 to 11 AM, on a fresh read since the cache may predate the night.
 // Water falls back to the cached snapshot without background access; the move nudge needs live steps, so it waits for access.
 class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
@@ -60,11 +60,21 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
             var cached = SnapshotCache(applicationContext).load()?.snapshot
             val lastMorning = sent.getLong("morning", 0L).takeIf { it > 0 }?.let(Instant::ofEpochMilli)
             if (settings.morningAlert && granted && morningAlertDue(now, lastMorning)) {
-                cached = BackgroundRefresh.read(applicationContext, reader, now)
-                val data = buildToday(cached, now)
-                val readings = morningAlert(data.vitals, data.heart, data.series, data.date)
-                if (readings.isNotEmpty()) {
-                    Reminders.notify(applicationContext, MORNING_ID, "Overnight vitals outside your range", readings.joinToString(" · ") { "${it.label} ${formatNumber(it.value)} ${it.unit}" })
+                val fresh = try {
+                    BackgroundRefresh.read(applicationContext, reader, now)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.w("fitdash", "Morning read failed", e)
+                    null
+                }
+                if (fresh != null) {
+                    cached = fresh
+                    val data = buildToday(fresh, now)
+                    val readings = morningAlert(data.vitals, data.heart, data.series, data.date)
+                    if (readings.isNotEmpty()) {
+                        Reminders.notify(applicationContext, MORNING_ID, "Overnight vitals outside your range", readings.joinToString(" · ") { "${it.label} ${formatNumber(it.value)} ${it.unit}" })
+                    }
                     sent.edit().putLong("morning", now.toInstant().toEpochMilli()).apply()
                 }
             }

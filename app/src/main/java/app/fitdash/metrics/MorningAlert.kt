@@ -14,7 +14,7 @@ fun morningAlert(vitals: List<VitalReading>, heart: HeartSummary?, series: Map<M
     }
 }
 
-fun morningAlertDue(now: ZonedDateTime, lastSent: Instant?): Boolean {
+fun morningAlertDue(now: ZonedDateTime, lastChecked: Instant?): Boolean {
     if (now.hour !in 6..10) return false
-    return lastSent == null || lastSent.atZone(now.zone).toLocalDate() != now.toLocalDate()
+    return lastChecked == null || lastChecked.atZone(now.zone).toLocalDate() != now.toLocalDate()
 }

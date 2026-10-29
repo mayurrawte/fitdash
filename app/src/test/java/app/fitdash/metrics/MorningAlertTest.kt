@@ -49,7 +49,7 @@ class MorningAlertTest {
         assertFalse(morningAlertDue(at(11), null))
     }
 
-    @Test fun `not due again once sent today`() {
+    @Test fun `not due again once checked today`() {
         assertFalse(morningAlertDue(at(9), at(7).toInstant()))
         assertTrue(morningAlertDue(at(9), at(7).minusDays(1).toInstant()))
     }
