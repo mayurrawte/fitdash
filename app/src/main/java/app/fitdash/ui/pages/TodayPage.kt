@@ -99,6 +99,7 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Type
+import app.fitdash.ui.theme.noteCase
 import app.fitdash.ui.theme.scoreColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -219,11 +220,11 @@ fun TodayPage(
                     stepsStreak?.let { Text(it, Modifier.padding(top = Space.s), style = Type.small, color = Palette.Muted) }
                 }
             }
-            if (chips.size <= 2) add { m ->
+            add { m ->
                 StatTile(
                     "Recovery", null, null,
                     when (r) {
-                        is ReadinessResult.Ready -> bandWord(r.band)
+                        is ReadinessResult.Ready -> null
                         is ReadinessResult.Calibrating -> "Night ${r.nights} of ${Tuning.MIN_NIGHTS}"
                         ReadinessResult.NoData -> "no data"
                     },
@@ -232,6 +233,7 @@ fun TodayPage(
                     when (r) {
                         is ReadinessResult.Ready -> Column {
                             CountUpText("recovery-${data.date}", r.score.toLong(), Type.tile.copy(fontSize = 34.sp), color = Palette.Text)
+                            Text(noteCase(bandWord(r.band)), style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.s))
                             ScoreChips(chips, Modifier.padding(top = Space.s))
                         }
                         is ReadinessResult.Calibrating -> Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -267,24 +269,7 @@ fun TodayPage(
                 }
             }
         }
-        revealItem("tiles", 2) {
-            Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
-                TileGrid(tiles)
-                if (r is ReadinessResult.Ready && chips.size > 2) HeroCard(metricOpener(MetricRef.Kind(MetricKind.RECOVERY)), "Recovery details", tint = Tint.ROSE) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(NavIcons.today, null, Modifier.padding(end = 6.dp).size(13.dp), tint = Palette.Muted)
-                            Text("Recovery", style = Type.secondary, color = Palette.Muted)
-                        }
-                        Row(Modifier.padding(top = Space.xs), verticalAlignment = Alignment.Bottom) {
-                            CountUpText("recovery-${data.date}", r.score.toLong(), Type.tile.copy(fontSize = 34.sp), color = Palette.Text)
-                            Text(bandWord(r.band), Modifier.padding(start = Space.s, bottom = 6.dp), style = Type.body, color = Palette.Muted)
-                        }
-                        ScoreChips(chips, Modifier.padding(top = Space.s))
-                    }
-                }
-            }
-        }
+        revealItem("tiles", 2) { TileGrid(tiles) }
         val hd = data.heartDay?.takeIf { prefs.showHeartRate }
         val workouts = data.workouts.takeIf { prefs.showWorkouts }.orEmpty()
         if (hd != null || workouts.isNotEmpty()) revealItem("rows", 3) {

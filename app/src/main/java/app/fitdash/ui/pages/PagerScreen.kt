@@ -226,14 +226,6 @@ private fun TodayCalibrating() = PagePreview(0, PreviewData.today(21, 30).copy(r
 @Composable
 private fun TodayLargeText() = PagePreview(0)
 
-@Preview(heightDp = 1500)
-@Composable
-private fun TodayChips() = PagePreview(0, PreviewData.today(21, 30))
-
-@Preview(heightDp = 1500, fontScale = 1.3f)
-@Composable
-private fun TodayChipsLarge() = PagePreview(0, PreviewData.today(21, 30))
-
 @Preview(heightDp = 900)
 @Composable
 private fun SleepLook() = PagePreview(1)
