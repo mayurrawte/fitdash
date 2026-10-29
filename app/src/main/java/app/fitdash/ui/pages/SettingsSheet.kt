@@ -1,9 +1,11 @@
 package app.fitdash.ui.pages
 
 import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,10 +16,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,13 +32,14 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,41 +58,37 @@ import androidx.health.connect.client.HealthConnectClient
 import app.fitdash.BuildConfig
 import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.SourceStatus
+import app.fitdash.metrics.Gender
 import app.fitdash.metrics.TodayData
+import app.fitdash.metrics.genderLabel
+import app.fitdash.metrics.maxHrForAge
 import app.fitdash.settings.JournalStore
-import app.fitdash.ui.share.exportDaily
-import app.fitdash.ui.share.exportRaw
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
-import android.widget.Toast
-import kotlin.coroutines.cancellation.CancellationException
-import java.time.ZoneId
 import app.fitdash.settings.SettingsStore
 import app.fitdash.settings.ThemeChoice
+import app.fitdash.ui.GITHUB_REPO_URL
 import app.fitdash.ui.components.ListRow
-import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.NavIcons
+import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.SectionCard
 import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.ToggleRow
 import app.fitdash.ui.formatHeight
 import app.fitdash.ui.formatLiters
-import android.os.Build
-import app.fitdash.ui.GITHUB_REPO_URL
-import app.fitdash.ui.issueUrl
 import app.fitdash.ui.formatSteps
+import app.fitdash.ui.formatTime
+import app.fitdash.ui.issueUrl
+import app.fitdash.ui.share.exportDaily
+import app.fitdash.ui.share.exportRaw
 import app.fitdash.ui.theme.LocalTheme
-import app.fitdash.ui.CLOCK
-import app.fitdash.ui.CLOCK_12
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
-import app.fitdash.ui.today.BackgroundAccess
-import app.fitdash.metrics.Gender
-import app.fitdash.metrics.genderLabel
-import app.fitdash.metrics.maxHrForAge
 import app.fitdash.ui.theme.Type
+import app.fitdash.ui.today.BackgroundAccess
+import kotlinx.coroutines.launch
+import java.time.LocalTime
+import java.time.ZoneId
 import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.roundToInt
 
 private const val GITHUB_URL = GITHUB_REPO_URL
@@ -152,7 +154,7 @@ fun SettingsSheet(
             item {
                 RowGroup {
                     ListRow(NavIcons.walk, "Height", heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set", onClick = { showHeight = true })
-                    ListRow(NavIcons.moonSmall, "Bedtime", settings.bedtimeTarget?.let { (if (settings.clock24) CLOCK else CLOCK_12).format(it) } ?: "From your last 14 nights", onClick = { showBedtime = true }, divider = true)
+                    ListRow(NavIcons.moonSmall, "Bedtime", settings.bedtimeTarget?.let { formatTime(it, settings.clock24) } ?: "From your last 14 nights", onClick = { showBedtime = true }, divider = true)
                     ListRow(NavIcons.info, "Name", settings.name ?: "Not set", onClick = { showName = true }, divider = true)
                 }
             }
@@ -212,46 +214,35 @@ fun SettingsSheet(
                 RowGroup {
                     ListRow(NavIcons.info, "Data sources", null, onClick = { showInfo = true })
                     if (canAskHistory) ListRow(NavIcons.trends, "Read older data", "Up to 6 months of history instead of 30 days", onClick = { onAskHistory() }, divider = true)
-                    ListRow(
-                        NavIcons.trends, "Export daily table", "CSV, ${data.daysBack + 1} days",
-                        onClick = {
-                            if (exporting == null) scope.launch {
-                                exporting = "daily"
-                                try {
-                                    val uri = exportDaily(context, data, JournalStore.get(context).flow.value)
-                                    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/csv").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Export daily table"))
-                                } catch (e: CancellationException) {
-                                    throw e
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "Couldn't export the data", Toast.LENGTH_SHORT).show()
-                                } finally {
-                                    exporting = null
-                                }
-                            }
+                    val exports = listOfNotNull(
+                        listOf("Export daily table", "CSV, ${data.daysBack + 1} days", "text/csv") to suspend { exportDaily(context, data, JournalStore.get(context).flow.value) },
+                        snapshot?.let { s ->
+                            listOf("Export raw data", "Heart rate, sleep stages, workouts, journal", "application/zip") to suspend { exportRaw(context, s, JournalStore.get(context).flow.value, ZoneId.systemDefault()) }
                         },
-                        trailing = if (exporting == "daily") ({ CircularProgressIndicator(Modifier.size(20.dp), color = LocalTheme.current.accent, strokeWidth = 2.dp) }) else null,
-                        divider = true,
                     )
-                    if (snapshot != null) ListRow(
-                        NavIcons.trends, "Export raw data", "Heart rate, sleep stages, workouts, journal",
-                        onClick = {
-                            if (exporting == null) scope.launch {
-                                exporting = "raw"
-                                try {
-                                    val uri = exportRaw(context, snapshot, JournalStore.get(context).flow.value, ZoneId.systemDefault())
-                                    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("application/zip").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Export raw data"))
-                                } catch (e: CancellationException) {
-                                    throw e
-                                } catch (e: Exception) {
-                                    Toast.makeText(context, "Couldn't export the data", Toast.LENGTH_SHORT).show()
-                                } finally {
-                                    exporting = null
+                    for ((text, export) in exports) {
+                        val (title, subtitle, type) = text
+                        ListRow(
+                            NavIcons.trends, title, subtitle,
+                            onClick = {
+                                if (exporting == null) scope.launch {
+                                    exporting = title
+                                    try {
+                                        val uri = export()
+                                        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType(type).putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), title))
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (e: Exception) {
+                                        Toast.makeText(context, "Couldn't export the data", Toast.LENGTH_SHORT).show()
+                                    } finally {
+                                        exporting = null
+                                    }
                                 }
-                            }
-                        },
-                        trailing = if (exporting == "raw") ({ CircularProgressIndicator(Modifier.size(20.dp), color = LocalTheme.current.accent, strokeWidth = 2.dp) }) else null,
-                        divider = true,
-                    )
+                            },
+                            trailing = if (exporting == title) ({ CircularProgressIndicator(Modifier.size(20.dp), color = LocalTheme.current.accent, strokeWidth = 2.dp) }) else null,
+                            divider = true,
+                        )
+                    }
                 }
             }
             if (background != BackgroundAccess.UNSUPPORTED) {
@@ -356,7 +347,7 @@ private fun HeightDialog(current: Int?, miles: Boolean, onDismiss: () -> Unit, o
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BedtimeDialog(current: java.time.LocalTime?, clock24: Boolean, onDismiss: () -> Unit, onSave: (java.time.LocalTime?) -> Unit) {
+private fun BedtimeDialog(current: LocalTime?, clock24: Boolean, onDismiss: () -> Unit, onSave: (LocalTime?) -> Unit) {
     val state = rememberTimePickerState(current?.hour ?: 23, current?.minute ?: 0, clock24)
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -364,7 +355,7 @@ private fun BedtimeDialog(current: java.time.LocalTime?, clock24: Boolean, onDis
         title = { Text("BEDTIME", style = Type.label, color = Palette.Muted) },
         text = { TimePicker(state) },
         confirmButton = {
-            TextButton(onClick = { onSave(java.time.LocalTime.of(state.hour, state.minute)) }) { Text("SAVE", style = Type.label, color = Palette.Accent) }
+            TextButton(onClick = { onSave(LocalTime.of(state.hour, state.minute)) }) { Text("SAVE", style = Type.label, color = Palette.Accent) }
         },
         dismissButton = {
             TextButton(onClick = { onSave(null) }) { Text("USE MY NIGHTS", style = Type.label, color = Palette.Muted) }
@@ -379,28 +370,22 @@ private fun NameDialog(current: String?, onDismiss: () -> Unit, onSave: (String?
         onDismissRequest = onDismiss,
         containerColor = LocalTheme.current.bgMid,
         title = { Text("NAME", style = Type.label, color = Palette.Muted) },
-        text = {
-            OutlinedTextField(
-                name,
-                { name = it.take(24) },
-                Modifier.fillMaxWidth(),
-                textStyle = Type.body,
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Palette.Text,
-                    unfocusedTextColor = Palette.Text,
-                    focusedBorderColor = Palette.Accent,
-                    unfocusedBorderColor = Palette.Divider,
-                    cursorColor = Palette.Accent,
-                ),
-            )
-        },
+        text = { NameField(name, { name = it }, Modifier.fillMaxWidth()) },
         confirmButton = {
             TextButton(onClick = { onSave(name.trim().ifEmpty { null }) }) { Text("SAVE", style = Type.label, color = Palette.Accent) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", style = Type.label, color = Palette.Muted) } },
     )
 }
+
+@Composable
+internal fun fieldColours() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = Palette.Text,
+    unfocusedTextColor = Palette.Text,
+    focusedBorderColor = Palette.Accent,
+    unfocusedBorderColor = Palette.Divider,
+    cursorColor = Palette.Accent,
+)
 
 @Composable
 internal fun NumberField(value: String, unit: String, modifier: Modifier, digits: Int = 3, onChange: (String) -> Unit) {
@@ -412,13 +397,21 @@ internal fun NumberField(value: String, unit: String, modifier: Modifier, digits
         textStyle = Type.body,
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = Palette.Text,
-            unfocusedTextColor = Palette.Text,
-            focusedBorderColor = Palette.Accent,
-            unfocusedBorderColor = Palette.Divider,
-            cursorColor = Palette.Accent,
-        ),
+        colors = fieldColours(),
+    )
+}
+
+@Composable
+internal fun NameField(value: String, onChange: (String) -> Unit, modifier: Modifier, onDone: (() -> Unit)? = null) {
+    OutlinedTextField(
+        value,
+        { onChange(it.take(24)) },
+        modifier,
+        textStyle = Type.body,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = if (onDone != null) KeyboardActions(onDone = { onDone() }) else KeyboardActions.Default,
+        colors = fieldColours(),
     )
 }
 

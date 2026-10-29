@@ -27,12 +27,10 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.TintScope
-import app.fitdash.ui.theme.tintColor
 
 @Composable
 fun HeroCard(onClick: (() -> Unit)?, description: String, modifier: Modifier = Modifier, tint: Tint? = null, content: @Composable BoxScope.() -> Unit) {
     val t = LocalTheme.current
-    val fill = tintColor(tint)
     Box(
         modifier
             .padding(horizontal = Space.l)
@@ -41,10 +39,10 @@ fun HeroCard(onClick: (() -> Unit)?, description: String, modifier: Modifier = M
             .tappable(onClick, description)
             .shadow(14.dp, CardShape, ambientColor = t.orb3.copy(alpha = 0.33f), spotColor = t.orb3.copy(alpha = 0.33f))
             .clip(CardShape)
-            .background(if (fill != null) SolidColor(fill) else Brush.linearGradient(listOf(t.orb2, t.orb3)))
+            .background(if (tint != null) SolidColor(t.tints[tint.ordinal]) else Brush.linearGradient(listOf(t.orb2, t.orb3)))
             .padding(horizontal = Space.l, vertical = Space.m),
     ) {
-        if (fill != null) TintScope(tint) { content() }
+        if (tint != null) TintScope(tint) { content() }
         else CompositionLocalProvider(
             LocalContentColor provides Color.White,
             LocalTheme provides t.copy(text = Color.White, muted = Color.White.copy(alpha = 0.85f), faint = Color.White.copy(alpha = 0.7f)),

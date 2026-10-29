@@ -27,7 +27,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import app.fitdash.metrics.ReadinessResult
 import app.fitdash.metrics.TodayData
 import app.fitdash.ui.components.ListRow
@@ -43,8 +42,6 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.ThemedBackground
 import app.fitdash.ui.theme.Type
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.ZoneId
 import kotlin.coroutines.cancellation.CancellationException
@@ -68,13 +65,9 @@ fun ShareRender(data: TodayData, onDone: () -> Unit) {
             withFrameNanos { }
             withFrameNanos { }
             val bitmap = layer.toImageBitmap().asAndroidBitmap()
-            val file = withContext(Dispatchers.IO) {
-                clearShareCache(context)
-                File(context.cacheDir, "share").apply { mkdirs() }.resolve("fitdash-${data.date}.png").also { f ->
-                    f.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
-                }
+            val uri = shareFile(context, "fitdash-${data.date}.png") { f ->
+                f.outputStream().use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
             }
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.share", file)
             val send = Intent(Intent.ACTION_SEND)
                 .setType("image/png")
                 .putExtra(Intent.EXTRA_STREAM, uri)

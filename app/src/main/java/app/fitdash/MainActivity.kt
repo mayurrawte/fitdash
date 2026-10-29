@@ -99,12 +99,13 @@ class MainActivity : ComponentActivity() {
             val store = SettingsStore.get(this@MainActivity)
             val settings by store.flow.collectAsStateWithLifecycle()
             val dark = resolveDark(settings.theme, isSystemInDarkTheme())
+            val animationsOff = remember { android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
             LaunchedEffect(dark) {
                 val bars = if (dark) SystemBarStyle.dark(TRANSPARENT) else SystemBarStyle.light(TRANSPARENT, TRANSPARENT)
                 (this@MainActivity as ComponentActivity).enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
             }
             FitdashTheme(dark) {
-                CompositionLocalProvider(LocalPrefs provides settings, LocalReduceMotion provides (settings.reduceMotion || android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f)) { App(store, openPage) }
+                CompositionLocalProvider(LocalPrefs provides settings, LocalReduceMotion provides (settings.reduceMotion || animationsOff)) { App(store, openPage) }
             }
         }
     }
@@ -144,65 +145,65 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
     Box(Modifier.fillMaxSize()) {
         if (!settings.nameAsked) {
             NameScreen { name -> store.update { it.copy(name = name, nameAsked = true) } }
-            return@Box
-        }
-        when (val s = state) {
-            TodayUiState.Loading -> LoadingScreen(firstRun = true, progressFlow = vm.progress)
-            is TodayUiState.NeedsHealthConnect -> MessageScreen(
-                title = if (s.update) "Update Health Connect" else "Install Health Connect",
-                body = "fitdash reads your watch, ring or phone data through Health Connect.",
-                action = if (s.update) "Update" else "Install",
-                onAction = {
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(HEALTH_CONNECT_STORE)).setPackage("com.android.vending"))
-                },
-            )
-            TodayUiState.NeedsPermission -> MessageScreen(
-                title = "Welcome to fitdash",
-                body = "Allow access in Health Connect. Nothing leaves your phone.",
-                action = "Grant access",
-                onAction = { askPermissions.launch(vm.permissions) },
-            )
-            TodayUiState.NoData -> NoDataScreen(
-                installed = SYNC_APPS.filter { context.packageManager.getLaunchIntentForPackage(it) != null }.map { it to sourceAppName(it) },
-                onOpen = { pkg -> context.packageManager.getLaunchIntentForPackage(pkg)?.let { context.startActivity(it) } },
-                onStore = { pkg -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")).setPackage("com.android.vending")) },
-                onCheck = vm::load,
-            )
-            TodayUiState.Failed -> MessageScreen(
-                title = "Couldn't read Health Connect",
-                body = "Something went wrong reading your data.",
-                action = "Retry",
-                onAction = vm::load,
-            )
-            is TodayUiState.Ready -> PagerScreen(
-                s, store,
-                progress = vm.progress,
-                rawSnapshot = vm.rawSnapshot,
-                onRefresh = { vm.load() },
-                onSelectDate = vm::select,
-                onAddWater = vm::addWater,
-                onUndoWater = vm::undoWater,
-                onAddNutrient = vm::addNutrient,
-                onRemoveNutrient = vm::removeNutrient,
-                onSetHeight = vm::setHeight,
-                onAskHistory = { askPermissions.launch(vm.permissions) },
-                onAskBackground = { askPermissions.launch(setOf(BACKGROUND_PERMISSION)) },
-                openPage = page,
-                onPageOpened = { openPage.value = null },
-                onSync = { pkg ->
-                    // Open the wearable's app so it pushes to Health Connect; we read again when the user comes back.
-                    val intent = context.packageManager.getLaunchIntentForPackage(pkg)
-                    if (intent != null) {
-                        vm.syncRequested()
-                        context.startActivity(intent)
-                    } else {
-                        context.startActivity(HealthConnectClient.getHealthConnectManageDataIntent(context).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    }
-                },
-            )
-        }
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 90.dp)) {
-            Snackbar(it, containerColor = LocalTheme.current.bgMid, contentColor = Palette.Text)
+        } else {
+            when (val s = state) {
+                TodayUiState.Loading -> LoadingScreen(firstRun = true, progressFlow = vm.progress)
+                is TodayUiState.NeedsHealthConnect -> MessageScreen(
+                    title = if (s.update) "Update Health Connect" else "Install Health Connect",
+                    body = "fitdash reads your watch, ring or phone data through Health Connect.",
+                    action = if (s.update) "Update" else "Install",
+                    onAction = {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(HEALTH_CONNECT_STORE)).setPackage("com.android.vending"))
+                    },
+                )
+                TodayUiState.NeedsPermission -> MessageScreen(
+                    title = "Welcome to fitdash",
+                    body = "Allow access in Health Connect. Nothing leaves your phone.",
+                    action = "Grant access",
+                    onAction = { askPermissions.launch(vm.permissions) },
+                )
+                TodayUiState.NoData -> NoDataScreen(
+                    installed = SYNC_APPS.filter { context.packageManager.getLaunchIntentForPackage(it) != null }.map { it to sourceAppName(it) },
+                    onOpen = { pkg -> context.packageManager.getLaunchIntentForPackage(pkg)?.let { context.startActivity(it) } },
+                    onStore = { pkg -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")).setPackage("com.android.vending")) },
+                    onCheck = vm::load,
+                )
+                TodayUiState.Failed -> MessageScreen(
+                    title = "Couldn't read Health Connect",
+                    body = "Something went wrong reading your data.",
+                    action = "Retry",
+                    onAction = vm::load,
+                )
+                is TodayUiState.Ready -> PagerScreen(
+                    s, store,
+                    progress = vm.progress,
+                    rawSnapshot = vm.rawSnapshot,
+                    onRefresh = { vm.load() },
+                    onSelectDate = vm::select,
+                    onAddWater = vm::addWater,
+                    onUndoWater = vm::undoWater,
+                    onAddNutrient = vm::addNutrient,
+                    onRemoveNutrient = vm::removeNutrient,
+                    onSetHeight = vm::setHeight,
+                    onAskHistory = { askPermissions.launch(vm.permissions) },
+                    onAskBackground = { askPermissions.launch(setOf(BACKGROUND_PERMISSION)) },
+                    openPage = page,
+                    onPageOpened = { openPage.value = null },
+                    onSync = { pkg ->
+                        // Open the wearable's app so it pushes to Health Connect; we read again when the user comes back.
+                        val intent = context.packageManager.getLaunchIntentForPackage(pkg)
+                        if (intent != null) {
+                            vm.syncRequested()
+                            context.startActivity(intent)
+                        } else {
+                            context.startActivity(HealthConnectClient.getHealthConnectManageDataIntent(context).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        }
+                    },
+                )
+            }
+            SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 90.dp)) {
+                Snackbar(it, containerColor = LocalTheme.current.bgMid, contentColor = Palette.Text)
+            }
         }
     }
 }

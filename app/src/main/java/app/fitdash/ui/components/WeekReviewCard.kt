@@ -18,12 +18,12 @@ import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.WeekReview
 import app.fitdash.metrics.WeekRow
 import app.fitdash.ui.formatDuration
+import app.fitdash.ui.formatSigned
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 import java.time.Duration
-import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -47,9 +47,9 @@ private fun change(r: WeekRow): String? {
     val last = r.lastWeek ?: return null
     val d = r.thisWeek - last
     return when (r.kind) {
-        MetricKind.RECOVERY -> d.roundToInt().takeIf { it != 0 }?.let { "${if (it > 0) "+" else "−"}${abs(it)}" }
-        MetricKind.SLEEP_HOURS -> (d * 60).roundToInt().takeIf { it != 0 }?.let { "${if (it > 0) "+" else "−"}${abs(it)}m" }
-        else -> if (last <= 0) null else (d / last * 100).roundToInt().takeIf { it != 0 }?.let { "${if (it > 0) "+" else "−"}${abs(it)}%" }
+        MetricKind.RECOVERY -> d.roundToInt().takeIf { it != 0 }?.let(::formatSigned)
+        MetricKind.SLEEP_HOURS -> (d * 60).roundToInt().takeIf { it != 0 }?.let { "${formatSigned(it)}m" }
+        else -> if (last <= 0) null else (d / last * 100).roundToInt().takeIf { it != 0 }?.let { "${formatSigned(it)}%" }
     }
 }
 
@@ -57,12 +57,16 @@ private fun change(r: WeekRow): String? {
 @Composable
 fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier, regularity: Int? = null, regularityLast: Int? = null, onDismiss: (() -> Unit)? = null) {
     SectionCard("LAST 7 DAYS", modifier, trailing = "vs week before") {
-        if (review.headline != null || onDismiss != null) Row(Modifier.fillMaxWidth().padding(bottom = Space.s), verticalAlignment = Alignment.Top) {
-            Text(review.headline.orEmpty(), Modifier.weight(1f), style = Type.body, color = Palette.Text)
-            if (onDismiss != null) Text(
-                "×", Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).clickable(role = Role.Button, onClick = onDismiss).semantics { contentDescription = "Dismiss weekly review" }.wrapContentSize(Alignment.Center),
-                style = Type.body, color = Palette.Muted,
-            )
+        if (onDismiss != null) {
+            Row(Modifier.fillMaxWidth().padding(bottom = Space.s), verticalAlignment = Alignment.Top) {
+                Text(review.headline.orEmpty(), Modifier.weight(1f), style = Type.body, color = Palette.Text)
+                Text(
+                    "×", Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).clickable(role = Role.Button, onClick = onDismiss).semantics { contentDescription = "Dismiss weekly review" }.wrapContentSize(Alignment.Center),
+                    style = Type.body, color = Palette.Muted,
+                )
+            }
+        } else if (review.headline != null) {
+            Text(review.headline, Modifier.fillMaxWidth().padding(bottom = Space.s), style = Type.body, color = Palette.Text)
         }
         review.rows.forEach { r ->
             Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -82,7 +86,7 @@ fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier, regularity
                 val d = regularityLast?.let { regularity - it }?.takeIf { it != 0 }
                 if (d != null) {
                     DeltaArrow(d > 0, Modifier.padding(start = Space.s, end = 4.dp))
-                    Text("${if (d > 0) "+" else "−"}${abs(d)}", style = Type.secondary, color = Palette.Muted)
+                    Text(formatSigned(d), style = Type.secondary, color = Palette.Muted)
                 }
             }
         }

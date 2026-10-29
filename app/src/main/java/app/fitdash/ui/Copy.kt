@@ -261,18 +261,23 @@ fun initial(name: String): String {
 
 fun streakLine(days: Int): String? = if (days >= 3) "$days days in a row" else null
 
-val CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
-val CLOCK_12 = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
+private val CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
+private val CLOCK_12 = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
 
 fun formatTime12(t: Instant, zone: ZoneId): String = CLOCK_12.format(t.atZone(zone))
 
 fun bedtimeLine(debtHours: Double, target: LocalTime?, clock24: Boolean): String? {
     if (target == null) return null
-    val time = (if (clock24) CLOCK else CLOCK_12).format(target)
+    val time = formatTime(target, clock24)
     return if (debtLevel(debtHours) != Status.GOOD) "Aim for bed by $time tonight" else "Bedtime target $time"
 }
 
-fun formatTime(t: Instant, zone: ZoneId, clock24: Boolean): String = if (clock24) CLOCK.format(t.atZone(zone)) else CLOCK_12.format(t.atZone(zone))
+fun formatTime(t: Instant, zone: ZoneId, clock24: Boolean): String = formatTime(t.atZone(zone).toLocalTime(), clock24)
+
+fun formatTime(t: LocalTime, clock24: Boolean): String = (if (clock24) CLOCK else CLOCK_12).format(t)
+
+// A whole number with its sign, using a true minus.
+fun formatSigned(n: Int): String = "${if (n < 0) "−" else "+"}${abs(n)}"
 
 // The user's settings, for composables that format times, units or decide what to show.
 val LocalPrefs = androidx.compose.runtime.staticCompositionLocalOf { app.fitdash.settings.Settings() }

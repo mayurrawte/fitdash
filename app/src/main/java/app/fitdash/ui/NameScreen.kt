@@ -6,12 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,10 +18,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.fitdash.ui.components.Orb
+import app.fitdash.ui.pages.NameField
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Type
 
@@ -40,22 +36,7 @@ fun NameScreen(onDone: (String?) -> Unit) {
     ) {
         Orb(null, intro = true) {}
         Text("What should we call you?", style = Type.title, color = Palette.Text, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 32.dp))
-        OutlinedTextField(
-            name,
-            { name = it.take(24) },
-            Modifier.fillMaxWidth().padding(top = 24.dp),
-            textStyle = Type.body,
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { if (trimmed.isNotEmpty()) onDone(trimmed) }),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Palette.Text,
-                unfocusedTextColor = Palette.Text,
-                focusedBorderColor = Palette.Accent,
-                unfocusedBorderColor = Palette.Divider,
-                cursorColor = Palette.Accent,
-            ),
-        )
+        NameField(name, { name = it }, Modifier.fillMaxWidth().padding(top = 24.dp)) { if (trimmed.isNotEmpty()) onDone(trimmed) }
         Button(
             onClick = { onDone(trimmed) },
             enabled = trimmed.isNotEmpty(),

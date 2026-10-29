@@ -42,6 +42,7 @@ import app.fitdash.ui.dayLetter
 import app.fitdash.ui.daysOfData
 import app.fitdash.ui.formatBmi
 import app.fitdash.ui.formatNumber
+import app.fitdash.ui.formatSigned
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.metricName
 import app.fitdash.ui.theme.Palette
@@ -52,7 +53,6 @@ import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.theme.Type
 import app.fitdash.ui.theme.bmiColour
 import java.time.ZoneId
-import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -89,7 +89,7 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
                 }
                 data.tagEffects.forEachIndexed { i, e ->
                     val parts = listOf(e.hrvMs to "HRV %s ms", e.restingHrBpm to "resting HR %s bpm", e.sleepScore to "sleep score %s", e.deepShare?.times(100) to "deep %s%%")
-                        .mapNotNull { (v, text) -> v?.roundToInt()?.let { text.format("${if (it < 0) "−" else "+"}${abs(it)}") } }
+                        .mapNotNull { (v, text) -> v?.roundToInt()?.let { text.format(formatSigned(it)) } }
                     ListRow(NavIcons.trends, e.tag.label, (listOf("${e.days} days") + parts).joinToString(" · "), divider = i > 0)
                 }
             }

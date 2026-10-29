@@ -152,7 +152,3 @@ fun TintScope(tint: Tint?, content: @Composable () -> Unit) {
     val ink = t.tintInk[tint.ordinal]
     CompositionLocalProvider(LocalTheme provides t.copy(card = t.tints[tint.ordinal], muted = ink, faint = ink, hairline = t.text.copy(alpha = 0.12f)), content = content)
 }
-
-@Composable
-@ReadOnlyComposable
-fun tintColor(tint: Tint?): Color? = tint?.let { LocalTheme.current.tints[it.ordinal] }

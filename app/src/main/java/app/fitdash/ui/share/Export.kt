@@ -19,32 +19,30 @@ import java.time.ZoneId
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
-suspend fun exportDaily(context: Context, data: TodayData, journal: Map<LocalDate, DayJournal>): Uri {
+suspend fun shareFile(context: Context, name: String, write: (File) -> Unit): Uri {
     val file = withContext(Dispatchers.IO) {
         clearShareCache(context)
-        File(context.cacheDir, "share").apply { mkdirs() }.resolve("fitdash-daily-${data.date}.csv").also { it.writeText(dailyCsv(data, journal)) }
+        File(context.cacheDir, "share").apply { mkdirs() }.resolve(name).also(write)
     }
     return FileProvider.getUriForFile(context, "${context.packageName}.share", file)
 }
 
-suspend fun exportRaw(context: Context, snapshot: HealthSnapshot, journal: Map<LocalDate, DayJournal>, zone: ZoneId): Uri {
-    val file = withContext(Dispatchers.IO) {
-        clearShareCache(context)
-        File(context.cacheDir, "share").apply { mkdirs() }.resolve("fitdash-raw-${LocalDate.now(zone)}.zip").also { f ->
-            ZipOutputStream(f.outputStream()).use { zip ->
-                val files = mapOf(
-                    "heart_rate.csv" to heartRateCsv(snapshot, zone),
-                    "sleep_stages.csv" to sleepStagesCsv(snapshot, zone),
-                    "workouts.csv" to workoutsCsv(snapshot, zone),
-                    "journal.csv" to journalCsv(journal),
-                )
-                for ((name, text) in files) {
-                    zip.putNextEntry(ZipEntry(name))
-                    zip.write(text.toByteArray())
-                    zip.closeEntry()
-                }
+suspend fun exportDaily(context: Context, data: TodayData, journal: Map<LocalDate, DayJournal>): Uri =
+    shareFile(context, "fitdash-daily-${data.date}.csv") { it.writeText(dailyCsv(data, journal)) }
+
+suspend fun exportRaw(context: Context, snapshot: HealthSnapshot, journal: Map<LocalDate, DayJournal>, zone: ZoneId): Uri =
+    shareFile(context, "fitdash-raw-${LocalDate.now(zone)}.zip") { f ->
+        ZipOutputStream(f.outputStream()).use { zip ->
+            val files = mapOf(
+                "heart_rate.csv" to heartRateCsv(snapshot, zone),
+                "sleep_stages.csv" to sleepStagesCsv(snapshot, zone),
+                "workouts.csv" to workoutsCsv(snapshot, zone),
+                "journal.csv" to journalCsv(journal),
+            )
+            for ((name, text) in files) {
+                zip.putNextEntry(ZipEntry(name))
+                zip.write(text.toByteArray())
+                zip.closeEntry()
             }
         }
     }
-    return FileProvider.getUriForFile(context, "${context.packageName}.share", file)
-}
