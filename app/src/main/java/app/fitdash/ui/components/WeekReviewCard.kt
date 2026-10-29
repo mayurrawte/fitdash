@@ -4,6 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -58,7 +60,7 @@ fun WeekReviewCard(review: WeekReview, modifier: Modifier = Modifier, regularity
         if (review.headline != null || onDismiss != null) Row(Modifier.fillMaxWidth().padding(bottom = Space.s), verticalAlignment = Alignment.Top) {
             Text(review.headline.orEmpty(), Modifier.weight(1f), style = Type.body, color = Palette.Text)
             if (onDismiss != null) Text(
-                "×", Modifier.padding(start = Space.s).clickable(role = Role.Button, onClick = onDismiss).semantics { contentDescription = "Dismiss weekly review" },
+                "×", Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).clickable(role = Role.Button, onClick = onDismiss).semantics { contentDescription = "Dismiss weekly review" }.wrapContentSize(Alignment.Center),
                 style = Type.body, color = Palette.Muted,
             )
         }
