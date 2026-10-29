@@ -34,6 +34,12 @@ class JournalStore(private val file: File) {
         if (text.isNotBlank()) {
             val root = JSONObject(text)
             val days = mutableMapOf<LocalDate, DayJournal>()
+            val entries = { arr: JSONArray ->
+                (0 until arr.length()).map { i ->
+                    val e = arr.getJSONObject(i)
+                    Entry(Instant.parse(e.getString("at")), e.getDouble("amount"), e.optString("recordId").takeIf { it.isNotEmpty() })
+                }
+            }
             for (key in root.keys()) {
                 val day = root.getJSONObject(key)
                 val tags = day.optJSONArray("tags") ?: JSONArray()
@@ -41,14 +47,8 @@ class JournalStore(private val file: File) {
                 val caffeine = day.optJSONArray("caffeine") ?: JSONArray()
                 days[LocalDate.parse(key)] = DayJournal(
                     tags = (0 until tags.length()).mapNotNull { i -> runCatching { Tag.valueOf(tags.getString(i)) }.getOrNull() }.toSet(),
-                    protein = (0 until protein.length()).map { i ->
-                        val e = protein.getJSONObject(i)
-                        Entry(Instant.parse(e.getString("at")), e.getDouble("amount"), e.optString("recordId").takeIf { it.isNotEmpty() })
-                    },
-                    caffeine = (0 until caffeine.length()).map { i ->
-                        val e = caffeine.getJSONObject(i)
-                        Entry(Instant.parse(e.getString("at")), e.getDouble("amount"), e.optString("recordId").takeIf { it.isNotEmpty() })
-                    },
+                    protein = entries(protein),
+                    caffeine = entries(caffeine),
                 )
             }
             _flow.value = days
@@ -82,7 +82,9 @@ class JournalStore(private val file: File) {
                 JSONObject().put("tags", JSONArray(j.tags.map { it.name })).put("protein", entries(j.protein)).put("caffeine", entries(j.caffeine)),
             )
         }
-        file.writeText(root.toString())
+        val tmp = File.createTempFile("journal", ".tmp", file.parentFile)
+        tmp.writeText(root.toString())
+        tmp.renameTo(file)
         _flow.value = days
     }
 
