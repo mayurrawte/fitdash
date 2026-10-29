@@ -1,9 +1,14 @@
 package app.fitdash.settings
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.time.Instant
@@ -29,29 +34,38 @@ data class DayJournal(
     fun withEntries(kind: NutrientKind, list: List<Entry>) = if (kind == NutrientKind.PROTEIN) copy(protein = list) else copy(caffeine = list)
 }
 
-class JournalStore(private val file: File) {
+class JournalStore(
+    private val file: File,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1)),
+) {
     private val _flow = MutableStateFlow(emptyMap<LocalDate, DayJournal>())
     val flow: StateFlow<Map<LocalDate, DayJournal>> = _flow
 
     init {
-        val text = if (file.exists()) file.readText() else ""
-        if (text.isNotBlank()) {
-            val root = JSONObject(text)
-            val days = mutableMapOf<LocalDate, DayJournal>()
-            val entries = { arr: JSONArray ->
-                (0 until arr.length()).map { i ->
-                    val e = arr.getJSONObject(i)
-                    Entry(Instant.parse(e.getString("at")), e.getDouble("amount"), e.optString("recordId").takeIf { it.isNotEmpty() })
+        scope.launch {
+            val text = if (file.exists()) file.readText() else ""
+            if (text.isNotBlank()) {
+                try {
+                    val root = JSONObject(text)
+                    val days = mutableMapOf<LocalDate, DayJournal>()
+                    val entries = { arr: JSONArray ->
+                        (0 until arr.length()).map { i ->
+                            val e = arr.getJSONObject(i)
+                            Entry(Instant.parse(e.getString("at")), e.getDouble("amount"), e.optString("recordId").takeIf { it.isNotEmpty() })
+                        }
+                    }
+                    for (key in root.keys()) {
+                        val day = root.getJSONObject(key)
+                        val tags = day.optJSONArray("tags") ?: JSONArray()
+                        var j = DayJournal(tags = (0 until tags.length()).mapNotNull { i -> runCatching { Tag.valueOf(tags.getString(i)) }.getOrNull() }.toSet())
+                        for (kind in NutrientKind.entries) j = j.withEntries(kind, entries(day.optJSONArray(kind.name.lowercase()) ?: JSONArray()))
+                        days[LocalDate.parse(key)] = j
+                    }
+                    _flow.value = days
+                } catch (e: JSONException) {
+                    file.renameTo(File(file.parentFile, file.name + ".bad"))
                 }
             }
-            for (key in root.keys()) {
-                val day = root.getJSONObject(key)
-                val tags = day.optJSONArray("tags") ?: JSONArray()
-                var j = DayJournal(tags = (0 until tags.length()).mapNotNull { i -> runCatching { Tag.valueOf(tags.getString(i)) }.getOrNull() }.toSet())
-                for (kind in NutrientKind.entries) j = j.withEntries(kind, entries(day.optJSONArray(kind.name.lowercase()) ?: JSONArray()))
-                days[LocalDate.parse(key)] = j
-            }
-            _flow.value = days
         }
     }
 
@@ -68,22 +82,24 @@ class JournalStore(private val file: File) {
     }
 
     private fun update(date: LocalDate, change: (DayJournal) -> DayJournal) {
-        val day = change(_flow.value[date] ?: DayJournal())
-        val days = _flow.value.toMutableMap()
-        if (day.tags.isEmpty() && day.protein.isEmpty() && day.caffeine.isEmpty()) days.remove(date) else days[date] = day
-        val root = JSONObject()
-        for ((d, j) in days) {
-            val entries = { list: List<Entry> ->
-                JSONArray(list.map { JSONObject().put("at", it.at.toString()).put("amount", it.amount).put("recordId", it.recordId ?: "") })
+        scope.launch {
+            val day = change(_flow.value[date] ?: DayJournal())
+            val days = _flow.value.toMutableMap()
+            if (day.tags.isEmpty() && day.protein.isEmpty() && day.caffeine.isEmpty()) days.remove(date) else days[date] = day
+            _flow.value = days
+            val root = JSONObject()
+            for ((d, j) in days) {
+                val entries = { list: List<Entry> ->
+                    JSONArray(list.map { JSONObject().put("at", it.at.toString()).put("amount", it.amount).put("recordId", it.recordId ?: "") })
+                }
+                val json = JSONObject().put("tags", JSONArray(j.tags.map { it.name }))
+                for (kind in NutrientKind.entries) json.put(kind.name.lowercase(), entries(j.entries(kind)))
+                root.put(d.toString(), json)
             }
-            val json = JSONObject().put("tags", JSONArray(j.tags.map { it.name }))
-            for (kind in NutrientKind.entries) json.put(kind.name.lowercase(), entries(j.entries(kind)))
-            root.put(d.toString(), json)
+            val tmp = File.createTempFile("journal", ".tmp", file.parentFile)
+            tmp.writeText(root.toString())
+            tmp.renameTo(file)
         }
-        val tmp = File.createTempFile("journal", ".tmp", file.parentFile)
-        tmp.writeText(root.toString())
-        tmp.renameTo(file)
-        _flow.value = days
     }
 
     companion object {

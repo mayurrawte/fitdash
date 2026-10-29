@@ -16,6 +16,7 @@ import app.fitdash.settings.Settings
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -396,7 +397,7 @@ class TodayViewModelTest {
 
     @Test fun `adding protein journals the entry with its record id, removing deletes both`() {
         val source = FakeSource()
-        val journal = JournalStore(tmp.newFile())
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
         val vm = TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal).also { it.load() }
         vm.addNutrient(NutrientKind.PROTEIN, 25.0)
         assertEquals(listOf(NutrientKind.PROTEIN to 25.0), source.nutrientsAdded)
@@ -407,7 +408,7 @@ class TodayViewModelTest {
     }
 
     @Test fun `a failed nutrient write keeps the entry without an id and shows a message`() = runBlocking {
-        val journal = JournalStore(tmp.newFile())
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
         val vm = TodayViewModel(FakeSource(canWrite = false), { now }, work = Dispatchers.Main, journal = journal).also { it.load() }
         vm.addNutrient(NutrientKind.CAFFEINE, 95.0)
         assertEquals("Couldn't save to Health Connect", vm.messages.first())
