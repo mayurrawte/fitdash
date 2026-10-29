@@ -87,7 +87,7 @@ Uncertainty to check: Google defines "collect" as data transmitted off the devic
 
 ### 0.9.0 notes
 
-The Play build reads Health Connect data and writes only water and height. Journal tags, your name and nutrition entries stay on the phone. CSV export leaves the phone only when the user shares the file. The answers in the table above do not change.
+The Play build reads Health Connect data and writes only water and height. Journal tags and your name stay on the phone. CSV export leaves the phone only when the user shares the file. The answers in the table above do not change.
 
 The Health Connect read and write permissions still need their own declaration, below.
 

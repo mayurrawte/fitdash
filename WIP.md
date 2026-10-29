@@ -1,6 +1,6 @@
 # WIP — handoff
 
-Last updated: 2026-10-27. Everything below is committed on `main`. Released: **v0.8.0** (tag `v0.8.0`, code 9, on GitHub; live on the Play internal track, sent for review on the closed Alpha track 26 Oct). Site: https://mayurrawte.is-a.dev/fitdash/
+Last updated: 2026-10-29. Everything below is committed on `main`, except the 0.9.0 section, which is on branch `polish-0.9` until it merges. Released: **v0.8.0** (tag `v0.8.0`, code 9, on GitHub; live on the Play internal track, sent for review on the closed Alpha track 26 Oct). Site: https://mayurrawte.is-a.dev/fitdash/
 
 ## 29 Oct: v0.9.0 (code 10) ready
 
