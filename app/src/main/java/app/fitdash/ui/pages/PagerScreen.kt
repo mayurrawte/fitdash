@@ -238,15 +238,19 @@ private fun LogWater() = PagePreview(3)
 @Composable
 private fun LogWaterLargeText() = PagePreview(3)
 
+@Preview(heightDp = 900)
 @Composable
-private fun PagePreview(page: Int, data: TodayData = PreviewData.today(21, 30)) {
+private fun LogTags() = PagePreview(3, initialSegment = 3)
+
+@Composable
+private fun PagePreview(page: Int, data: TodayData = PreviewData.today(21, 30), initialSegment: Int = 0) {
     val chrome = PageChrome(data.date, data.date, false, 29, {}, {}, {}, {}, {}, {})
     FitdashTheme {
         Box(Modifier.fillMaxSize()) {
             ThemedBackground()
             when (page) {
                 0 -> TodayPage(data, chrome, {}, {}, {}, {})
-                3 -> LogPage(data, chrome, JournalStore(File("journal-preview.json")), {}, {}, { _, _ -> }, { _, _ -> }, false)
+                3 -> LogPage(data, chrome, JournalStore(File("journal-preview.json")), {}, {}, { _, _ -> }, { _, _ -> }, false, initialSegment)
                 else -> SleepPage(data, chrome)
             }
         }

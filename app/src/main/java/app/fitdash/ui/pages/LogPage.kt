@@ -9,13 +9,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +45,7 @@ import app.fitdash.metrics.wakingWindow
 import app.fitdash.metrics.waterDue
 import app.fitdash.settings.JournalStore
 import app.fitdash.settings.NutrientKind
+import app.fitdash.settings.Tag
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.clock
 import app.fitdash.ui.components.Bottle
@@ -53,6 +59,7 @@ import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.StripCard
 import app.fitdash.ui.components.tappable
+import app.fitdash.ui.formatDate
 import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatTime
 import app.fitdash.ui.theme.LocalTheme
@@ -68,6 +75,14 @@ import java.time.ZonedDateTime
 
 private const val UNDO_MILLIS = 3000L
 
+private val tagIcon = mapOf(
+    Tag.LATE_CAFFEINE to NavIcons.cup, Tag.ALCOHOL to NavIcons.wine, Tag.LATE_MEAL to NavIcons.meal,
+    Tag.ILLNESS to NavIcons.thermometer, Tag.TRAVEL to NavIcons.plane, Tag.SCREEN_IN_BED to NavIcons.phone,
+    Tag.STRESS to NavIcons.stress, Tag.LATE_WORKOUT to NavIcons.walk, Tag.NAP to NavIcons.moonSmall,
+    Tag.EARLY_BED to NavIcons.moonSmall,
+)
+
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun LogPage(
     data: TodayData,
@@ -78,11 +93,12 @@ fun LogPage(
     onAddNutrient: (NutrientKind, Double) -> Unit,
     onRemoveNutrient: (NutrientKind, Instant) -> Unit,
     playBuild: Boolean,
+    initialSegment: Int = 0,
 ) {
     val prefs = LocalPrefs.current
     val haptic = LocalHapticFeedback.current
     val segments = if (playBuild) listOf("Water", "Tags") else listOf("Water", "Protein", "Caffeine", "Tags")
-    var segment by rememberSaveable { mutableIntStateOf(0) }
+    var segment by rememberSaveable { mutableIntStateOf(initialSegment) }
     // This session's adds only: Health Connect does not hand back which water records are ours.
     var entries by rememberSaveable { mutableStateOf(listOf<String>()) }
     var lastMl by remember { mutableIntStateOf(0) }
@@ -199,7 +215,26 @@ fun LogPage(
                     }
                 }
             } else {
-                item(key = "soon") { Text("Coming in the next step", Modifier.padding(horizontal = Space.xl), style = Type.body, color = Palette.Muted) }
+                item(key = "tags") {
+                    Column(Modifier.padding(horizontal = Space.l), verticalArrangement = Arrangement.spacedBy(Space.m)) {
+                        Text(if (data.isToday) "Tags for today" else "Tags for ${formatDate(data.date)}", style = Type.body, color = Palette.Text)
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Tag.entries.forEach { tag ->
+                                val on = day != null && tag in day.tags
+                                Row(
+                                    Modifier.clip(RoundedCornerShape(14.dp)).background(if (on) Palette.Accent else Palette.Chip)
+                                        .tappable({ journal.toggle(data.date, tag) }, tag.label)
+                                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Icon(tagIcon.getValue(tag), null, Modifier.size(16.dp), tint = if (on) Color.White else Palette.Text)
+                                    Text(tag.label, Modifier.padding(start = 6.dp), style = Type.label, color = if (on) Color.White else Palette.Text)
+                                }
+                            }
+                        }
+                        Text("Tag a day to find patterns on Trends after 10 days", style = Type.small, color = Palette.Muted)
+                    }
+                }
             }
         }
         AnimatedVisibility(

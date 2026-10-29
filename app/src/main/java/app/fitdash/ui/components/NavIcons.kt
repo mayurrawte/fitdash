@@ -60,6 +60,12 @@ object NavIcons {
     val swim = lineIcon("swim", "M3 17c2 0 2 1.5 4.5 1.5S10 17 12 17s2 1.5 4.5 1.5S19 17 21 17", "M3 12.5c2 0 2 1.5 4.5 1.5S10 12.5 12 12.5", "M16 7.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0 -3z", "M6 12 10 6l5 3")
     val strength = lineIcon("strength", "M4 10v4M20 10v4M6.5 8v8M17.5 8v8M9 12h6M6.5 12h-2.5M17.5 12h2.5")
     val yoga = lineIcon("yoga", "M12 3.5a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0 -3z", "M12 8v6M5 20c3-1 5-2 7-5 2 3 4 4 7 5M4 12l8 2 8-2")
+    val wine = lineIcon("wine", "M7 3h10l-1 7a4 4 0 0 1-8 0zM12 14v7M8.5 21h7")
+    val meal = lineIcon("meal", "M7 3v7a2 2 0 0 0 2 2v9M11 3v7a2 2 0 0 1-2 2M17 21V3c-2 1.5-3 4-3 7h3")
+    val thermometer = lineIcon("thermometer", "M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0zM12 9v8")
+    val plane = lineIcon("plane", "M21 15.5 13 11V5a1 1 0 0 0-2 0v6l-8 4.5v1.5l8-2v4l-2 1.5V22l3-1 3 1v-1.5L13 19v-4l8 2z")
+    val phone = lineIcon("phone", "M8 3h8a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM11 18h2")
+    val stress = lineIcon("stress", "M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0 -16z", "M8.5 15.5c1-1.2 2.2-1.8 3.5-1.8s2.5.6 3.5 1.8M9 9.5v.01M15 9.5v.01")
     val flame = lineIcon("flame", "M12 3c1 3 4 5 4 9.5a4 4 0 0 1-8 0c0-1.5.5-2.5 1.2-3.5.3 1 .8 1.8 1.8 2.2C11 8 10.5 5.5 12 3z")
 }
 
