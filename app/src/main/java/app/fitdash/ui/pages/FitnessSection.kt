@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.fitdash.metrics.FitnessCard
+import app.fitdash.metrics.debtLevel
 import app.fitdash.metrics.LoadBand
 import app.fitdash.metrics.MissingInput
 import app.fitdash.metrics.TodayData
@@ -66,12 +67,6 @@ private fun ageLevel(delta: Int) = when {
     delta < -1 -> 0
     delta <= 1 -> 1
     delta < 10 -> 2
-    else -> 3
-}
-
-private fun debtLevel(hours: Double) = when {
-    hours < 2 -> 0
-    hours <= 5 -> 2
     else -> 3
 }
 

@@ -13,6 +13,7 @@ import app.fitdash.metrics.RegularityBand
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.HeartSummary
 import app.fitdash.metrics.MetricKind
+import app.fitdash.metrics.debtLevel
 import app.fitdash.metrics.RangeStatus
 import app.fitdash.metrics.ReadinessResult
 import app.fitdash.metrics.Regularity
@@ -272,7 +273,7 @@ fun formatTime12(t: Instant, zone: ZoneId): String = CLOCK_12.format(t.atZone(zo
 fun bedtimeLine(debtHours: Double, target: LocalTime?, clock24: Boolean): String? {
     if (target == null) return null
     val time = (if (clock24) CLOCK else CLOCK_12).format(target)
-    return if (debtHours > 2) "Aim for bed by $time tonight" else "Bedtime target $time"
+    return if (debtLevel(debtHours) > 0) "Aim for bed by $time tonight" else "Bedtime target $time"
 }
 
 fun formatTime(t: Instant, zone: ZoneId, clock24: Boolean): String = if (clock24) CLOCK.format(t.atZone(zone)) else CLOCK_12.format(t.atZone(zone))

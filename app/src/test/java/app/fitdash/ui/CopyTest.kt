@@ -279,6 +279,8 @@ class IssueUrlTest {
         assertEquals("Aim for bed by 11:15 PM tonight", bedtimeLine(2.4, target, false))
         assertEquals("Bedtime target 11:15 PM", bedtimeLine(0.5, target, false))
         assertEquals("Bedtime target 23:15", bedtimeLine(0.5, target, true))
+        assertEquals("Aim for bed by 11:15 PM tonight", bedtimeLine(2.0, target, false))
+        assertEquals("Bedtime target 11:15 PM", bedtimeLine(1.9, target, false))
         assertNull(bedtimeLine(2.4, null, false))
     }
 }
