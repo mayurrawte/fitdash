@@ -65,6 +65,7 @@ import app.fitdash.ui.formatKm
 import app.fitdash.ui.formatNumber
 import app.fitdash.ui.metricName
 import app.fitdash.ui.formatSteps
+import app.fitdash.ui.formatTempDelta
 import app.fitdash.ui.greeting
 import app.fitdash.ui.initial
 import app.fitdash.ui.missingRecoveryLine
@@ -191,8 +192,10 @@ fun TodayPage(
             revealItem("alert-${r.label}", 0) {
                 val range = r.range!!
                 val side = if (r.value > range.endInclusive) "above" else "below"
+                val f = prefs.fahrenheit && r.kind == MetricKind.SKIN_TEMP
+                val show = { x: Double -> if (f) formatTempDelta(x, true) else formatNumber(x) }
                 StripCard(metricOpener(MetricRef.Kind(r.kind)), "${metricName(r.kind)} details", tint = Tint.ROSE) {
-                    Text("${r.label} ${formatNumber(r.value)} ${r.unit}, $side your usual ${formatNumber(range.start)} to ${formatNumber(range.endInclusive)}", style = Type.body, color = Palette.Text)
+                    Text("${r.label} ${show(r.value)} ${if (f) "°F" else r.unit}, $side your usual ${show(range.start)} to ${show(range.endInclusive)}", style = Type.body, color = Palette.Text)
                 }
             }
         }

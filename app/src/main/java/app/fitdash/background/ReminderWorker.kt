@@ -19,6 +19,7 @@ import app.fitdash.R
 import app.fitdash.health.Availability
 import app.fitdash.health.HealthReader
 import app.fitdash.health.SnapshotCache
+import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.buildToday
 import app.fitdash.metrics.morningAlert
 import app.fitdash.metrics.morningAlertDue
@@ -27,6 +28,7 @@ import app.fitdash.metrics.waterDue
 import app.fitdash.metrics.wakingWindow
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.formatNumber
+import app.fitdash.ui.formatTempDelta
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -73,7 +75,10 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
                     val data = buildToday(fresh, now)
                     val readings = morningAlert(data.vitals, data.heart, data.series, data.date)
                     if (readings.isNotEmpty()) {
-                        Reminders.notify(applicationContext, MORNING_ID, "Overnight vitals outside your range", readings.joinToString(" · ") { "${it.label} ${formatNumber(it.value)} ${it.unit}" })
+                        Reminders.notify(applicationContext, MORNING_ID, "Overnight vitals outside your range", readings.joinToString(" · ") {
+                            val f = settings.fahrenheit && it.kind == MetricKind.SKIN_TEMP
+                            "${it.label} ${if (f) formatTempDelta(it.value, true) else formatNumber(it.value)} ${if (f) "°F" else it.unit}"
+                        })
                     }
                     sent.edit().putLong("morning", now.toInstant().toEpochMilli()).apply()
                 }

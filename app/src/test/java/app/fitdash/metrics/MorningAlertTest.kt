@@ -15,12 +15,14 @@ class MorningAlertTest {
     // 20 days before `day` holding 50 to 69: the IQR is 54.75 to 64.25, the 10th to 90th band 51.9 to 67.1.
     private fun spread(kind: MetricKind) = mapOf(kind to (1..20).map { DayValue(day.minusDays(it.toLong()), 70.0 - it) })
 
-    @Test fun `resting heart rate above the wide band is returned with that band`() {
+    @Test fun `alert quotes the interquartile range`() {
         val alerts = morningAlert(emptyList(), heart(68.0, 48.0), spread(MetricKind.RESTING_HR), day)
         assertEquals(listOf("Resting HR"), alerts.map { it.label })
         assertEquals(68.0, alerts[0].value, 0.0)
-        assertEquals(51.9, alerts[0].range!!.start, 1e-9)
-        assertEquals(67.1, alerts[0].range!!.endInclusive, 1e-9)
+        val usual = normalRange(spread(MetricKind.RESTING_HR)[MetricKind.RESTING_HR]!!.associate { it.date to it.value!! }, day)
+        assertEquals(usual, alerts[0].range)
+        assertEquals(54.75, alerts[0].range!!.start, 1e-9)
+        assertTrue(68.0 > alerts[0].range!!.endInclusive)
     }
 
     @Test fun `just outside the interquartile range but inside the wide band is not returned`() {

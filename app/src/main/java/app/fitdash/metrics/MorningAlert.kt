@@ -9,8 +9,10 @@ fun morningAlert(vitals: List<VitalReading>, heart: HeartSummary?, series: Map<M
     val readings = listOfNotNull(heart?.restingHr?.let { VitalReading("Resting HR", "bpm", it, heart.restingHrBaseline, null, Good.LOWER, MetricKind.RESTING_HR) }) +
         vitals.filter { it.kind == MetricKind.RESPIRATORY || it.kind == MetricKind.SKIN_TEMP }
     return readings.mapNotNull { r ->
-        val band = normalRange(series[r.kind].orEmpty().mapNotNull { d -> d.value?.let { d.date to it } }.toMap(), date, 0.1, 0.9)
-        if (band != null && rangeStatus(r.value, band, r.good) == RangeStatus.BAD_SIDE) r.copy(range = band) else null
+        val daily = series[r.kind].orEmpty().mapNotNull { d -> d.value?.let { d.date to it } }.toMap()
+        val band = normalRange(daily, date, 0.1, 0.9)
+        val usual = normalRange(daily, date)
+        if (band != null && usual != null && rangeStatus(r.value, band, r.good) == RangeStatus.BAD_SIDE) r.copy(range = usual) else null
     }
 }
 
