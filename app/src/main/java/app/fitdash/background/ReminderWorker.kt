@@ -44,6 +44,7 @@ private const val MORNING_ID = 3
 private const val ACTION_ADD_WATER = "app.fitdash.ADD_WATER"
 
 // Every hour in the waking day: a water reminder when behind pace, and a move nudge after a still hour.
+// The morning vitals check runs first, from 6 to 11 AM, on a fresh read since the cache may predate the night.
 // Water falls back to the cached snapshot without background access; the move nudge needs live steps, so it waits for access.
 class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
@@ -53,12 +54,23 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
             val reader = HealthReader(applicationContext)
             if (reader.availability() != Availability.AVAILABLE) return Result.success()
             val now = ZonedDateTime.now()
-            val cached = SnapshotCache(applicationContext).load()?.snapshot
+            val background = reader.backgroundPermission()
+            val granted = background != null && background in reader.grantedPermissions()
+            val sent = applicationContext.getSharedPreferences("reminders", Context.MODE_PRIVATE)
+            var cached = SnapshotCache(applicationContext).load()?.snapshot
+            val lastMorning = sent.getLong("morning", 0L).takeIf { it > 0 }?.let(Instant::ofEpochMilli)
+            if (settings.morningAlert && granted && morningAlertDue(now, lastMorning)) {
+                cached = BackgroundRefresh.read(applicationContext, reader, now)
+                val data = buildToday(cached, now)
+                val readings = morningAlert(data.vitals, data.heart, data.series, data.date)
+                if (readings.isNotEmpty()) {
+                    Reminders.notify(applicationContext, MORNING_ID, "Overnight vitals outside your range", readings.joinToString(" · ") { "${it.label} ${formatNumber(it.value)} ${it.unit}" })
+                    sent.edit().putLong("morning", now.toInstant().toEpochMilli()).apply()
+                }
+            }
             val window = wakingWindow(cached?.sleep.orEmpty(), now, settings.sleepHours)
             if (now !in window) return Result.success()
-            val background = reader.backgroundPermission()
-            val live = if (background != null && background in reader.grantedPermissions()) reader.nudgeInputs(now) else null
-            val sent = applicationContext.getSharedPreferences("reminders", Context.MODE_PRIVATE)
+            val live = if (granted) reader.nudgeInputs(now) else null
             val goal = settings.waterGoalMl / 1000.0
             val water = live?.waterLiters ?: cached?.waterDaily?.get(now.toLocalDate()) ?: 0.0
             val lastWater = sent.getLong("water", 0L).takeIf { it > 0 }?.let(Instant::ofEpochMilli)
@@ -70,15 +82,6 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
             if (settings.moveNudge && live != null && moveDue(live.stepsLastHour, live.latestSteps, now, window, lastMove)) {
                 Reminders.notify(applicationContext, MOVE_ID, "Time to stretch your legs", "Under 250 steps in the last hour. A few minutes of walking helps.")
                 sent.edit().putLong("move", now.toInstant().toEpochMilli()).apply()
-            }
-            val lastMorning = sent.getLong("morning", 0L).takeIf { it > 0 }?.let(Instant::ofEpochMilli)
-            if (settings.morningAlert && live != null && cached != null && morningAlertDue(now, lastMorning)) {
-                val data = buildToday(cached, now)
-                val readings = morningAlert(data.vitals, data.heart)
-                if (readings.isNotEmpty()) {
-                    Reminders.notify(applicationContext, MORNING_ID, "Overnight vitals outside your range", readings.joinToString(" · ") { "${it.label} ${formatNumber(it.value)} ${it.unit}" })
-                    sent.edit().putLong("morning", now.toInstant().toEpochMilli()).apply()
-                }
             }
         } catch (e: CancellationException) {
             throw e

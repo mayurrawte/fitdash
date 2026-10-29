@@ -11,32 +11,35 @@ class MorningAlertTest {
     private val zone = ZoneId.of("Asia/Kolkata")
     private val day = LocalDate.of(2026, 10, 26)
     private fun at(h: Int, m: Int = 0) = day.atTime(h, m).atZone(zone)
-    private fun heart(rhr: Double?, hrv: Double?) = HeartSummary(hrv, 47.0, rhr, 66.0, emptyList(), emptyList(), 40.0..55.0, 62.0..70.0)
+    private fun heart(rhr: Double?, hrv: Double?) = HeartSummary(hrv, 47.0, rhr, 60.0, emptyList(), emptyList(), 40.0..55.0, 54.75..64.25)
+    // 20 days before `day` holding 50 to 69: the IQR is 54.75 to 64.25, the 10th to 90th band 51.9 to 67.1.
+    private fun spread(kind: MetricKind) = mapOf(kind to (1..20).map { DayValue(day.minusDays(it.toLong()), 70.0 - it) })
 
-    @Test fun `resting heart rate above its range is returned`() {
-        val alerts = morningAlert(emptyList(), heart(76.0, 48.0))
+    @Test fun `resting heart rate above the wide band is returned with that band`() {
+        val alerts = morningAlert(emptyList(), heart(68.0, 48.0), spread(MetricKind.RESTING_HR), day)
         assertEquals(listOf("Resting HR"), alerts.map { it.label })
-        assertEquals(76.0, alerts[0].value, 0.0)
-        assertEquals(62.0..70.0, alerts[0].range)
+        assertEquals(68.0, alerts[0].value, 0.0)
+        assertEquals(51.9, alerts[0].range!!.start, 1e-9)
+        assertEquals(67.1, alerts[0].range!!.endInclusive, 1e-9)
     }
 
-    @Test fun `HRV below its range is returned`() {
-        assertEquals(listOf("HRV"), morningAlert(emptyList(), heart(65.0, 37.0)).map { it.label })
+    @Test fun `just outside the interquartile range but inside the wide band is not returned`() {
+        assertTrue(morningAlert(emptyList(), heart(66.0, 48.0), spread(MetricKind.RESTING_HR), day).isEmpty())
     }
 
-    @Test fun `values inside their range are not returned`() {
-        assertTrue(morningAlert(emptyList(), heart(65.0, 48.0)).isEmpty())
+    @Test fun `the good side of the band is not returned`() {
+        assertTrue(morningAlert(emptyList(), heart(50.0, 48.0), spread(MetricKind.RESTING_HR), day).isEmpty())
     }
 
-    @Test fun `the good side of a range is not returned`() {
-        assertTrue(morningAlert(emptyList(), heart(58.0, 60.0)).isEmpty())
+    @Test fun `HRV and SpO2 never alert`() {
+        val spo2 = VitalReading("SpO₂", "%", 40.0, 96.0, 94.0..99.0, Good.HIGHER, MetricKind.SPO2)
+        assertTrue(morningAlert(listOf(spo2), heart(null, 10.0), spread(MetricKind.SPO2) + spread(MetricKind.HRV), day).isEmpty())
     }
 
-    @Test fun `vitals outside their range are returned`() {
-        val spo2 = VitalReading("SpO₂", "%", 91.0, 96.0, 94.0..99.0, Good.HIGHER, MetricKind.SPO2)
-        val steady = VitalReading("Respiratory rate", "br/min", 15.0, 15.0, 13.0..17.0, Good.MIDDLE, MetricKind.RESPIRATORY)
-        val noRange = VitalReading("Skin temperature", "°C", 1.0, null, null, Good.MIDDLE, MetricKind.SKIN_TEMP)
-        assertEquals(listOf(spo2), morningAlert(listOf(spo2, steady, noRange), null))
+    @Test fun `respiratory rate outside the band on either side is returned, a vital without history is not`() {
+        val low = VitalReading("Respiratory rate", "br/min", 51.0, 60.0, null, Good.MIDDLE, MetricKind.RESPIRATORY)
+        val skin = VitalReading("Skin temperature", "°C", 1.0, null, null, Good.MIDDLE, MetricKind.SKIN_TEMP)
+        assertEquals(listOf("Respiratory rate"), morningAlert(listOf(low, skin), null, spread(MetricKind.RESPIRATORY), day).map { it.label })
     }
 
     @Test fun `due between 6 AM and 11 AM`() {

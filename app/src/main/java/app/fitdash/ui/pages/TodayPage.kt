@@ -187,7 +187,7 @@ fun TodayPage(
             )
         }
         if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing, progress, chrome.error) }
-        if (data.isToday) morningAlert(data.vitals, data.heart).forEach { r ->
+        if (data.isToday && prefs.morningAlert) morningAlert(data.vitals, data.heart, data.series, data.date).forEach { r ->
             revealItem("alert-${r.label}", 0) {
                 val range = r.range!!
                 val side = if (r.value > range.endInclusive) "above" else "below"

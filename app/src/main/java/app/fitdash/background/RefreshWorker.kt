@@ -12,6 +12,7 @@ import androidx.work.WorkerParameters
 import app.fitdash.health.Availability
 import app.fitdash.health.CachedSnapshot
 import app.fitdash.health.HealthReader
+import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.SnapshotCache
 import app.fitdash.health.readFresh
 import app.fitdash.widget.FitdashWidget
@@ -29,13 +30,7 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
         try {
             val reader = HealthReader(applicationContext)
             val permission = if (reader.availability() == Availability.AVAILABLE) reader.backgroundPermission() else null
-            if (permission != null && permission in reader.grantedPermissions()) {
-                val store = SnapshotCache(applicationContext)
-                val cached = store.load()
-                val now = ZonedDateTime.now()
-                val result = readFresh(reader, cached?.snapshot, cached?.readAt, cached?.fullReadAt, now)
-                store.save(CachedSnapshot(result.snapshot, now.toInstant(), if (result.full) now.toInstant() else cached?.fullReadAt ?: now.toInstant()))
-            }
+            if (permission != null && permission in reader.grantedPermissions()) BackgroundRefresh.read(applicationContext, reader, ZonedDateTime.now())
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -48,6 +43,14 @@ class RefreshWorker(context: Context, params: WorkerParameters) : CoroutineWorke
 }
 
 object BackgroundRefresh {
+    suspend fun read(context: Context, reader: HealthReader, now: ZonedDateTime): HealthSnapshot {
+        val store = SnapshotCache(context)
+        val cached = store.load()
+        val result = readFresh(reader, cached?.snapshot, cached?.readAt, cached?.fullReadAt, now)
+        store.save(CachedSnapshot(result.snapshot, now.toInstant(), if (result.full) now.toInstant() else cached?.fullReadAt ?: now.toInstant()))
+        return result.snapshot
+    }
+
     fun apply(context: Context, enabled: Boolean) {
         val work = WorkManager.getInstance(context)
         if (!enabled) {

@@ -1,14 +1,17 @@
 package app.fitdash.metrics
 
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZonedDateTime
 
-fun morningAlert(vitals: List<VitalReading>, heart: HeartSummary?): List<VitalReading> {
-    val readings = listOfNotNull(
-        heart?.restingHr?.let { VitalReading("Resting HR", "bpm", it, heart.restingHrBaseline, heart.restingHrRange, Good.LOWER, MetricKind.RESTING_HR) },
-        heart?.hrv?.let { VitalReading("HRV", "ms", it, heart.hrvBaseline, heart.hrvRange, Good.HIGHER, MetricKind.HRV) },
-    ) + vitals
-    return readings.filter { it.range != null && rangeStatus(it.value, it.range, it.good) == RangeStatus.BAD_SIDE }
+// The 10th to 90th percentile band, so only a clearly unusual night alerts.
+fun morningAlert(vitals: List<VitalReading>, heart: HeartSummary?, series: Map<MetricKind, List<DayValue>>, date: LocalDate): List<VitalReading> {
+    val readings = listOfNotNull(heart?.restingHr?.let { VitalReading("Resting HR", "bpm", it, heart.restingHrBaseline, null, Good.LOWER, MetricKind.RESTING_HR) }) +
+        vitals.filter { it.kind == MetricKind.RESPIRATORY || it.kind == MetricKind.SKIN_TEMP }
+    return readings.mapNotNull { r ->
+        val band = normalRange(series[r.kind].orEmpty().mapNotNull { d -> d.value?.let { d.date to it } }.toMap(), date, 0.1, 0.9)
+        if (band != null && rangeStatus(r.value, band, r.good) == RangeStatus.BAD_SIDE) r.copy(range = band) else null
+    }
 }
 
 fun morningAlertDue(now: ZonedDateTime, lastSent: Instant?): Boolean {

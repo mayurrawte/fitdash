@@ -13,10 +13,10 @@ fun percentile(sorted: List<Double>, p: Double): Double {
     return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo)
 }
 
-fun normalRange(daily: Map<LocalDate, Double>, date: LocalDate): ClosedFloatingPointRange<Double>? {
+fun normalRange(daily: Map<LocalDate, Double>, date: LocalDate, lo: Double = 0.25, hi: Double = 0.75): ClosedFloatingPointRange<Double>? {
     val values = daily.filterKeys { it < date && it >= date.minusDays(Tuning.BASELINE_DAYS) }.values.sorted()
     if (values.size < Tuning.MIN_RANGE_VALUES) return null
-    return percentile(values, 0.25)..percentile(values, 0.75)
+    return percentile(values, lo)..percentile(values, hi)
 }
 
 fun rangeStatus(value: Double, range: ClosedFloatingPointRange<Double>, good: Good): RangeStatus = when {
