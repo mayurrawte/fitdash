@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -71,6 +72,7 @@ fun BottomBar(items: List<NavItem>, pager: PagerState, onSelect: (Int) -> Unit, 
                 Text(
                     item.label,
                     Modifier
+                        .clipToBounds()
                         .layout { measurable, constraints ->
                             val placeable = measurable.measure(constraints.copy(maxWidth = Constraints.Infinity))
                             layout((placeable.width * reveal).roundToInt().coerceAtLeast(0), placeable.height) { placeable.place(0, 0) }

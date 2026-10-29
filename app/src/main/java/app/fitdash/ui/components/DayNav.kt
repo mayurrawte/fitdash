@@ -71,7 +71,7 @@ fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate
                     .graphicsLayer { translationY = -2.dp.toPx() * lift }
                     .shadow(8.dp * f, shape, ambientColor = Palette.Accent.copy(alpha = 0.25f), spotColor = Palette.Accent.copy(alpha = 0.25f))
                     .clip(shape)
-                    .background(lerp(Color.White.copy(alpha = 0.75f), Palette.Accent, f))
+                    .background(lerp(Palette.Card.copy(alpha = 0.75f), Palette.Accent, f))
                     .clickable(interactionSource = interaction, indication = null, enabled = active, role = Role.Button) {
                         if (haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelect(day)

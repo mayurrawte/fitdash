@@ -450,6 +450,15 @@ class TodayViewModelTest {
         assertEquals(null, withTimeoutOrNull(200) { vm.messages.first() })
     }
 
+    @Test fun `a refused retry ends the pass at the first entry`() {
+        val source = FakeSource(canWrite = false)
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
+        journal.add(TODAY, NutrientKind.PROTEIN, Entry(now.minusHours(3).toInstant(), 30.0, null))
+        journal.add(TODAY, NutrientKind.CAFFEINE, Entry(now.minusHours(2).toInstant(), 95.0, null))
+        TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal).load()
+        assertEquals(1, source.nutrientTimes.size)
+    }
+
     @Test fun `a load during an add does not write that entry again`() {
         val source = FakeSource()
         val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))

@@ -333,7 +333,7 @@ class TodayViewModel(
                     // The loop walks a copy taken at the start; the entry may have changed during an earlier write.
                     val live = journal.flow.value[date]?.entries(kind).orEmpty().firstOrNull { it.at == entry.at }
                     if (live == null || live.recordId != null || (kind to live.at) in adding) continue
-                    val id = source.addNutrient(kind, live.amount, live.at) ?: continue
+                    val id = source.addNutrient(kind, live.amount, live.at) ?: return@launch
                     if (journal.flow.value[date]?.entries(kind).orEmpty().any { it.at == entry.at }) journal.setRecordId(date, kind, entry.at, id)
                     else source.deleteNutrient(id)
                 }
