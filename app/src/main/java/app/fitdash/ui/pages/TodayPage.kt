@@ -161,7 +161,7 @@ fun TodayPage(
     val review = remember(data, prefs.weekReviewSeen) {
         if (data.isToday && showWeekReview(data.date, prefs.weekReviewSeen)) weekReview(data.series, data.date.minusDays(1)) else null
     }
-    PageColumn(chrome, accent = score?.let { scoreColor(it) } ?: Palette.Calibrating) {
+    PageColumn(chrome, accent = score?.let { scoreColor(it) } ?: Palette.Calibrating, datePill = false) {
         item(key = "greeting") {
             Row(Modifier.padding(horizontal = Space.xl, vertical = Space.xs), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -180,7 +180,7 @@ fun TodayPage(
         }
         item(key = "strip") {
             WeekStrip(
-                (6L downTo 0L).map { data.date.minusDays(it) },
+                (6L downTo 0L).map { minOf(chrome.today, data.date.plusDays(3)).minusDays(it) },
                 data.date,
                 data.daysWithData,
                 onSelectDate,

@@ -45,7 +45,7 @@ data class PageChrome(
 )
 
 @Composable
-fun PageColumn(chrome: PageChrome, accent: Color, content: LazyListScope.() -> Unit) {
+fun PageColumn(chrome: PageChrome, accent: Color, datePill: Boolean = true, content: LazyListScope.() -> Unit) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Box(
@@ -68,7 +68,7 @@ fun PageColumn(chrome: PageChrome, accent: Color, content: LazyListScope.() -> U
         ) {
             item(key = "top") {
                 TopBar(
-                    dateText = formatDate(chrome.date),
+                    dateText = if (datePill) formatDate(chrome.date) else null,
                     canNext = chrome.date < chrome.today,
                     onPrev = chrome.onPrev,
                     onNext = chrome.onNext,

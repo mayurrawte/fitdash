@@ -49,7 +49,7 @@ import java.time.LocalDate
 import java.time.format.TextStyle
 import java.util.Locale
 
-// The seven days ending on the selected day, so no cell is ever a future day. The selected chip lifts and turns plum.
+// Seven days around the selected day, never past today. The selected chip lifts and turns plum.
 @Composable
 fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate>, onSelect: (LocalDate) -> Unit, modifier: Modifier = Modifier, enabled: (LocalDate) -> Boolean = { true }) {
     val haptic = LocalHapticFeedback.current
@@ -126,7 +126,7 @@ private fun ArrowButton(icon: ImageVector, description: String, enabled: Boolean
 
 @Composable
 fun TopBar(
-    dateText: String,
+    dateText: String?,
     canNext: Boolean,
     onPrev: () -> Unit,
     onNext: () -> Unit,
@@ -138,7 +138,8 @@ fun TopBar(
 ) {
     Row(modifier.fillMaxWidth().padding(horizontal = Space.l), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         CircleButton(NavIcons.menu, "Menu", onMenu)
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        if (dateText == null) CircleButton(NavIcons.calendar, "Pick a date", onDate)
+        else Row(verticalAlignment = Alignment.CenterVertically) {
             ArrowButton(NavIcons.chevronLeft, "Previous day", canPrev, onPrev)
             Text(
                 dateText,

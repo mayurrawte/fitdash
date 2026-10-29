@@ -38,6 +38,7 @@ object NavIcons {
     val bolt = lineIcon("bolt", "M13 3 5 13h6l-1 8 8-10h-6z")
     val cup = lineIcon("cup", "M5 9h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M9 3v2M13 3v2")
     val moonSmall = lineIcon("moonSmall", "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z")
+    val calendar = lineIcon("calendar", "M6 5.5h12a1.5 1.5 0 0 1 1.5 1.5v11a1.5 1.5 0 0 1-1.5 1.5H6A1.5 1.5 0 0 1 4.5 18V7A1.5 1.5 0 0 1 6 5.5z", "M4.5 10h15M8.5 3.5v4M15.5 3.5v4")
     val clock = lineIcon("clock", "M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0 -16z", "M12 8v4l3 2")
     val heart = lineIcon("heart", "M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z")
     val share = lineIcon("share", "M12 15V4M8 8l4-4 4 4M5 13v6h14v-6")
