@@ -51,6 +51,9 @@ import app.fitdash.ui.components.BottomBar
 import app.fitdash.ui.components.LocalRevealed
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.NavItem
+import app.fitdash.ui.components.ScoreChips
+import app.fitdash.ui.sleepChips
+import androidx.compose.foundation.layout.width
 import app.fitdash.ui.theme.FitdashTheme
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Motion
@@ -274,6 +277,13 @@ private fun TrendsInsights() = PagePreview(4, PreviewData.today(21, 30).copy(tag
 @Preview(heightDp = 1500)
 @Composable
 private fun TrendsInsightsEmpty() = PagePreview(4, PreviewData.today(21, 30).copy(taggedDays = 3))
+
+@Preview(widthDp = 320, fontScale = 1.3f, showBackground = true)
+@Composable
+private fun ChipsWrapped() {
+    val data = PreviewData.today(21, 30)
+    FitdashTheme { ScoreChips(sleepChips(data.sleep!!, data.goals.sleepHours).take(4), Modifier.width(320.dp).padding(16.dp)) }
+}
 
 @Composable
 private fun PagePreview(page: Int, data: TodayData = PreviewData.today(21, 30), initialSegment: Int = 0) {
