@@ -18,6 +18,7 @@ import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.Tuning
 import app.fitdash.metrics.rangeStatus
+import java.text.BreakIterator
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -176,10 +177,20 @@ fun sleepWord(score: Int) = when {
     else -> "Short night"
 }
 
-fun greeting(hour: Int) = when (hour) {
-    in 4..11 -> "Good morning"
-    in 12..16 -> "Good afternoon"
-    else -> "Good evening"
+fun greeting(hour: Int, name: String? = null): String {
+    val hello = when (hour) {
+        in 4..11 -> "Good morning"
+        in 12..16 -> "Good afternoon"
+        else -> "Good evening"
+    }
+    return if (name.isNullOrBlank()) hello else "$hello, ${name.trim()}!"
+}
+
+fun initial(name: String): String {
+    val trimmed = name.trim()
+    val breaks = BreakIterator.getCharacterInstance()
+    breaks.setText(trimmed)
+    return trimmed.substring(0, breaks.next().coerceAtLeast(0)).uppercase()
 }
 
 fun streakLine(days: Int): String? = if (days >= 3) "$days days in a row" else null

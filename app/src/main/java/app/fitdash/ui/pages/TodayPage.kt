@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -67,6 +68,7 @@ import app.fitdash.ui.formatKm
 import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.greeting
+import app.fitdash.ui.initial
 import app.fitdash.ui.missingRecoveryLine
 import app.fitdash.ui.morningReadout
 import app.fitdash.ui.rangeNote
@@ -151,12 +153,20 @@ fun TodayPage(
     val goalText = if (goal % 1000 == 0) "of ${goal / 1000}k" else "of ${formatSteps(goal.toLong())}"
     PageColumn(chrome, accent = score?.let { scoreColor(it) } ?: Palette.Calibrating) {
         item(key = "greeting") {
-            Text(
-                if (data.isToday) greeting(LocalTime.now().hour) else formatDate(data.date),
-                Modifier.padding(horizontal = Space.xl, vertical = Space.xs),
-                style = Type.title,
-                color = Palette.Text,
-            )
+            Row(Modifier.padding(horizontal = Space.xl, vertical = Space.xs), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (data.isToday) greeting(LocalTime.now().hour, prefs.name) else formatDate(data.date),
+                    style = Type.title,
+                    color = Palette.Text,
+                )
+                Spacer(Modifier.weight(1f))
+                val name = prefs.name
+                if (data.isToday && name != null) {
+                    Box(Modifier.size(36.dp).clip(CircleShape).background(Palette.Accent), contentAlignment = Alignment.Center) {
+                        Text(initial(name), style = Type.body.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                    }
+                }
+            }
         }
         item(key = "strip") {
             WeekStrip(

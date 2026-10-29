@@ -32,6 +32,8 @@ data class Settings(
     val waterReminders: Boolean = false,
     // Needs background access: it reads the last hour's steps while fitdash is closed.
     val moveNudge: Boolean = false,
+    val name: String? = null,
+    val nameAsked: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -62,6 +64,8 @@ class SettingsStore(context: Context) {
         backgroundRefresh = prefs.getBoolean("backgroundRefresh", false),
         waterReminders = prefs.getBoolean("waterReminders", false),
         moveNudge = prefs.getBoolean("moveNudge", false),
+        name = prefs.getString("name", null)?.takeIf { it.isNotBlank() },
+        nameAsked = prefs.getBoolean("nameAsked", false),
     )
 
     fun update(change: (Settings) -> Settings) {
@@ -74,7 +78,8 @@ class SettingsStore(context: Context) {
             .putBoolean("showWater", s.showWater).putBoolean("showWorkouts", s.showWorkouts).putBoolean("showHeartRate", s.showHeartRate)
             .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody).putBoolean("showSleepScore", s.showSleepScore)
             .putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh)
-            .putBoolean("waterReminders", s.waterReminders).putBoolean("moveNudge", s.moveNudge).apply()
+            .putBoolean("waterReminders", s.waterReminders).putBoolean("moveNudge", s.moveNudge)
+            .putString("name", s.name).putBoolean("nameAsked", s.nameAsked).apply()
         _flow.value = s
     }
 

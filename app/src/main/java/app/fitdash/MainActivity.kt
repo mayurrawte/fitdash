@@ -49,6 +49,7 @@ import app.fitdash.health.SnapshotCache
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.LoadingScreen
 import app.fitdash.ui.MessageScreen
+import app.fitdash.ui.NameScreen
 import app.fitdash.ui.NoDataScreen
 import app.fitdash.ui.sourceAppName
 import app.fitdash.health.SYNC_APPS
@@ -136,6 +137,10 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
     }
 
     Box(Modifier.fillMaxSize()) {
+        if (!settings.nameAsked) {
+            NameScreen { name -> store.update { it.copy(name = name, nameAsked = true) } }
+            return@Box
+        }
         when (val s = state) {
             TodayUiState.Loading -> LoadingScreen(firstRun = true, progressFlow = vm.progress)
             is TodayUiState.NeedsHealthConnect -> MessageScreen(

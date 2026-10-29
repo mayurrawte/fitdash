@@ -76,6 +76,18 @@ class CopyTest {
         assertEquals("M", dayLetter(LocalDate.of(2026, 10, 12)))
     }
 
+    @Test fun greetingWithName() {
+        assertEquals("Good morning, Mayur!", greeting(8, "Mayur"))
+        assertEquals("Good evening", greeting(20, null))
+        assertEquals("Good evening", greeting(20, "  "))
+    }
+
+    @Test fun initialTakesFirstGrapheme() {
+        assertEquals("M", initial("Mayur Rawte"))
+        assertEquals("É", initial("élodie"))
+        assertEquals("🙂", initial("🙂 Sam"))
+    }
+
     @Test fun greetingByHour() {
         assertEquals("Good morning", greeting(4))
         assertEquals("Good morning", greeting(11))

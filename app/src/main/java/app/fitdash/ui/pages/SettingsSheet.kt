@@ -96,6 +96,7 @@ fun SettingsSheet(
     val context = LocalContext.current
     var showInfo by remember { mutableStateOf(false) }
     var showHeight by remember { mutableStateOf(false) }
+    var showName by remember { mutableStateOf(false) }
     val heightCm = heightMeters?.let { (it * 100).roundToInt() } ?: settings.heightCm
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -124,7 +125,10 @@ fun SettingsSheet(
                 }
             }
             item {
-                RowGroup { ListRow(NavIcons.walk, "Height", heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set", onClick = { showHeight = true }) }
+                RowGroup {
+                    ListRow(NavIcons.walk, "Height", heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set", onClick = { showHeight = true })
+                    ListRow(NavIcons.info, "Name", settings.name ?: "Not set", onClick = { showName = true }, divider = true)
+                }
             }
             item {
                 // Age sets maximum heart rate for workout zones; unset, the zones card asks for it.
@@ -225,6 +229,12 @@ fun SettingsSheet(
         }
     }
     if (showInfo) InfoSheet(sources, onDismiss = { showInfo = false })
+    if (showName) {
+        NameDialog(settings.name, onDismiss = { showName = false }) { name ->
+            store.update { it.copy(name = name) }
+            showName = false
+        }
+    }
     if (showHeight) {
         HeightDialog(heightCm, settings.miles, onDismiss = { showHeight = false }) { cm ->
             store.update { it.copy(heightCm = cm) }
@@ -260,6 +270,36 @@ private fun HeightDialog(current: Int?, miles: Boolean, onDismiss: () -> Unit, o
         },
         confirmButton = {
             TextButton(onClick = { onSave(value!!) }, enabled = valid) { Text("SAVE", style = Type.label, color = if (valid) Palette.Accent else Palette.Faint) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", style = Type.label, color = Palette.Muted) } },
+    )
+}
+
+@Composable
+private fun NameDialog(current: String?, onDismiss: () -> Unit, onSave: (String?) -> Unit) {
+    var name by remember { mutableStateOf(current.orEmpty()) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = LocalTheme.current.bgMid,
+        title = { Text("NAME", style = Type.label, color = Palette.Muted) },
+        text = {
+            OutlinedTextField(
+                name,
+                { name = it.take(24) },
+                Modifier.fillMaxWidth(),
+                textStyle = Type.body,
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Palette.Text,
+                    unfocusedTextColor = Palette.Text,
+                    focusedBorderColor = Palette.Accent,
+                    unfocusedBorderColor = Palette.Divider,
+                    cursorColor = Palette.Accent,
+                ),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(name.trim().ifEmpty { null }) }) { Text("SAVE", style = Type.label, color = Palette.Accent) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", style = Type.label, color = Palette.Muted) } },
     )
