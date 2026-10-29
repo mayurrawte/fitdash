@@ -115,6 +115,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                         style = Type.tiny,
                         color = Palette.Muted,
                     )
+                    ScoreChips(sleepChips(s, data.goals.sleepHours), Modifier.padding(top = Space.s))
                     if (s.goalPercent < 100) {
                         val avg = weekHours.takeIf { it.size >= 3 }?.average()
                         Text(
@@ -122,7 +123,6 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                             Modifier.padding(top = Space.s, start = Space.xl, end = Space.xl), style = Type.body, color = Palette.Muted, textAlign = TextAlign.Center,
                         )
                     }
-                    ScoreChips(sleepChips(s, data.goals.sleepHours), Modifier.padding(top = Space.s))
                 }
             }
             item(key = "span") {
