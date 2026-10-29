@@ -7,11 +7,12 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.RoundRect
@@ -29,6 +30,8 @@ import kotlin.math.PI
 import kotlin.math.sin
 
 private val BUBBLE_X = listOf(0.3f, 0.62f, 0.45f, 0.72f)
+// Speed and alpha of the back and front wave.
+private val WAVES = listOf(0.6f to 0.45f, 1f to 1f)
 
 @Composable
 fun Bottle(fraction: Float, modifier: Modifier = Modifier) {
@@ -41,36 +44,43 @@ fun Bottle(fraction: Float, modifier: Modifier = Modifier) {
     val outline = Palette.Accent.copy(alpha = 0.3f)
     val deep = Palette.Deep
     val rem = Palette.Rem
-    Canvas(modifier.size(120.dp, 200.dp)) {
-        val stroke = 3.dp.toPx()
-        val neck = size.width * 0.38f
-        val shoulder = size.height * 0.12f
-        val body = RoundRect(stroke / 2, shoulder, size.width - stroke / 2, size.height - stroke / 2, CornerRadius(28.dp.toPx()))
-        val bodyPath = Path().apply { addRoundRect(body) }
-        if (level > 0f) clipPath(bodyPath) {
+    Spacer(
+        modifier.size(120.dp, 200.dp).drawWithCache {
+            val stroke = 3.dp.toPx()
+            val outlineStroke = Stroke(stroke)
+            val neck = size.width * 0.38f
+            val shoulder = size.height * 0.12f
+            val body = RoundRect(stroke / 2, shoulder, size.width - stroke / 2, size.height - stroke / 2, CornerRadius(28.dp.toPx()))
+            val bodyPath = Path().apply { addRoundRect(body) }
             val top = body.bottom - (body.bottom - body.top) * level
             val amp = 4.dp.toPx()
             val brush = Brush.verticalGradient(listOf(deep, rem), startY = top - amp, endY = body.bottom)
-            listOf(0.6f to 0.45f, 1f to 1f).forEach { (speed, alpha) ->
-                val shift = (phase?.value ?: 0f) * speed
-                val wave = Path().apply {
-                    moveTo(0f, size.height)
-                    for (i in 0..24) {
-                        val x = size.width * i / 24
-                        lineTo(x, top + amp * sin(x / size.width * 2 * PI.toFloat() + shift + speed * 2))
+            val waves = WAVES.map { Path() }
+            onDrawBehind {
+                if (level > 0f) clipPath(bodyPath) {
+                    WAVES.forEachIndexed { w, (speed, alpha) ->
+                        val shift = (phase?.value ?: 0f) * speed
+                        val wave = waves[w].apply {
+                            rewind()
+                            moveTo(0f, size.height)
+                            for (i in 0..24) {
+                                val x = size.width * i / 24
+                                lineTo(x, top + amp * sin(x / size.width * 2 * PI.toFloat() + shift + speed * 2))
+                            }
+                            lineTo(size.width, size.height)
+                            close()
+                        }
+                        drawPath(wave, brush, alpha = alpha)
                     }
-                    lineTo(size.width, size.height)
-                    close()
+                    BUBBLE_X.forEachIndexed { i, bx ->
+                        val t = rise?.let { (it.value + i / 4f) % 1f } ?: (i / 4f)
+                        val y = body.bottom - (body.bottom - top) * t
+                        if (y > top + amp) drawCircle(Color.White.copy(alpha = 0.35f * (1 - t)), radius = (2.5f + i % 2).dp.toPx(), center = Offset(size.width * bx, y))
+                    }
                 }
-                drawPath(wave, brush, alpha = alpha)
+                drawPath(bodyPath, outline, style = outlineStroke)
+                drawRoundRect(outline, topLeft = Offset((size.width - neck) / 2, stroke / 2), size = Size(neck, shoulder - stroke / 2), cornerRadius = CornerRadius(6.dp.toPx()), style = outlineStroke)
             }
-            BUBBLE_X.forEachIndexed { i, bx ->
-                val t = rise?.let { (it.value + i / 4f) % 1f } ?: (i / 4f)
-                val y = body.bottom - (body.bottom - top) * t
-                if (y > top + amp) drawCircle(Color.White.copy(alpha = 0.35f * (1 - t)), radius = (2.5f + i % 2).dp.toPx(), center = Offset(size.width * bx, y))
-            }
-        }
-        drawPath(bodyPath, outline, style = Stroke(stroke))
-        drawRoundRect(outline, topLeft = Offset((size.width - neck) / 2, stroke / 2), size = Size(neck, shoulder - stroke / 2), cornerRadius = CornerRadius(6.dp.toPx()), style = Stroke(stroke))
-    }
+        },
+    )
 }
