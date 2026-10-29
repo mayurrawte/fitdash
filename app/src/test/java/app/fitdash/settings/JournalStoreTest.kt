@@ -64,4 +64,20 @@ class JournalStoreTest {
         assertTrue(store.flow.value.isEmpty())
         assertEquals("{not json", File(tmp.root, "journal.json.bad").readText())
     }
+
+    @Test fun `an add is visible at once, before the write runs`() = runTest {
+        val s = JournalStore(tmp.newFile(), CoroutineScope(StandardTestDispatcher(testScheduler))); val e = Entry(at(TODAY, 9), 25.0, null)
+        s.add(TODAY, NutrientKind.PROTEIN, e)
+        assertEquals(listOf(e), s.flow.value[TODAY]?.protein)
+        advanceUntilIdle()
+        assertEquals(listOf(e), s.flow.value[TODAY]?.protein)
+    }
+
+    @Test fun `a file with a bad date starts empty and is kept aside`() = runTest {
+        val f = File(tmp.root, "journal.json").apply { writeText("""{"not-a-date":{"tags":["ALCOHOL"]}}""") }
+        val store = JournalStore(f, CoroutineScope(StandardTestDispatcher(testScheduler)))
+        advanceUntilIdle()
+        assertTrue(store.flow.value.isEmpty())
+        assertEquals("""{"not-a-date":{"tags":["ALCOHOL"]}}""", File(tmp.root, "journal.json.bad").readText())
+    }
 }

@@ -13,6 +13,7 @@ import org.json.JSONObject
 import java.io.File
 import java.time.Instant
 import java.time.LocalDate
+import java.time.format.DateTimeParseException
 
 enum class Tag(val label: String) {
     LATE_CAFFEINE("Late caffeine"), ALCOHOL("Alcohol"), LATE_MEAL("Late meal"), ILLNESS("Feeling ill"), TRAVEL("Travel"),
@@ -40,14 +41,17 @@ class JournalStore(
 ) {
     private val _flow = MutableStateFlow(emptyMap<LocalDate, DayJournal>())
     val flow: StateFlow<Map<LocalDate, DayJournal>> = _flow
+    private val lock = Any()
+    private var loaded = false
+    private val pending = mutableListOf<(Map<LocalDate, DayJournal>) -> Map<LocalDate, DayJournal>>()
 
     init {
         scope.launch {
             val text = if (file.exists()) file.readText() else ""
+            val days = mutableMapOf<LocalDate, DayJournal>()
             if (text.isNotBlank()) {
                 try {
                     val root = JSONObject(text)
-                    val days = mutableMapOf<LocalDate, DayJournal>()
                     val entries = { arr: JSONArray ->
                         (0 until arr.length()).map { i ->
                             val e = arr.getJSONObject(i)
@@ -61,10 +65,16 @@ class JournalStore(
                         for (kind in NutrientKind.entries) j = j.withEntries(kind, entries(day.optJSONArray(kind.name.lowercase()) ?: JSONArray()))
                         days[LocalDate.parse(key)] = j
                     }
-                    _flow.value = days
-                } catch (e: JSONException) {
+                } catch (e: Exception) {
+                    if (e !is JSONException && e !is DateTimeParseException && e !is IllegalArgumentException) throw e
+                    days.clear()
                     file.renameTo(File(file.parentFile, file.name + ".bad"))
                 }
+            }
+            synchronized(lock) {
+                _flow.value = pending.fold(days.toMap()) { m, apply -> apply(m) }
+                pending.clear()
+                loaded = true
             }
         }
     }
@@ -82,13 +92,20 @@ class JournalStore(
     }
 
     private fun update(date: LocalDate, change: (DayJournal) -> DayJournal) {
+        val apply = { days: Map<LocalDate, DayJournal> ->
+            val day = change(days[date] ?: DayJournal())
+            val next = days.toMutableMap()
+            if (day.tags.isEmpty() && day.protein.isEmpty() && day.caffeine.isEmpty()) next.remove(date) else next[date] = day
+            next
+        }
+        synchronized(lock) {
+            _flow.value = apply(_flow.value)
+            if (!loaded) pending += apply
+        }
+        // The load is the first job on this serial scope, so the write always sees the loaded journal.
         scope.launch {
-            val day = change(_flow.value[date] ?: DayJournal())
-            val days = _flow.value.toMutableMap()
-            if (day.tags.isEmpty() && day.protein.isEmpty() && day.caffeine.isEmpty()) days.remove(date) else days[date] = day
-            _flow.value = days
             val root = JSONObject()
-            for ((d, j) in days) {
+            for ((d, j) in _flow.value) {
                 val entries = { list: List<Entry> ->
                     JSONArray(list.map { JSONObject().put("at", it.at.toString()).put("amount", it.amount).put("recordId", it.recordId ?: "") })
                 }
