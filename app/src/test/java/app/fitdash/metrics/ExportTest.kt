@@ -1,0 +1,54 @@
+package app.fitdash.metrics
+
+import app.fitdash.IST
+import app.fitdash.TODAY
+import app.fitdash.health.HealthSnapshot
+import app.fitdash.health.Sample
+import app.fitdash.health.Workout
+import app.fitdash.history
+import app.fitdash.at
+import app.fitdash.settings.DayJournal
+import app.fitdash.settings.Tag
+import org.junit.Assert.assertEquals
+import org.junit.Test
+
+class ExportTest {
+    private val now = TODAY.atTime(8, 0).atZone(IST)
+    private val data = buildToday(history(TODAY, 5), now)
+
+    @Test fun `daily header is exact`() {
+        assertEquals(
+            "date,recovery,sleep_score,hours_asleep,efficiency,awakenings,hrv_ms,resting_hr,steps,distance_km,calories,active_minutes,water_l,weight_kg,tags",
+            dailyCsv(data, emptyMap()).lines().first(),
+        )
+    }
+
+    @Test fun `tags are joined in the last column`() {
+        val yesterday = TODAY.minusDays(1)
+        val csv = dailyCsv(data, mapOf(yesterday to DayJournal(tags = setOf(Tag.ALCOHOL, Tag.STRESS))))
+        assertEquals(true, csv.lines().first { it.startsWith("$yesterday,") }.endsWith(",alcohol|stress"))
+    }
+
+    @Test fun `missing values are empty fields`() {
+        val csv = dailyCsv(data, emptyMap())
+        assertEquals(false, csv.contains("null"))
+        val empty = TODAY.minusDays(20)
+        assertEquals("$empty,,,,,,,,,,,,,,", csv.lines().first { it.startsWith("$empty,") })
+    }
+
+    @Test fun `journal has one row per tag`() {
+        val csv = journalCsv(mapOf(TODAY to DayJournal(tags = setOf(Tag.ALCOHOL, Tag.NAP))))
+        assertEquals(listOf("date,tag", "$TODAY,Alcohol", "$TODAY,Napped"), csv.lines().filter { it.isNotEmpty() })
+    }
+
+    @Test fun `heart rate rows carry the local offset`() {
+        val snap = HealthSnapshot(heartRate = listOf(Sample(at(TODAY, 8), 61.5)))
+        assertEquals(listOf("time,bpm", "${TODAY}T08:00:00+05:30,61.5"), heartRateCsv(snap, IST).lines().filter { it.isNotEmpty() })
+    }
+
+    @Test fun `workout with no distance leaves the field empty`() {
+        val snap = HealthSnapshot(workouts = listOf(Workout(at(TODAY, 7), at(TODAY, 8), 56, title = "Run, easy")))
+        val row = workoutsCsv(snap, IST).lines()[1]
+        assertEquals("${TODAY}T07:00:00+05:30,${TODAY}T08:00:00+05:30,56,\"Run, easy\",,,,,,\"\"", row)
+    }
+}

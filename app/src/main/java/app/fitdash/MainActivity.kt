@@ -177,6 +177,7 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
             is TodayUiState.Ready -> PagerScreen(
                 s, store,
                 progress = vm.progress,
+                rawSnapshot = vm.rawSnapshot,
                 onRefresh = { vm.load() },
                 onSelectDate = vm::select,
                 onAddWater = vm::addWater,

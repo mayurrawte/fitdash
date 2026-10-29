@@ -79,6 +79,9 @@ class TodayViewModel(
     private val _progress = MutableStateFlow<ReadProgress?>(null)
     val progress: StateFlow<ReadProgress?> = _progress
 
+    private val _rawSnapshot = MutableStateFlow<HealthSnapshot?>(null)
+    val rawSnapshot: StateFlow<HealthSnapshot?> = _rawSnapshot
+
     private var job: Job? = null
     private var rebuildJob: Job? = null
     private var snapshot: HealthSnapshot? = null
@@ -276,6 +279,7 @@ class TodayViewModel(
                         augmented to build(augmented, now, date, currentGoals())
                     }
                     snapshot = augmented
+                    _rawSnapshot.value = augmented
                     lastNow = now
                     _state.value = TodayUiState.Ready(built.first, built.second, refreshing = true)
                 }
@@ -303,6 +307,7 @@ class TodayViewModel(
                     }
                     raw = read
                     snapshot = augmented
+                    _rawSnapshot.value = augmented
                     pendingWater -= seen
                     confirmedWater -= seen
                     lastNow = now

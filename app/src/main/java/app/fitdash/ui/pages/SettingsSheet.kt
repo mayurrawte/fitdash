@@ -50,7 +50,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.health.connect.client.HealthConnectClient
 import app.fitdash.BuildConfig
+import app.fitdash.health.HealthSnapshot
 import app.fitdash.health.SourceStatus
+import app.fitdash.metrics.TodayData
+import app.fitdash.settings.JournalStore
+import app.fitdash.ui.share.exportDaily
+import app.fitdash.ui.share.exportRaw
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import java.time.ZoneId
 import app.fitdash.settings.SettingsStore
 import app.fitdash.settings.ThemeChoice
 import app.fitdash.ui.components.ListRow
@@ -86,6 +95,8 @@ private const val WHY =
 @Composable
 fun SettingsSheet(
     store: SettingsStore,
+    data: TodayData,
+    snapshot: HealthSnapshot?,
     sources: List<SourceStatus>,
     heightMeters: Double?,
     onSetHeight: (Int) -> Unit,
@@ -99,6 +110,8 @@ fun SettingsSheet(
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     val uri = LocalUriHandler.current
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var exporting by remember { mutableStateOf<String?>(null) }
     var showInfo by remember { mutableStateOf(false) }
     var showHeight by remember { mutableStateOf(false) }
     var showName by remember { mutableStateOf(false) }
@@ -197,6 +210,32 @@ fun SettingsSheet(
                 RowGroup {
                     ListRow(NavIcons.info, "Data sources", null, onClick = { showInfo = true })
                     if (canAskHistory) ListRow(NavIcons.trends, "Read older data", "Up to 6 months of history instead of 30 days", onClick = { onAskHistory() }, divider = true)
+                    ListRow(
+                        NavIcons.trends, "Export daily table", "CSV, ${data.daysBack + 1} days",
+                        onClick = {
+                            if (exporting == null) scope.launch {
+                                exporting = "daily"
+                                val uri = exportDaily(context, data, JournalStore.get(context).flow.value)
+                                exporting = null
+                                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/csv").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Export daily table"))
+                            }
+                        },
+                        trailing = if (exporting == "daily") ({ CircularProgressIndicator(Modifier.size(20.dp), color = LocalTheme.current.accent, strokeWidth = 2.dp) }) else null,
+                        divider = true,
+                    )
+                    if (snapshot != null) ListRow(
+                        NavIcons.trends, "Export raw data", "Heart rate, sleep stages, workouts, journal",
+                        onClick = {
+                            if (exporting == null) scope.launch {
+                                exporting = "raw"
+                                val uri = exportRaw(context, snapshot, JournalStore.get(context).flow.value, ZoneId.systemDefault())
+                                exporting = null
+                                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("application/zip").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Export raw data"))
+                            }
+                        },
+                        trailing = if (exporting == "raw") ({ CircularProgressIndicator(Modifier.size(20.dp), color = LocalTheme.current.accent, strokeWidth = 2.dp) }) else null,
+                        divider = true,
+                    )
                 }
             }
             if (background != BackgroundAccess.UNSUPPORTED) {

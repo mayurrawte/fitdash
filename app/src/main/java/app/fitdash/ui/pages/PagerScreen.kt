@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import app.fitdash.health.HealthSnapshot
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -85,6 +86,7 @@ fun PagerScreen(
     state: TodayUiState.Ready,
     store: SettingsStore,
     progress: StateFlow<ReadProgress?> = MutableStateFlow(null),
+    rawSnapshot: StateFlow<HealthSnapshot?> = MutableStateFlow(null),
     onRefresh: () -> Unit,
     onSelectDate: (LocalDate) -> Unit,
     onAddWater: (Int) -> Unit,
@@ -195,7 +197,7 @@ fun PagerScreen(
             )
         }
         if (sharing) ShareRender(data, onDone = { sharing = false })
-        if (showSettings) SettingsSheet(store, data.sources, data.heightMeters, onSetHeight, state.canAskHistory, onAskHistory, state.background, onAskBackground, onDismiss = { showSettings = false })
+        if (showSettings) SettingsSheet(store, data, rawSnapshot.collectAsState().value, data.sources, data.heightMeters, onSetHeight, state.canAskHistory, onAskHistory, state.background, onAskBackground, onDismiss = { showSettings = false })
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
         metric?.let { ref ->
             if (ref is MetricRef.Fitness) FitnessSheet(ref.card, data, onDismiss = { metric = null })
