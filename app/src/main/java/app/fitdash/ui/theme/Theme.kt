@@ -41,6 +41,7 @@ object Palette {
     val Amber: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.warn
     val Glass: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.navBg
     val Accent: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.accent
+    val OnAccent: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.onAccent
     val Good: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.good
     val Warn: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.warn
     val Bad: Color @Composable @ReadOnlyComposable get() = LocalTheme.current.bad

@@ -172,7 +172,7 @@ fun TodayPage(
                 val name = prefs.name
                 if (data.isToday && name != null) {
                     Box(Modifier.size(36.dp).clip(CircleShape).background(Palette.Accent), contentAlignment = Alignment.Center) {
-                        Text(initial(name), style = Type.body.copy(fontWeight = FontWeight.Bold), color = Color.White)
+                        Text(initial(name), style = Type.body.copy(fontWeight = FontWeight.Bold), color = Palette.OnAccent)
                     }
                 }
             }

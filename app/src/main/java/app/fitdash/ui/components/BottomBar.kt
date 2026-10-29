@@ -67,7 +67,7 @@ fun BottomBar(items: List<NavItem>, pager: PagerState, onSelect: (Int) -> Unit, 
                     .padding(horizontal = 12.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(item.icon, null, Modifier.size(22.dp), tint = if (selected) Color.White else Palette.Muted)
+                Icon(item.icon, null, Modifier.size(22.dp), tint = if (selected) Palette.OnAccent else Palette.Muted)
                 Text(
                     item.label,
                     Modifier
@@ -77,7 +77,7 @@ fun BottomBar(items: List<NavItem>, pager: PagerState, onSelect: (Int) -> Unit, 
                         }
                         .padding(start = 6.dp),
                     style = Type.body.copy(fontSize = 12.5.sp, fontWeight = FontWeight.Bold),
-                    color = Color.White,
+                    color = Palette.OnAccent,
                     maxLines = 1,
                     softWrap = false,
                 )

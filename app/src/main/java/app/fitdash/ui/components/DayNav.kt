@@ -84,8 +84,8 @@ fun WeekStrip(days: List<LocalDate>, selected: LocalDate, hasData: Set<LocalDate
                     .padding(top = 5.dp, bottom = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(day.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.ENGLISH), style = Type.tiny.copy(fontWeight = FontWeight.SemiBold), color = lerp(Palette.Muted, Color.White.copy(alpha = 0.63f), f))
-                Text(day.dayOfMonth.toString(), style = Type.small.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold), color = lerp(Palette.Text, Color.White, f))
+                Text(day.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.ENGLISH), style = Type.tiny.copy(fontWeight = FontWeight.SemiBold), color = lerp(Palette.Muted, Palette.OnAccent.copy(alpha = 0.63f), f))
+                Text(day.dayOfMonth.toString(), style = Type.small.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold), color = lerp(Palette.Text, Palette.OnAccent, f))
                 Box(Modifier.padding(top = 2.dp).size(4.dp).clip(CircleShape).background(if (day !in hasData) Color.Transparent else if (on) Palette.Sun else Palette.Light))
             }
         }

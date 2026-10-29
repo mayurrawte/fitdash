@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +32,7 @@ fun ScoreChips(chips: List<ScoreChip>, modifier: Modifier = Modifier) {
             Text(
                 chip.label,
                 Modifier
+                    .then(if (ref != null) Modifier.minimumInteractiveComponentSize() else Modifier)
                     .tappable(ref?.let { { open(it) } }, "${chip.label} details")
                     .clip(RoundedCornerShape(12.dp))
                     .background(colour.copy(alpha = 0.14f))

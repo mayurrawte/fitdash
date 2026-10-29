@@ -54,6 +54,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.appwidget.updateAll
 import androidx.health.connect.client.HealthConnectClient
 import app.fitdash.BuildConfig
 import app.fitdash.health.HealthSnapshot
@@ -84,6 +85,7 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Type
 import app.fitdash.ui.today.BackgroundAccess
+import app.fitdash.widget.FitdashWidget
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.ZoneId
@@ -207,7 +209,10 @@ fun SettingsSheet(
                 }
             }
             item { Label("FEEL") }
-            item { SegmentedControl(listOf("System", "Light", "Dark"), settings.theme.ordinal, { i -> store.update { it.copy(theme = ThemeChoice.entries[i]) } }) }
+            item { SegmentedControl(listOf("System", "Light", "Dark"), settings.theme.ordinal, { i ->
+                store.update { it.copy(theme = ThemeChoice.entries[i]) }
+                scope.launch { FitdashWidget().updateAll(context.applicationContext) }
+            }) }
             item { ToggleRow("Haptics", settings.haptics, { v -> store.update { it.copy(haptics = v) } }, "A light tick on taps") }
             item { ToggleRow("Reduce motion", settings.reduceMotion, { v -> store.update { it.copy(reduceMotion = v) } }, "No draw-in or count-up animations, still orb") }
             item { Label("DATA") }

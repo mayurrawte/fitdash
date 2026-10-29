@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -232,8 +231,8 @@ fun LogPage(
                                         .padding(horizontal = 12.dp, vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Icon(tagIcon.getValue(tag), null, Modifier.size(16.dp), tint = if (on) Color.White else Palette.Text)
-                                    Text(tag.label, Modifier.padding(start = 6.dp), style = Type.label, color = if (on) Color.White else Palette.Text)
+                                    Icon(tagIcon.getValue(tag), null, Modifier.size(16.dp), tint = if (on) Palette.OnAccent else Palette.Text)
+                                    Text(tag.label, Modifier.padding(start = 6.dp), style = Type.label, color = if (on) Palette.OnAccent else Palette.Text)
                                 }
                             }
                         }

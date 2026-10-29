@@ -17,7 +17,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.fitdash.ui.components.Orb
@@ -41,7 +40,7 @@ fun NameScreen(onDone: (String?) -> Unit) {
             onClick = { onDone(trimmed) },
             enabled = trimmed.isNotEmpty(),
             modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.Accent, contentColor = Color.White),
+            colors = ButtonDefaults.buttonColors(containerColor = Palette.Accent, contentColor = Palette.OnAccent),
         ) { Text("Continue") }
         TextButton(onClick = { onDone(null) }, Modifier.padding(top = 8.dp)) { Text("Skip", color = Palette.Muted) }
     }
