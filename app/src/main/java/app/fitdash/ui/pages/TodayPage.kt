@@ -65,6 +65,7 @@ import app.fitdash.ui.initial
 import app.fitdash.ui.missingRecoveryLine
 import app.fitdash.ui.morningReadout
 import app.fitdash.ui.rangeNote
+import app.fitdash.ui.recoveryChips
 import app.fitdash.ui.sourceAppName
 import app.fitdash.ui.streakLine
 import app.fitdash.ui.suggestionText
@@ -85,6 +86,7 @@ import app.fitdash.ui.components.NumberWithUnits
 import app.fitdash.ui.components.Pill
 import app.fitdash.ui.components.RangeBar
 import app.fitdash.ui.components.RowGroup
+import app.fitdash.ui.components.ScoreChips
 import app.fitdash.ui.components.StatTile
 import app.fitdash.ui.components.StripCard
 import app.fitdash.ui.components.TileGrid
@@ -208,6 +210,7 @@ fun TodayPage(
                 }
             }
         }
+        val chips = (r as? ReadinessResult.Ready)?.let { recoveryChips(it, h, data.sleep) }.orEmpty()
         val tiles = buildList<@Composable (Modifier) -> Unit> {
             // Left out when the hero shows steps (no sleep, steps above zero).
             if (a != null && (data.sleep != null || !hasSteps)) add { m ->
@@ -216,7 +219,7 @@ fun TodayPage(
                     stepsStreak?.let { Text(it, Modifier.padding(top = Space.s), style = Type.small, color = Palette.Muted) }
                 }
             }
-            add { m ->
+            if (chips.size <= 2) add { m ->
                 StatTile(
                     "Recovery", null, null,
                     when (r) {
@@ -227,7 +230,10 @@ fun TodayPage(
                     m, icon = NavIcons.today, onClick = metricOpener(MetricRef.Kind(MetricKind.RECOVERY)), description = "Recovery details", tint = Tint.ROSE,
                 ) {
                     when (r) {
-                        is ReadinessResult.Ready -> CountUpText("recovery-${data.date}", r.score.toLong(), Type.tile.copy(fontSize = 34.sp), color = Palette.Text)
+                        is ReadinessResult.Ready -> Column {
+                            CountUpText("recovery-${data.date}", r.score.toLong(), Type.tile.copy(fontSize = 34.sp), color = Palette.Text)
+                            ScoreChips(chips, Modifier.padding(top = Space.s))
+                        }
                         is ReadinessResult.Calibrating -> Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                             repeat(Tuning.MIN_NIGHTS) { i -> Box(Modifier.size(7.dp).clip(CircleShape).background(if (i < r.nights) Palette.Accent else Palette.Divider)) }
                         }
@@ -261,7 +267,24 @@ fun TodayPage(
                 }
             }
         }
-        revealItem("tiles", 2) { TileGrid(tiles) }
+        revealItem("tiles", 2) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
+                TileGrid(tiles)
+                if (r is ReadinessResult.Ready && chips.size > 2) HeroCard(metricOpener(MetricRef.Kind(MetricKind.RECOVERY)), "Recovery details", tint = Tint.ROSE) {
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(NavIcons.today, null, Modifier.padding(end = 6.dp).size(13.dp), tint = Palette.Muted)
+                            Text("Recovery", style = Type.secondary, color = Palette.Muted)
+                        }
+                        Row(Modifier.padding(top = Space.xs), verticalAlignment = Alignment.Bottom) {
+                            CountUpText("recovery-${data.date}", r.score.toLong(), Type.tile.copy(fontSize = 34.sp), color = Palette.Text)
+                            Text(bandWord(r.band), Modifier.padding(start = Space.s, bottom = 6.dp), style = Type.body, color = Palette.Muted)
+                        }
+                        ScoreChips(chips, Modifier.padding(top = Space.s))
+                    }
+                }
+            }
+        }
         val hd = data.heartDay?.takeIf { prefs.showHeartRate }
         val workouts = data.workouts.takeIf { prefs.showWorkouts }.orEmpty()
         if (hd != null || workouts.isNotEmpty()) revealItem("rows", 3) {

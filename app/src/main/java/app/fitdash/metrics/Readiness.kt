@@ -23,7 +23,7 @@ enum class Component { HRV, RESTING_HR, SLEEP }
 sealed interface ReadinessResult {
     data object NoData : ReadinessResult
     data class Calibrating(val nights: Int) : ReadinessResult
-    data class Ready(val score: Int, val band: Band, val used: Set<Component>) : ReadinessResult
+    data class Ready(val score: Int, val band: Band, val used: Set<Component>, val parts: Map<Component, Double>) : ReadinessResult
 }
 
 fun band(score: Int): Band = when {
@@ -77,5 +77,5 @@ fun readiness(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId, goals: Go
 
     val total = parts.keys.sumOf { WEIGHTS.getValue(it) }
     val score = (parts.entries.sumOf { (k, v) -> v * WEIGHTS.getValue(k) } / total).roundToInt()
-    return ReadinessResult.Ready(score, band(score), parts.keys)
+    return ReadinessResult.Ready(score, band(score), parts.keys, parts)
 }

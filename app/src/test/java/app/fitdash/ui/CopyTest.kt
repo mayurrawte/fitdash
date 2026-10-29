@@ -1,12 +1,17 @@
 package app.fitdash.ui
 
 import app.fitdash.health.SourceStatus
+import app.fitdash.metrics.Band
 import app.fitdash.metrics.Component
 import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.LoadBand
+import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.MissingInput
+import app.fitdash.metrics.ReadinessResult
+import app.fitdash.metrics.SleepSummary
 import app.fitdash.metrics.Status
 import app.fitdash.metrics.regularityBand
+import app.fitdash.ui.components.ScoreChip
 import app.fitdash.ui.components.statusWord
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.HeartSummary
@@ -22,6 +27,36 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 class CopyTest {
+    @Test fun `recovery chips name the inputs used and only those`() {
+        val r = ReadinessResult.Ready(42, Band.STEADY, setOf(Component.HRV), mapOf(Component.HRV to 30.0))
+        val heart = HeartSummary(hrv = 37.0, hrvBaseline = 44.0, restingHr = 76.0, restingHrBaseline = 60.0, hrvTrend = emptyList(), restingHrTrend = emptyList(), hrvRange = null, restingHrRange = null)
+        val chips = recoveryChips(r, heart = heart, sleep = null)
+        assertEquals(listOf(ScoreChip("HRV 37 ms · below usual", Status.ATTENTION, MetricKind.HRV)), chips)
+    }
+
+    @Test fun `recovery chips for every input`() {
+        val r = ReadinessResult.Ready(
+            60, Band.STEADY, Component.entries.toSet(),
+            mapOf(Component.HRV to 70.0, Component.RESTING_HR to 55.0, Component.SLEEP to 95.0),
+        )
+        val sleep = SleepSummary(
+            asleep = Duration.ofHours(8), deep = Duration.ZERO, rem = Duration.ZERO, light = Duration.ZERO, awake = Duration.ZERO,
+            hasStages = false, score = 95, stages = emptyList(),
+            start = Instant.EPOCH, end = Instant.EPOCH, timeInBed = Duration.ZERO, restorative = null, overnightHr = null,
+            efficiency = 1.0, awakenings = null, latency = null,
+        )
+        val heart = HeartSummary(hrv = 44.4, hrvBaseline = 44.0, restingHr = 76.4, restingHrBaseline = 60.0, hrvTrend = emptyList(), restingHrTrend = emptyList(), hrvRange = null, restingHrRange = null)
+        assertEquals(
+            listOf(
+                ScoreChip("HRV 44 ms · usual", Status.GOOD, MetricKind.HRV),
+                ScoreChip("Resting HR 76 · above usual", Status.BELOW_USUAL, MetricKind.RESTING_HR),
+                ScoreChip("Sleep 95 · restful", Status.GOOD, MetricKind.SLEEP_SCORE),
+            ),
+            recoveryChips(r, heart, sleep),
+        )
+        assertEquals(2, recoveryChips(r, heart, sleep = null).size)
+    }
+
     @Test fun `based-on line lists what was used`() {
         assertEquals("Based on resting HR + sleep", basedOn(setOf(Component.SLEEP, Component.RESTING_HR)))
         assertNull(basedOn(Component.entries.toSet()))

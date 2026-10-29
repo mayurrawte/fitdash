@@ -14,10 +14,14 @@ import app.fitdash.metrics.Good
 import app.fitdash.metrics.HeartSummary
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.RangeStatus
+import app.fitdash.metrics.ReadinessResult
+import app.fitdash.metrics.SleepSummary
+import app.fitdash.metrics.Status
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.Tuning
 import app.fitdash.metrics.rangeStatus
+import app.fitdash.ui.components.ScoreChip
 import java.text.BreakIterator
 import java.time.Duration
 import java.time.Instant
@@ -175,6 +179,39 @@ fun sleepWord(score: Int) = when {
     score >= 70 -> "Good"
     score >= 50 -> "Fair"
     else -> "Short night"
+}
+
+fun recoveryChips(r: ReadinessResult.Ready, heart: HeartSummary?, sleep: SleepSummary?): List<ScoreChip> {
+    val chips = mutableListOf<ScoreChip>()
+    for (c in Component.entries) {
+        val part = r.parts[c]
+        if (c !in r.used || part == null) continue
+        val (value, base, kind) = when (c) {
+            Component.HRV -> Triple(heart?.hrv, heart?.hrvBaseline, MetricKind.HRV)
+            Component.RESTING_HR -> Triple(heart?.restingHr, heart?.restingHrBaseline, MetricKind.RESTING_HR)
+            Component.SLEEP -> Triple(sleep?.score?.toDouble(), null, MetricKind.SLEEP_SCORE)
+        }
+        if (value == null) continue
+        val n = value.roundToInt()
+        val word = when {
+            c == Component.SLEEP -> sleepWord(n).lowercase()
+            base == null || abs(value / base - 1) <= 0.05 -> "usual"
+            value > base -> "above usual"
+            else -> "below usual"
+        }
+        val name = when (c) {
+            Component.HRV -> "HRV $n ms"
+            Component.RESTING_HR -> "Resting HR $n"
+            Component.SLEEP -> "Sleep $n"
+        }
+        val status = when {
+            part < 50 -> Status.ATTENTION
+            part < 65 -> Status.BELOW_USUAL
+            else -> Status.GOOD
+        }
+        chips += ScoreChip("$name · $word", status, kind)
+    }
+    return chips
 }
 
 fun greeting(hour: Int, name: String? = null): String {
