@@ -22,11 +22,13 @@ private val COLUMNS = listOf(
     "water_l" to (MetricKind.WATER to 2),
 )
 
+fun csvField(value: String): String =
+    if (value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) "\"" + value.replace("\"", "\"\"") + "\"" else value
+
 fun dailyCsv(data: TodayData, journal: Map<LocalDate, DayJournal>): String {
     val out = StringBuilder("date,${COLUMNS.joinToString(",") { it.first }},weight_kg,tags\n")
     val byKind = COLUMNS.map { (_, kd) -> data.series[kd.first].orEmpty().associate { it.date to it.value } }
-    val dates = data.series[MetricKind.RECOVERY].orEmpty().map { it.date }
-    for (date in dates) {
+    for (date in generateSequence(data.date.minusDays(data.daysBack)) { it.plusDays(1) }.takeWhile { it <= data.date }) {
         out.append(date)
         COLUMNS.forEachIndexed { i, (_, kd) ->
             out.append(',')
@@ -66,13 +68,13 @@ fun workoutsCsv(snapshot: HealthSnapshot, zone: ZoneId): String {
         out.append(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(w.start.atZone(zone))).append(',')
             .append(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(w.end.atZone(zone))).append(',')
             .append(w.type).append(',')
-            .append('"').append(w.title.orEmpty().replace("\"", "\"\"")).append("\",")
+            .append(csvField(w.title.orEmpty())).append(',')
             .append(w.distanceMeters?.let { "%.2f".format(Locale.ENGLISH, it / 1000) }.orEmpty()).append(',')
             .append(w.kcal?.let { "%.0f".format(Locale.ENGLISH, it) }.orEmpty()).append(',')
             .append(w.steps ?: "").append(',')
             .append(w.avgHr?.let { "%.0f".format(Locale.ENGLISH, it) }.orEmpty()).append(',')
             .append(w.maxHr?.let { "%.0f".format(Locale.ENGLISH, it) }.orEmpty()).append(',')
-            .append('"').append(w.app.replace("\"", "\"\"")).append("\"\n")
+            .append(csvField(w.app)).append('\n')
     }
     return out.toString()
 }
@@ -80,7 +82,7 @@ fun workoutsCsv(snapshot: HealthSnapshot, zone: ZoneId): String {
 fun journalCsv(journal: Map<LocalDate, DayJournal>): String {
     val out = StringBuilder("date,tag\n")
     for ((date, day) in journal.toSortedMap()) {
-        for (tag in day.tags.sorted()) out.append(date).append(',').append(tag.label).append('\n')
+        for (tag in day.tags.sorted()) out.append(date).append(',').append(csvField(tag.label)).append('\n')
     }
     return out.toString()
 }

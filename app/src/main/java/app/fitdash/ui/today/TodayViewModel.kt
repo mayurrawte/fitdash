@@ -271,6 +271,7 @@ class TodayViewModel(
                 val cached = withContext(work) { store.load() }
                 if (cached != null && cached.snapshot.sources.any { it.hasData }) {
                     raw = cached.snapshot
+                    _rawSnapshot.value = cached.snapshot
                     lastRead = cached.readAt
                     lastFullRead = cached.fullReadAt
                     val date = selectedDate.value ?: now.toLocalDate()
@@ -279,7 +280,6 @@ class TodayViewModel(
                         augmented to build(augmented, now, date, currentGoals())
                     }
                     snapshot = augmented
-                    _rawSnapshot.value = augmented
                     lastNow = now
                     _state.value = TodayUiState.Ready(built.first, built.second, refreshing = true)
                 }
@@ -306,8 +306,8 @@ class TodayViewModel(
                         augmented to build(augmented, now, date, goals, pendingWater - seen)
                     }
                     raw = read
+                    _rawSnapshot.value = read
                     snapshot = augmented
-                    _rawSnapshot.value = augmented
                     pendingWater -= seen
                     confirmedWater -= seen
                     lastNow = now

@@ -59,6 +59,8 @@ import app.fitdash.ui.share.exportRaw
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import android.widget.Toast
+import kotlin.coroutines.cancellation.CancellationException
 import java.time.ZoneId
 import app.fitdash.settings.SettingsStore
 import app.fitdash.settings.ThemeChoice
@@ -215,9 +217,16 @@ fun SettingsSheet(
                         onClick = {
                             if (exporting == null) scope.launch {
                                 exporting = "daily"
-                                val uri = exportDaily(context, data, JournalStore.get(context).flow.value)
-                                exporting = null
-                                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/csv").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Export daily table"))
+                                try {
+                                    val uri = exportDaily(context, data, JournalStore.get(context).flow.value)
+                                    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/csv").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Export daily table"))
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Couldn't export the data", Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    exporting = null
+                                }
                             }
                         },
                         trailing = if (exporting == "daily") ({ CircularProgressIndicator(Modifier.size(20.dp), color = LocalTheme.current.accent, strokeWidth = 2.dp) }) else null,
@@ -228,9 +237,16 @@ fun SettingsSheet(
                         onClick = {
                             if (exporting == null) scope.launch {
                                 exporting = "raw"
-                                val uri = exportRaw(context, snapshot, JournalStore.get(context).flow.value, ZoneId.systemDefault())
-                                exporting = null
-                                context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("application/zip").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Export raw data"))
+                                try {
+                                    val uri = exportRaw(context, snapshot, JournalStore.get(context).flow.value, ZoneId.systemDefault())
+                                    context.startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("application/zip").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Export raw data"))
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Couldn't export the data", Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    exporting = null
+                                }
                             }
                         },
                         trailing = if (exporting == "raw") ({ CircularProgressIndicator(Modifier.size(20.dp), color = LocalTheme.current.accent, strokeWidth = 2.dp) }) else null,

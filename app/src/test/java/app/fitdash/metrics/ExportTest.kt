@@ -49,6 +49,20 @@ class ExportTest {
     @Test fun `workout with no distance leaves the field empty`() {
         val snap = HealthSnapshot(workouts = listOf(Workout(at(TODAY, 7), at(TODAY, 8), 56, title = "Run, easy")))
         val row = workoutsCsv(snap, IST).lines()[1]
-        assertEquals("${TODAY}T07:00:00+05:30,${TODAY}T08:00:00+05:30,56,\"Run, easy\",,,,,,\"\"", row)
+        assertEquals("${TODAY}T07:00:00+05:30,${TODAY}T08:00:00+05:30,56,\"Run, easy\",,,,,,", row)
+    }
+
+    @Test fun `quotes and newlines are escaped`() {
+        val snap = HealthSnapshot(workouts = listOf(Workout(at(TODAY, 7), at(TODAY, 8), 56, title = "The \"big\" one", app = "a\nb")))
+        val row = workoutsCsv(snap, IST).substringAfter("max_hr,app\n")
+        assertEquals(true, row.contains(",\"The \"\"big\"\" one\","))
+        assertEquals(true, row.endsWith(",\"a\nb\"\n"))
+    }
+
+    @Test fun `a day with steps but no recovery still has a row`() {
+        val d = TODAY.minusDays(25)
+        val snap = HealthSnapshot(dailyActivity = listOf(app.fitdash.health.DayActivity(d, 4321, 0.0, 0.0)))
+        val csv = dailyCsv(buildToday(snap, now), emptyMap())
+        assertEquals(true, csv.lines().any { it.startsWith("$d,") && it.contains("4321") })
     }
 }
