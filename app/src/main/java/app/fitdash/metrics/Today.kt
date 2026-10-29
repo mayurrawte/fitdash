@@ -7,6 +7,8 @@ import app.fitdash.health.SourceStatus
 import app.fitdash.health.Workout
 import app.fitdash.health.latestDataTime
 import app.fitdash.health.syncApp
+import app.fitdash.settings.DayJournal
+import app.fitdash.settings.Tag
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZonedDateTime
@@ -61,13 +63,16 @@ data class TodayData(
     val regularityLastWeek: Int? = null,
     val streaks: List<Streak> = emptyList(),
     val fitness: FitnessData = FitnessData(null, emptyList(), null, emptyList(), false, null, FitnessValue(SleepDebt(0.0, emptyList()), Explanation("", emptyList(), SLEEP_DEBT_SOURCE)), null, emptyMap()),
+    val tagEffects: List<TagEffect> = emptyList(),
+    val yesterdayTags: Set<Tag> = emptySet(),
+    val taggedDays: Int = 0,
 )
 
 data class DayScores(val sleep: Int?, val readiness: Int?, val movement: Int?)
 
 data class DayTrend(val date: LocalDate, val recovery: Int?, val sleepScore: Int?, val steps: Long?, val restingHr: Double?, val hrv: Double?)
 
-fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = now.toLocalDate(), goals: Goals = Goals(), augmented: Boolean = false): TodayData {
+fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = now.toLocalDate(), goals: Goals = Goals(), augmented: Boolean = false, journal: Map<LocalDate, DayJournal> = emptyMap()): TodayData {
     val zone = now.zone
     val snap = if (augmented) snapshot else withEstimatedRestingHr(snapshot, zone, now.toLocalDate())
     val isToday = date == now.toLocalDate()
@@ -150,5 +155,8 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         regularity = reg.value,
         regularityProgress = reg.progress,
         regularityLastWeek = regularity(snap.sleep, date.minusDays(7), zone).value?.value?.sri,
+        tagEffects = tagEffects(journal, series, date),
+        yesterdayTags = journal[prev]?.tags.orEmpty(),
+        taggedDays = window(date).count { !journal[it]?.tags.isNullOrEmpty() },
     )
 }

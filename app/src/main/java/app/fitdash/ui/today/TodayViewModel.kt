@@ -106,6 +106,7 @@ class TodayViewModel(
 
     init {
         viewModelScope.launch { settings.map { it.goals() }.distinctUntilChanged().drop(1).collect { rebuild() } }
+        journal?.let { j -> viewModelScope.launch { j.flow.drop(1).collect { rebuild() } } }
     }
 
     fun select(date: LocalDate) {
@@ -135,7 +136,7 @@ class TodayViewModel(
     private fun build(read: HealthSnapshot, now: ZonedDateTime, date: LocalDate, goals: Goals, water: Double = 0.0): Pair<TodayData, String> {
         val today = now.toLocalDate()
         val snapshot = if (water == 0.0) read else read.copy(waterDaily = read.waterDaily + (today to (read.waterDaily[today] ?: 0.0) + water))
-        val data = buildToday(snapshot, now, date, goals, augmented = true)
+        val data = buildToday(snapshot, now, date, goals, augmented = true, journal = journal?.flow?.value.orEmpty())
         return data to aiSummary(snapshot, data, now)
     }
 

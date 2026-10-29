@@ -47,9 +47,12 @@ import app.fitdash.ui.metricName
 import app.fitdash.ui.theme.Palette
 import app.fitdash.metrics.weekReview
 import app.fitdash.ui.components.WeekReviewCard
+import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.theme.Type
 import app.fitdash.ui.theme.bmiColour
 import java.time.ZoneId
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -78,6 +81,18 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
         }
         weekReview(data.series, if (data.isToday) data.date.minusDays(1) else data.date)?.let { review ->
             item(key = "week-review") { WeekReviewCard(review, Modifier.padding(bottom = Space.s), regularity = data.regularity?.value?.sri, regularityLast = data.regularityLastWeek) }
+        }
+        item(key = "insights") {
+            SectionCard("INSIGHTS", Modifier.padding(bottom = Space.s)) {
+                if (data.tagEffects.isEmpty()) {
+                    Text("Tag 10 days to see patterns · ${data.taggedDays} so far", style = Type.secondary, color = Palette.Muted)
+                }
+                data.tagEffects.forEachIndexed { i, e ->
+                    val parts = listOf(e.hrvMs to "HRV %s ms", e.restingHrBpm to "resting HR %s bpm", e.sleepScore to "sleep score %s", e.deepShare?.times(100) to "deep %s%%")
+                        .mapNotNull { (v, text) -> v?.roundToInt()?.let { text.format("${if (it < 0) "−" else "+"}${abs(it)}") } }
+                    ListRow(NavIcons.trends, e.tag.label, (listOf("${e.days} days") + parts).joinToString(" · "), divider = i > 0)
+                }
+            }
         }
         item(key = "toggle") { SegmentedControl(if (history) listOf("Week", "Month", "6M") else listOf("Week", "Month"), segment, { segment = it }) }
         val letters = if (sixMonths) monthLabels(weekStarts) else sparseLabels(days.map { it.date }, month)

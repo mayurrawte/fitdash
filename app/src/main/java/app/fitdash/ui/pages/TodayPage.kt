@@ -175,6 +175,11 @@ fun TodayPage(
                 Icon(NavIcons.sparkle, null, Modifier.padding(end = Space.m).size(18.dp), tint = Palette.Accent)
                 Column {
                     Text(readout(data), style = Type.body, color = Palette.Text)
+                    val tags = data.yesterdayTags.map { it.label.lowercase() }
+                    if (data.isToday && tags.isNotEmpty() && ((data.readiness as? ReadinessResult.Ready)?.score ?: 100) < 50) {
+                        val list = if (tags.size == 1) tags[0] else tags.dropLast(1).joinToString(", ") + " and " + tags.last()
+                        Text("Yesterday you tagged $list.", style = Type.small, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
+                    }
                     (data.readiness as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.used)?.let { Text(it, style = Type.small, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs)) } }
                     if (data.isToday) missingRecoveryLine(data.sources)?.let { Text(it, style = Type.secondary, color = Palette.Warn, modifier = Modifier.padding(top = Space.xs)) }
                 }
