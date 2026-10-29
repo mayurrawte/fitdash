@@ -17,7 +17,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -38,6 +41,7 @@ private class FakeSource(
     var fail: Boolean = false,
     var gate: CompletableDeferred<Unit>? = null,
     var canWrite: Boolean = true,
+    var writeDelay: Long = 0,
 ) : HealthSource {
     var reads = 0
     val sinces = mutableListOf<Instant?>()
@@ -59,6 +63,7 @@ private class FakeSource(
         return snapshot
     }
     override suspend fun addWater(liters: Double, at: Instant): String? {
+        delay(writeDelay)
         if (!canWrite) return null
         waterAdded += liters
         return "water-${waterAdded.size}"
@@ -279,12 +284,24 @@ class TodayViewModelTest {
         assertEquals(2, source.reads)
     }
 
-    @Test fun `adding water writes then reads again`() {
+    @Test fun `adding water writes and shows the new total without reading again`() {
         val source = FakeSource()
         val vm = load(source)
         vm.addWater(250)
         assertEquals(listOf(0.25), source.waterAdded)
-        assertEquals(2, source.reads)
+        assertEquals(1, source.reads)
+        assertEquals(0.25, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
+    }
+
+    @Test fun `addWater shows the new total at once and rolls back on failure`() = runTest {
+        val source = FakeSource(canWrite = false, writeDelay = 100)
+        val vm = TodayViewModel(source, clock = { now }, work = UnconfinedTestDispatcher(testScheduler))
+        vm.load(); advanceUntilIdle()
+        val before = (vm.state.value as TodayUiState.Ready).data.waterLiters
+        vm.addWater(250)
+        assertEquals(before + 0.25, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
+        advanceUntilIdle()
+        assertEquals(before, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
     }
 
     @Test fun `undo deletes the entry that was just added`() {
@@ -293,7 +310,8 @@ class TodayViewModelTest {
         vm.addWater(500)
         vm.undoWater()
         assertEquals(listOf("water-1"), source.waterDeleted)
-        assertEquals(3, source.reads)
+        assertEquals(1, source.reads)
+        assertEquals(0.0, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
         vm.undoWater()
         assertEquals(listOf("water-1"), source.waterDeleted)
     }

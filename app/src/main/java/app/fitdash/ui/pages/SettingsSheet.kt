@@ -151,7 +151,6 @@ fun SettingsSheet(
             item { SegmentedControl(listOf("12-hour", "24-hour"), if (settings.clock24) 1 else 0, { i -> store.update { it.copy(clock24 = i == 1) } }) }
             item { Label("SHOW ON TODAY") }
             item { ToggleRow("Show sleep score", settings.showSleepScore, { v -> store.update { it.copy(showSleepScore = v) } }, "Off shows hours and regularity instead of a score") }
-            item { ToggleRow("Water", settings.showWater, { v -> store.update { it.copy(showWater = v) } }) }
             item { ToggleRow("Workouts", settings.showWorkouts, { v -> store.update { it.copy(showWorkouts = v) } }) }
             item { ToggleRow("Heart rate", settings.showHeartRate, { v -> store.update { it.copy(showHeartRate = v) } }) }
             item { ToggleRow("Suggestions", settings.showSuggestions, { v -> store.update { it.copy(showSuggestions = v) } }, "Do this today") }
@@ -263,10 +262,10 @@ private fun HeightDialog(current: Int?, miles: Boolean, onDismiss: () -> Unit, o
         text = {
             Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
                 if (miles) {
-                    HeightField(ft, "ft", Modifier.weight(1f)) { ft = it }
-                    HeightField(inch, "in", Modifier.weight(1f)) { inch = it }
+                    NumberField(ft, "ft", Modifier.weight(1f)) { ft = it }
+                    NumberField(inch, "in", Modifier.weight(1f)) { inch = it }
                 } else {
-                    HeightField(cm, "cm", Modifier.fillMaxWidth()) { cm = it }
+                    NumberField(cm, "cm", Modifier.fillMaxWidth()) { cm = it }
                 }
             }
         },
@@ -308,10 +307,10 @@ private fun NameDialog(current: String?, onDismiss: () -> Unit, onSave: (String?
 }
 
 @Composable
-private fun HeightField(value: String, unit: String, modifier: Modifier, onChange: (String) -> Unit) {
+internal fun NumberField(value: String, unit: String, modifier: Modifier, digits: Int = 3, onChange: (String) -> Unit) {
     OutlinedTextField(
         value,
-        { onChange(it.filter(Char::isDigit).take(3)) },
+        { onChange(it.filter(Char::isDigit).take(digits)) },
         modifier,
         suffix = { Text(unit.uppercase(), style = Type.tiny, color = Palette.Muted) },
         textStyle = Type.body,

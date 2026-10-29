@@ -9,6 +9,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -318,5 +320,23 @@ fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Un
                 textAlign = TextAlign.Center,
             )
         }
+    }
+}
+
+@Composable
+fun Pill(text: String, colour: Color, border: Color, onClick: () -> Unit, modifier: Modifier, icon: ImageVector? = null) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        modifier
+            .clip(shape)
+            .border(1.dp, border, shape)
+            .tappable(onClick, null)
+            .heightIn(min = 48.dp)
+            .padding(vertical = 13.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (icon != null) Icon(icon, null, Modifier.padding(end = 6.dp).size(12.dp), tint = colour)
+        Text(text, style = Type.label, color = colour, textAlign = TextAlign.Center)
     }
 }

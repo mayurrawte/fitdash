@@ -90,6 +90,9 @@ class TodayViewModel(
     private val messageChannel = Channel<String>(Channel.CONFLATED)
     val messages: Flow<String> = messageChannel.receiveAsFlow()
     private var lastWaterId: String? = null
+    private var lastWaterLiters = 0.0
+    // Water written or undone since the last read, shown at once instead of waiting for Health Connect.
+    private var pendingWater = 0.0
 
     init {
         viewModelScope.launch { settings.map { it.goals() }.distinctUntilChanged().drop(1).collect { rebuild() } }
@@ -101,11 +104,13 @@ class TodayViewModel(
     }
 
     private fun rebuild() {
-        val snapshot = snapshot ?: return
+        val read = snapshot ?: return
         // Past midnight the stored "now" is yesterday; refreshing it keeps "today" meaning today until the next read.
         val now = lastNow?.let { if (it.toLocalDate() == clock().toLocalDate()) it else clock().also { n -> lastNow = n } } ?: return
         val goals = currentGoals()
         val date = selectedDate.value ?: now.toLocalDate()
+        val today = now.toLocalDate()
+        val snapshot = if (pendingWater == 0.0) read else read.copy(waterDaily = read.waterDaily + (today to (read.waterDaily[today] ?: 0.0) + pendingWater))
         rebuildJob?.cancel()
         rebuildJob = viewModelScope.launch {
             val (data, text) = withContext(work) { build(snapshot, now, date, goals) }
@@ -132,22 +137,34 @@ class TodayViewModel(
     }
 
     fun addWater(ml: Int) {
+        val liters = ml / 1000.0
+        pendingWater += liters
+        rebuild()
         viewModelScope.launch {
-            val id = source.addWater(ml / 1000.0, clock().toInstant())
+            val id = source.addWater(liters, clock().toInstant())
             if (id == null) {
+                pendingWater -= liters
+                rebuild()
                 writeFailed()
             } else {
                 lastWaterId = id
-                load()
+                lastWaterLiters = liters
             }
         }
     }
 
     fun undoWater() {
         val id = lastWaterId ?: return
+        val liters = lastWaterLiters
         lastWaterId = null
+        pendingWater -= liters
+        rebuild()
         viewModelScope.launch {
-            if (source.deleteWater(id)) load() else messageChannel.trySend("Couldn't save to Health Connect")
+            if (!source.deleteWater(id)) {
+                pendingWater += liters
+                rebuild()
+                messageChannel.trySend("Couldn't save to Health Connect")
+            }
         }
     }
 
@@ -229,6 +246,7 @@ class TodayViewModel(
                     }
                     raw = read
                     snapshot = augmented
+                    pendingWater = 0.0
                     lastNow = now
                     lastRead = now.toInstant()
                     store?.let { st ->

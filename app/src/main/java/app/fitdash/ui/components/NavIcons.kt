@@ -32,6 +32,7 @@ object NavIcons {
     val sleep = lineIcon("sleep", "M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z")
     val activity = lineIcon("activity", "M3 12h4l3-7 4 14 3-7h4")
     val trends = lineIcon("trends", "M4 19V5M4 19h16M8 15l4-4 3 3 5-6")
+    val log = lineIcon("log", "M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0 -16z", "M12 8.5v7M8.5 12h7")
     val bed = lineIcon("bed", "M3 18V7M3 14h18v4M21 14v-2a3 3 0 0 0-3-3h-7v5M7 11.5a1.5 1.5 0 1 0 0-.01")
     val walk = lineIcon("walk", "M13 3a1.5 1.5 0 1 0 0 3a1.5 1.5 0 1 0 0 -3z", "m9 21 3-7 3 3v4M7 11l3-3 4 1 3 3")
     val bolt = lineIcon("bolt", "M13 3 5 13h6l-1 8 8-10h-6z")

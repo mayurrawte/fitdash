@@ -61,7 +61,7 @@ val Nunito = FontFamily(
 )
 
 // Small labels are written in sentence case and lowercase.
-private val ACRONYMS = setOf("HRV", "HR", "BMI", "AI", "REM", "SPO2", "SPO₂", "AM", "PM")
+private val ACRONYMS = setOf("HRV", "HR", "BMI", "AI", "REM", "SPO2", "SPO₂", "AM", "PM", "L")
 
 private fun restoreAcronyms(s: String): String =
     s.split(" ").joinToString(" ") { w -> if (w.trim('.', ',', '·', ':').uppercase() in ACRONYMS) w.uppercase().replace("SPO", "SpO") else w }

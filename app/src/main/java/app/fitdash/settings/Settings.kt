@@ -22,7 +22,6 @@ data class Settings(
     val fahrenheit: Boolean = false,
     val reduceMotion: Boolean = false,
     val haptics: Boolean = true,
-    val showWater: Boolean = true,
     val showWorkouts: Boolean = true,
     val showHeartRate: Boolean = true,
     val showSuggestions: Boolean = true,
@@ -62,7 +61,6 @@ class SettingsStore(context: Context) {
         fahrenheit = prefs.getBoolean("fahrenheit", false),
         reduceMotion = prefs.getBoolean("reduceMotion", false),
         haptics = prefs.getBoolean("haptics", true),
-        showWater = prefs.getBoolean("showWater", true),
         showWorkouts = prefs.getBoolean("showWorkouts", true),
         showHeartRate = prefs.getBoolean("showHeartRate", true),
         showSuggestions = prefs.getBoolean("showSuggestions", true),
@@ -89,7 +87,7 @@ class SettingsStore(context: Context) {
             .putInt("waterGoalMl", s.waterGoalMl).putInt("heightCm", s.heightCm ?: 0).putInt("activeGoal", s.activeGoal)
             .putBoolean("clock24", s.clock24).putBoolean("weightLb", s.weightLb).putBoolean("fahrenheit", s.fahrenheit)
             .putBoolean("reduceMotion", s.reduceMotion).putBoolean("haptics", s.haptics)
-            .putBoolean("showWater", s.showWater).putBoolean("showWorkouts", s.showWorkouts).putBoolean("showHeartRate", s.showHeartRate)
+            .putBoolean("showWorkouts", s.showWorkouts).putBoolean("showHeartRate", s.showHeartRate)
             .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody).putBoolean("showSleepScore", s.showSleepScore)
             .putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh)
             .putBoolean("waterReminders", s.waterReminders).putBoolean("moveNudge", s.moveNudge)

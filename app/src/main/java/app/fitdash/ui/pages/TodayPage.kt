@@ -9,14 +9,12 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -26,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -35,11 +32,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -64,7 +59,6 @@ import app.fitdash.ui.basedOn
 import app.fitdash.ui.dataUpTo
 import app.fitdash.ui.formatDate
 import app.fitdash.ui.formatKm
-import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.greeting
 import app.fitdash.ui.initial
@@ -88,6 +82,7 @@ import app.fitdash.ui.components.ListRow
 import app.fitdash.ui.components.MiniRing
 import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.NumberWithUnits
+import app.fitdash.ui.components.Pill
 import app.fitdash.ui.components.RangeBar
 import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.StatTile
@@ -111,8 +106,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.math.roundToInt
 
-private const val UNDO_MILLIS = 5000L
-
 private fun suggestionIcon(kind: SuggestionKind) = when (kind) {
     SuggestionKind.HARD_WORKOUT -> NavIcons.bolt
     SuggestionKind.MODERATE -> NavIcons.walk
@@ -130,8 +123,6 @@ fun TodayPage(
     onSelectDate: (LocalDate) -> Unit,
     onShareDay: () -> Unit,
     onAskAi: () -> Unit,
-    onAddWater: (Int) -> Unit,
-    onUndoWater: () -> Unit,
     miles: Boolean = false,
     onOpenWorkout: (Workout) -> Unit = {},
     onSync: (String) -> Unit = {},
@@ -147,7 +138,6 @@ fun TodayPage(
     val prefs = LocalPrefs.current
     val sleepStreak = data.streaks.firstOrNull { it.kind == MetricKind.SLEEP_HOURS }?.let { streakLine(it.days) }
     val stepsStreak = data.streaks.firstOrNull { it.kind == MetricKind.STEPS }?.let { streakLine(it.days) }
-    val waterStreak = data.streaks.firstOrNull { it.kind == MetricKind.WATER }?.let { streakLine(it.days) }
     val goal = data.goals.steps
     val goalText = if (goal % 1000 == 0) "of ${goal / 1000}k" else "of ${formatSteps(goal.toLong())}"
     PageColumn(chrome, accent = score?.let { scoreColor(it) } ?: Palette.Calibrating) {
@@ -274,17 +264,8 @@ fun TodayPage(
         revealItem("tiles", 2) { TileGrid(tiles) }
         val hd = data.heartDay?.takeIf { prefs.showHeartRate }
         val workouts = data.workouts.takeIf { prefs.showWorkouts }.orEmpty()
-        if (hd != null || workouts.isNotEmpty() || prefs.showWater) revealItem("rows", 3) {
+        if (hd != null || workouts.isNotEmpty()) revealItem("rows", 3) {
             var expanded by rememberSaveable(data.date) { mutableStateOf(false) }
-            var adds by remember { mutableIntStateOf(0) }
-            var canUndo by remember { mutableStateOf(false) }
-            LaunchedEffect(adds) {
-                if (adds > 0) {
-                    canUndo = true
-                    delay(UNDO_MILLIS)
-                    canUndo = false
-                }
-            }
             Column(Modifier.animateContentSize()) {
                 RowGroup {
                     if (hd != null) {
@@ -308,24 +289,6 @@ fun TodayPage(
                         if (expanded) workouts.forEach { w ->
                             ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) }, divider = true)
                         }
-                    }
-                    if (prefs.showWater) {
-                        ListRow(
-                            NavIcons.drop, "Water",
-                            listOfNotNull("${formatLiters(data.waterLiters)} of ${formatLiters(data.waterGoal)} L", waterStreak).joinToString("\n"),
-                            divider = hd != null || workouts.isNotEmpty(),
-                            trailing = {
-                                if (data.isToday && canUndo) {
-                                    Text("Undo", Modifier.clip(RoundedCornerShape(8.dp)).tappable({ canUndo = false; onUndoWater() }, "Undo water").padding(Space.s), style = Type.label, color = Palette.Accent)
-                                } else if (data.isToday) {
-                                    Box(Modifier.size(48.dp).tappable({ adds++; onAddWater(250) }, "Add 250 millilitres"), contentAlignment = Alignment.Center) {
-                                        Box(Modifier.size(34.dp).clip(CircleShape).background(Palette.Accent), contentAlignment = Alignment.Center) {
-                                            Text("+", style = Type.body.copy(fontSize = 20.sp), color = Color.White)
-                                        }
-                                    }
-                                }
-                            },
-                        )
                     }
                 }
             }
@@ -438,24 +401,6 @@ internal fun TrioStat(label: String, value: Int?, previous: Int?, modifier: Modi
             }
             if (delta != null) DeltaArrow(delta > 0, Modifier.padding(start = 4.dp))
         }
-    }
-}
-
-@Composable
-private fun Pill(text: String, colour: Color, border: Color, onClick: () -> Unit, modifier: Modifier, icon: ImageVector? = null) {
-    val shape = RoundedCornerShape(14.dp)
-    Row(
-        modifier
-            .clip(shape)
-            .border(1.dp, border, shape)
-            .tappable(onClick, null)
-            .heightIn(min = 48.dp)
-            .padding(vertical = 13.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (icon != null) Icon(icon, null, Modifier.padding(end = 6.dp).size(12.dp), tint = colour)
-        Text(text, style = Type.label, color = colour, textAlign = TextAlign.Center)
     }
 }
 

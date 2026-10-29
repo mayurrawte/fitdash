@@ -41,6 +41,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import app.fitdash.BuildConfig
+import app.fitdash.settings.JournalStore
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.PreviewData
 import app.fitdash.ui.components.BottomBar
@@ -60,12 +62,14 @@ import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.today.TodayUiState
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import java.io.File
 import java.time.LocalDate
 
 private val NAV = listOf(
     NavItem("Today", NavIcons.today),
     NavItem("Sleep", NavIcons.sleep),
     NavItem("Activity", NavIcons.activity),
+    NavItem("Log", NavIcons.log),
     NavItem("Trends", NavIcons.trends),
 )
 
@@ -100,6 +104,7 @@ fun PagerScreen(
     var metric by remember { mutableStateOf<MetricRef?>(null) }
     var workout by remember { mutableStateOf<Workout?>(null) }
     val settings by store.flow.collectAsState()
+    val journal = remember { JournalStore.get(context) }
     val today = if (data.isToday) data.date else LocalDate.now()
 
     LaunchedEffect(openPage) {
@@ -156,9 +161,10 @@ fun PagerScreen(
                 ThemedBackground()
                 HorizontalPager(pager, Modifier.fillMaxSize(), beyondViewportPageCount = 1) { page ->
                     when (page) {
-                        0 -> TodayPage(data, chrome, goTo, onSelectDate, { sharing = true }, askAi, onAddWater, onUndoWater, settings.miles, { workout = it }, onSync, state.refreshing, progress)
+                        0 -> TodayPage(data, chrome, goTo, onSelectDate, { sharing = true }, askAi, settings.miles, { workout = it }, onSync, state.refreshing, progress)
                         1 -> SleepPage(data, chrome)
                         2 -> ActivityPage(data, chrome, settings.miles, { workout = it })
+                        3 -> LogPage(data, chrome, journal, onAddWater, onUndoWater, BuildConfig.FLAVOR == "play")
                         else -> TrendsPage(data, chrome)
                     }
                 }
@@ -220,13 +226,25 @@ private fun TodayLargeText() = PagePreview(0)
 @Composable
 private fun SleepLook() = PagePreview(1)
 
+@Preview(heightDp = 900)
+@Composable
+private fun LogWater() = PagePreview(3)
+
+@Preview(heightDp = 900, fontScale = 1.3f)
+@Composable
+private fun LogWaterLargeText() = PagePreview(3)
+
 @Composable
 private fun PagePreview(page: Int, data: TodayData = PreviewData.today(21, 30)) {
     val chrome = PageChrome(data.date, data.date, false, 29, {}, {}, {}, {}, {}, {})
     FitdashTheme {
         Box(Modifier.fillMaxSize()) {
             ThemedBackground()
-            if (page == 0) TodayPage(data, chrome, {}, {}, {}, {}, {}, {}) else SleepPage(data, chrome)
+            when (page) {
+                0 -> TodayPage(data, chrome, {}, {}, {}, {})
+                3 -> LogPage(data, chrome, JournalStore(File("journal-preview.json")), {}, {}, false)
+                else -> SleepPage(data, chrome)
+            }
         }
     }
 }
