@@ -18,7 +18,7 @@ class ExportTest {
 
     @Test fun `daily header is exact`() {
         assertEquals(
-            "date,recovery,sleep_score,hours_asleep,efficiency,awakenings,hrv_ms,resting_hr,steps,distance_km,calories,active_minutes,water_l,weight_kg,tags",
+            "date,recovery,sleep_score,hours_asleep,efficiency,awakenings,hrv_ms,resting_hr,steps,distance_km,calories,active_minutes,water_l,tags",
             dailyCsv(snap, now, Goals(), emptyMap()).lines().first(),
         )
     }
@@ -33,7 +33,7 @@ class ExportTest {
         val csv = dailyCsv(snap, now, Goals(), emptyMap())
         assertEquals(false, csv.contains("null"))
         val empty = TODAY.minusDays(20)
-        assertEquals("$empty,,,,,,,,,,,,,,", csv.lines().first { it.startsWith("$empty,") })
+        assertEquals("$empty,,,,,,,,,,,,,", csv.lines().first { it.startsWith("$empty,") })
     }
 
     @Test fun `rows run from the window start to today`() {

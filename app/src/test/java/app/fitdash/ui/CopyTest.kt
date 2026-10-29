@@ -283,4 +283,9 @@ class IssueUrlTest {
         assertEquals("Bedtime target 11:15 PM", bedtimeLine(1.0, target, false))
         assertNull(bedtimeLine(2.4, null, false))
     }
+
+    @Test fun insightsEmptyLine() {
+        assertEquals("Tag 10 days to see patterns · 4 so far", insightsEmpty(4))
+        assertEquals("Keep tagging: a tag needs 5 days with it and 5 without", insightsEmpty(12))
+    }
 }

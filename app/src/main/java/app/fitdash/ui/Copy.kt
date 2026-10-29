@@ -12,6 +12,8 @@ import app.fitdash.metrics.MissingInput
 import app.fitdash.metrics.RegularityBand
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.HeartSummary
+import app.fitdash.metrics.MIN_TAGGED_DAYS
+import app.fitdash.metrics.MIN_TAG_DAYS
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.RangeStatus
 import app.fitdash.metrics.ReadinessResult
@@ -527,3 +529,7 @@ private fun hrvLine(status: RangeStatus) = when (status) {
     RangeStatus.GOOD_SIDE -> "HRV higher than your usual."
     RangeStatus.BAD_SIDE -> "HRV lower than your usual."
 }
+
+fun insightsEmpty(taggedDays: Int): String =
+    if (taggedDays < MIN_TAGGED_DAYS) "Tag $MIN_TAGGED_DAYS days to see patterns · $taggedDays so far"
+    else "Keep tagging: a tag needs $MIN_TAG_DAYS days with it and $MIN_TAG_DAYS without"

@@ -30,7 +30,7 @@ fun csvField(value: String): String =
 
 fun dailyCsv(snapshot: HealthSnapshot, now: ZonedDateTime, goals: Goals, journal: Map<LocalDate, DayJournal>): String {
     val data = buildToday(snapshot, now, goals = goals)
-    val out = StringBuilder("date,${COLUMNS.joinToString(",") { it.first }},weight_kg,tags\n")
+    val out = StringBuilder("date,${COLUMNS.joinToString(",") { it.first }},tags\n")
     val byKind = COLUMNS.map { (_, kd) -> data.series[kd.first].orEmpty().associate { it.date to it.value } }
     for (date in generateSequence(data.date.minusDays(data.daysBack)) { it.plusDays(1) }.takeWhile { it <= data.date }) {
         out.append(date)
@@ -38,7 +38,7 @@ fun dailyCsv(snapshot: HealthSnapshot, now: ZonedDateTime, goals: Goals, journal
             out.append(',')
             byKind[i][date]?.let { out.append("%.${kd.second}f".format(Locale.ENGLISH, it)) }
         }
-        out.append(",,")
+        out.append(',')
         out.append(journal[date]?.tags.orEmpty().sorted().joinToString("|") { it.name.lowercase() })
         out.append('\n')
     }

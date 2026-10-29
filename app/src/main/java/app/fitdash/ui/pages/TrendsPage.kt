@@ -12,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.mutableIntStateOf
 import app.fitdash.metrics.DayValue
-import app.fitdash.metrics.MIN_TAGGED_DAYS
 import app.fitdash.metrics.weeklyAverages
 import app.fitdash.ui.components.GapLine
 import app.fitdash.ui.components.monthLabels
@@ -39,6 +38,7 @@ import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.StatTile
 import app.fitdash.ui.components.TileGrid
 import app.fitdash.ui.bmiWord
+import app.fitdash.ui.insightsEmpty
 import app.fitdash.ui.dayLetter
 import app.fitdash.ui.daysOfData
 import app.fitdash.ui.formatBmi
@@ -86,7 +86,7 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
         item(key = "insights") {
             SectionCard("INSIGHTS", Modifier.padding(bottom = Space.s)) {
                 if (data.tagEffects.isEmpty()) {
-                    Text("Tag $MIN_TAGGED_DAYS days to see patterns · ${data.taggedDays} so far", style = Type.secondary, color = Palette.Muted)
+                    Text(insightsEmpty(data.taggedDays), style = Type.secondary, color = Palette.Muted)
                 }
                 data.tagEffects.forEachIndexed { i, e ->
                     val parts = listOf(e.hrvMs to "HRV %s ms", e.restingHrBpm to "resting HR %s bpm", e.sleepScore to "sleep score %s", e.deepShare?.times(100) to "deep %s%%")
