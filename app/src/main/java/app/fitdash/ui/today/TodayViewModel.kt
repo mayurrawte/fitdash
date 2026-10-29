@@ -81,6 +81,9 @@ class TodayViewModel(
 
     private var job: Job? = null
     private var rebuildJob: Job? = null
+    private var retryJob: Job? = null
+    // Nutrient adds whose own write is still running; their entries have no id yet but must not be retried.
+    private val adding = mutableSetOf<Instant>()
     private var snapshot: HealthSnapshot? = null
     // The un-augmented snapshot: what incremental reads merge into, what the cache stores and what the export writes.
     private val raw = MutableStateFlow<HealthSnapshot?>(null)
@@ -197,8 +200,10 @@ class TodayViewModel(
         val date = now.toLocalDate()
         val at = now.toInstant()
         journal.add(date, kind, Entry(at, amount, null))
+        adding += at
         viewModelScope.launch {
             val id = source.addNutrient(kind, amount, at)
+            adding -= at
             val kept = journal.flow.value[date]?.entries(kind).orEmpty().any { it.at == at }
             if (id == null) {
                 writeFailed()
@@ -247,6 +252,7 @@ class TodayViewModel(
         job?.cancel()
         rebuildJob?.cancel()
         job = viewModelScope.launch {
+            var fresh = false
             when (source.availability()) {
                 Availability.NOT_INSTALLED -> {
                     _state.value = TodayUiState.NeedsHealthConnect(update = false)
@@ -310,6 +316,7 @@ class TodayViewModel(
                         onCacheSaved()
                     }
                     if (read.selectedDateOutOfWindow(selectedDate.value, now)) selectedDate.value = null
+                    fresh = true
                     if (read.sources.none { it.hasData }) TodayUiState.NoData
                     else TodayUiState.Ready(built.first, built.second, canAskHistory = canAskHistory, background = background)
                 }
@@ -320,6 +327,15 @@ class TodayViewModel(
                 (_state.value as? TodayUiState.Ready)?.copy(refreshing = false, error = true) ?: TodayUiState.Failed
             } finally {
                 _progress.value = null
+            }
+            val journal = journal
+            if (fresh && journal != null && retryJob?.isActive != true) retryJob = viewModelScope.launch {
+                for ((date, day) in journal.flow.value) for (kind in NutrientKind.entries) for (entry in day.entries(kind)) {
+                    if (entry.recordId != null || entry.at in adding) continue
+                    val id = source.addNutrient(kind, entry.amount, entry.at) ?: continue
+                    if (journal.flow.value[date]?.entries(kind).orEmpty().any { it.at == entry.at }) journal.setRecordId(date, kind, entry.at, id)
+                    else source.deleteNutrient(id)
+                }
             }
         }
     }

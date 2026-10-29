@@ -56,6 +56,7 @@ private class FakeSource(
     val waterDeleted = mutableListOf<String>()
     val heights = mutableListOf<Double>()
     val nutrientsAdded = mutableListOf<Pair<NutrientKind, Double>>()
+    val nutrientTimes = mutableListOf<Instant>()
     val nutrientsDeleted = mutableListOf<String>()
     var history: String? = null
     var progress: List<ReadProgress> = emptyList()
@@ -83,8 +84,10 @@ private class FakeSource(
         return canWrite
     }
     override suspend fun addNutrient(kind: NutrientKind, amount: Double, at: Instant): String? {
+        delay(writeDelay)
         if (!canWrite) return null
         nutrientsAdded += kind to amount
+        nutrientTimes += at
         return "nutrition-${nutrientsAdded.size}"
     }
     override suspend fun deleteNutrient(id: String): Boolean { nutrientsDeleted += id; return true }
@@ -413,5 +416,61 @@ class TodayViewModelTest {
         vm.addNutrient(NutrientKind.CAFFEINE, 95.0)
         assertEquals("Couldn't save to Health Connect", vm.messages.first())
         assertEquals(listOf(Entry(now.toInstant(), 95.0, null)), journal.flow.value[TODAY]!!.caffeine)
+    }
+
+    @Test fun `entries saved without permission are written once it is granted`() {
+        val source = FakeSource()
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
+        val at = now.minusHours(2).toInstant()
+        journal.add(TODAY, NutrientKind.PROTEIN, Entry(at, 30.0, null))
+        TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal).load()
+        assertEquals(listOf(NutrientKind.PROTEIN to 30.0), source.nutrientsAdded)
+        assertEquals(listOf(at), source.nutrientTimes)
+        assertEquals(listOf(Entry(at, 30.0, "nutrition-1")), journal.flow.value[TODAY]!!.protein)
+    }
+
+    @Test fun `entries with an id are never rewritten`() {
+        val source = FakeSource()
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
+        journal.add(TODAY, NutrientKind.CAFFEINE, Entry(now.minusHours(2).toInstant(), 95.0, "r1"))
+        TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal).load()
+        assertTrue(source.nutrientsAdded.isEmpty())
+    }
+
+    @Test fun `a failed retry leaves the entry as it was`() = runBlocking {
+        val source = FakeSource(canWrite = false)
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher()))
+        val entry = Entry(now.minusHours(2).toInstant(), 30.0, null)
+        journal.add(TODAY, NutrientKind.PROTEIN, entry)
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal).also { it.load() }
+        assertEquals(listOf(entry), journal.flow.value[TODAY]!!.protein)
+        assertEquals(null, withTimeoutOrNull(200) { vm.messages.first() })
+    }
+
+    @Test fun `a load during an add does not write that entry again`() = runTest {
+        val source = FakeSource()
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
+        val vm = TodayViewModel(source, { now }, work = UnconfinedTestDispatcher(testScheduler), journal = journal)
+        vm.load(); advanceUntilIdle()
+        source.writeDelay = 100
+        vm.addNutrient(NutrientKind.PROTEIN, 25.0)
+        vm.load()
+        advanceUntilIdle()
+        assertEquals(listOf(now.toInstant()), source.nutrientTimes)
+        assertEquals(listOf(Entry(now.toInstant(), 25.0, "nutrition-1")), journal.flow.value[TODAY]!!.protein)
+    }
+
+    @Test fun `overlapping loads retry each entry once`() = runTest {
+        val source = FakeSource(writeDelay = 100)
+        val journal = JournalStore(tmp.newFile(), CoroutineScope(UnconfinedTestDispatcher(testScheduler)))
+        val protein = now.minusHours(3).toInstant()
+        val caffeine = now.minusHours(2).toInstant()
+        journal.add(TODAY, NutrientKind.PROTEIN, Entry(protein, 30.0, null))
+        journal.add(TODAY.minusDays(1), NutrientKind.CAFFEINE, Entry(caffeine, 95.0, null))
+        val vm = TodayViewModel(source, { now }, work = UnconfinedTestDispatcher(testScheduler), journal = journal)
+        vm.load()
+        vm.load()
+        advanceUntilIdle()
+        assertEquals(listOf(protein, caffeine).sorted(), source.nutrientTimes.sorted())
     }
 }
