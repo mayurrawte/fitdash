@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -156,10 +155,10 @@ fun TodayPage(
             Row(Modifier.padding(horizontal = Space.xl, vertical = Space.xs), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     if (data.isToday) greeting(LocalTime.now().hour, prefs.name) else formatDate(data.date),
+                    Modifier.weight(1f),
                     style = Type.title,
                     color = Palette.Text,
                 )
-                Spacer(Modifier.weight(1f))
                 val name = prefs.name
                 if (data.isToday && name != null) {
                     Box(Modifier.size(36.dp).clip(CircleShape).background(Palette.Accent), contentAlignment = Alignment.Center) {

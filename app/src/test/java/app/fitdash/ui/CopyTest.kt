@@ -80,12 +80,14 @@ class CopyTest {
         assertEquals("Good morning, Mayur!", greeting(8, "Mayur"))
         assertEquals("Good evening", greeting(20, null))
         assertEquals("Good evening", greeting(20, "  "))
+        assertEquals("Good morning, Mayur!", greeting(8, " Mayur "))
     }
 
     @Test fun initialTakesFirstGrapheme() {
         assertEquals("M", initial("Mayur Rawte"))
         assertEquals("É", initial("élodie"))
         assertEquals("🙂", initial("🙂 Sam"))
+        assertEquals("S", initial("  sam"))
     }
 
     @Test fun greetingByHour() {
