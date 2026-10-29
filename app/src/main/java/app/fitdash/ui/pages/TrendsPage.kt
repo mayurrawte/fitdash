@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.mutableIntStateOf
 import app.fitdash.metrics.DayValue
+import app.fitdash.metrics.MIN_TAGGED_DAYS
 import app.fitdash.metrics.weeklyAverages
 import app.fitdash.ui.components.GapLine
 import app.fitdash.ui.components.monthLabels
@@ -85,11 +86,11 @@ fun TrendsPage(data: TodayData, chrome: PageChrome) {
         item(key = "insights") {
             SectionCard("INSIGHTS", Modifier.padding(bottom = Space.s)) {
                 if (data.tagEffects.isEmpty()) {
-                    Text("Tag 10 days to see patterns · ${data.taggedDays} so far", style = Type.secondary, color = Palette.Muted)
+                    Text("Tag $MIN_TAGGED_DAYS days to see patterns · ${data.taggedDays} so far", style = Type.secondary, color = Palette.Muted)
                 }
                 data.tagEffects.forEachIndexed { i, e ->
                     val parts = listOf(e.hrvMs to "HRV %s ms", e.restingHrBpm to "resting HR %s bpm", e.sleepScore to "sleep score %s", e.deepShare?.times(100) to "deep %s%%")
-                        .mapNotNull { (v, text) -> v?.roundToInt()?.let { text.format(formatSigned(it)) } }
+                        .mapNotNull { (v, text) -> v?.roundToInt()?.takeIf { it != 0 }?.let { text.format(formatSigned(it)) } }
                     ListRow(NavIcons.trends, e.tag.label, (listOf("${e.days} days") + parts).joinToString(" · "), divider = i > 0)
                 }
             }

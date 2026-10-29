@@ -21,7 +21,6 @@ import app.fitdash.metrics.Status
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.Tuning
-import app.fitdash.metrics.debtLevel
 import app.fitdash.metrics.rangeStatus
 import app.fitdash.ui.components.ScoreChip
 import java.text.BreakIterator
@@ -269,7 +268,7 @@ fun formatTime12(t: Instant, zone: ZoneId): String = CLOCK_12.format(t.atZone(zo
 fun bedtimeLine(debtHours: Double, target: LocalTime?, clock24: Boolean): String? {
     if (target == null) return null
     val time = formatTime(target, clock24)
-    return if (debtLevel(debtHours) != Status.GOOD) "Aim for bed by $time tonight" else "Bedtime target $time"
+    return if (debtHours > 1) "Aim for bed by $time tonight" else "Bedtime target $time"
 }
 
 fun formatTime(t: Instant, zone: ZoneId, clock24: Boolean): String = formatTime(t.atZone(zone).toLocalTime(), clock24)

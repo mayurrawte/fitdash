@@ -59,8 +59,23 @@ class JournalTest {
     @Test fun `exactly five tagged and five untagged days gives one effect`() {
         val window = window(TODAY)
         val journal = window.take(5).associateWith { DayJournal(setOf(Tag.ALCOHOL)) } +
+            window.drop(10).associateWith { DayJournal(setOf(Tag.STRESS)) }
+        assertEquals(5, window.count { journal[it] == null })
+        assertEquals(listOf(Tag.ALCOHOL), tagEffects(journal, seriesWhere { 40.0 }, window).map { it.tag }.filter { it == Tag.ALCOHOL })
+    }
+
+    @Test fun `hidden until ten tagged days in total`() {
+        val nine = journalWith(Tag.ALCOHOL, 5) + (6..9).associate { TODAY.minusDays(it.toLong()) to DayJournal(setOf(Tag.STRESS)) }
+        assertTrue(tagEffects(nine, seriesWhere { 40.0 }, window(TODAY)).isEmpty())
+        val ten = nine + (TODAY.minusDays(10) to DayJournal(setOf(Tag.STRESS)))
+        assertEquals(setOf(Tag.ALCOHOL, Tag.STRESS), tagEffects(ten, seriesWhere { 40.0 }, window(TODAY)).map { it.tag }.toSet())
+    }
+
+    @Test fun `untagged days without a following night do not count`() {
+        val window = window(TODAY)
+        val journal = window.take(5).associateWith { DayJournal(setOf(Tag.ALCOHOL)) } +
             window.drop(5).dropLast(5).associateWith { DayJournal(setOf(Tag.STRESS)) }
         assertEquals(5, window.count { journal[it] == null })
-        assertEquals(listOf(Tag.ALCOHOL), tagEffects(journal, seriesWhere { 40.0 }, window(TODAY)).map { it.tag }.filter { it == Tag.ALCOHOL })
+        assertTrue(tagEffects(journal, seriesWhere { 40.0 }, window).isEmpty())
     }
 }

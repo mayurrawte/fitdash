@@ -4,6 +4,7 @@ import app.fitdash.health.HealthSnapshot
 import app.fitdash.settings.DayJournal
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -27,7 +28,8 @@ private val ISO = DateTimeFormatter.ISO_OFFSET_DATE_TIME
 fun csvField(value: String): String =
     if (value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) "\"" + value.replace("\"", "\"\"") + "\"" else value
 
-fun dailyCsv(data: TodayData, journal: Map<LocalDate, DayJournal>): String {
+fun dailyCsv(snapshot: HealthSnapshot, now: ZonedDateTime, goals: Goals, journal: Map<LocalDate, DayJournal>): String {
+    val data = buildToday(snapshot, now, goals = goals)
     val out = StringBuilder("date,${COLUMNS.joinToString(",") { it.first }},weight_kg,tags\n")
     val byKind = COLUMNS.map { (_, kd) -> data.series[kd.first].orEmpty().associate { it.date to it.value } }
     for (date in generateSequence(data.date.minusDays(data.daysBack)) { it.plusDays(1) }.takeWhile { it <= data.date }) {
@@ -84,7 +86,7 @@ fun workoutsCsv(snapshot: HealthSnapshot, zone: ZoneId): String {
 fun journalCsv(journal: Map<LocalDate, DayJournal>): String {
     val out = StringBuilder("date,tag\n")
     for ((date, day) in journal.toSortedMap()) {
-        for (tag in day.tags.sorted()) out.append(date).append(',').append(csvField(tag.label)).append('\n')
+        for (tag in day.tags.sorted()) out.append(date).append(',').append(tag.name.lowercase()).append('\n')
     }
     return out.toString()
 }

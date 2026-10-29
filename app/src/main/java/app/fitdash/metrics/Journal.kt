@@ -11,13 +11,16 @@ data class TagEffect(val tag: Tag, val days: Int, val hrvMs: Double?, val restin
 // Each side needs this many days before a difference is worth showing.
 const val MIN_TAG_DAYS = 5
 
+// Insights stay hidden until this many days carry any tag.
+const val MIN_TAGGED_DAYS = 10
+
 fun tagEffects(journal: Map<LocalDate, DayJournal>, series: Map<MetricKind, List<DayValue>>, days: List<LocalDate>): List<TagEffect> {
-    if (journal.values.all { it.tags.isEmpty() }) return emptyList()
+    if (days.count { !journal[it]?.tags.isNullOrEmpty() } < MIN_TAGGED_DAYS) return emptyList()
     val values = listOf(MetricKind.HRV, MetricKind.RESTING_HR, MetricKind.SLEEP_SCORE, MetricKind.DEEP, MetricKind.SLEEP_HOURS)
         .associateWith { kind -> series[kind].orEmpty().mapNotNull { v -> v.value?.let { v.date to it } }.toMap() }
     val deep = values.getValue(MetricKind.DEEP).mapNotNull { (d, v) -> values.getValue(MetricKind.SLEEP_HOURS)[d]?.takeIf { it > 0 }?.let { d to v / 60 / it } }.toMap()
     val metrics = listOf(values.getValue(MetricKind.HRV), values.getValue(MetricKind.RESTING_HR), values.getValue(MetricKind.SLEEP_SCORE), deep)
-    val untagged = days.filter { journal[it]?.tags.isNullOrEmpty() }
+    val untagged = days.filter { d -> journal[d]?.tags.isNullOrEmpty() && metrics.any { d.plusDays(1) in it } }
     return Tag.entries.mapNotNull { tag ->
         val tagged = days.filter { d -> tag in journal[d]?.tags.orEmpty() && metrics.any { d.plusDays(1) in it } }
         if (tagged.size < MIN_TAG_DAYS || untagged.size < MIN_TAG_DAYS) return@mapNotNull null

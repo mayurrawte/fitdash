@@ -14,31 +14,38 @@ import org.junit.Test
 
 class ExportTest {
     private val now = TODAY.atTime(8, 0).atZone(IST)
-    private val data = buildToday(history(TODAY, 5), now)
+    private val snap = history(TODAY, 5)
 
     @Test fun `daily header is exact`() {
         assertEquals(
             "date,recovery,sleep_score,hours_asleep,efficiency,awakenings,hrv_ms,resting_hr,steps,distance_km,calories,active_minutes,water_l,weight_kg,tags",
-            dailyCsv(data, emptyMap()).lines().first(),
+            dailyCsv(snap, now, Goals(), emptyMap()).lines().first(),
         )
     }
 
     @Test fun `tags are joined in the last column`() {
         val yesterday = TODAY.minusDays(1)
-        val csv = dailyCsv(data, mapOf(yesterday to DayJournal(tags = setOf(Tag.ALCOHOL, Tag.STRESS))))
+        val csv = dailyCsv(snap, now, Goals(), mapOf(yesterday to DayJournal(tags = setOf(Tag.ALCOHOL, Tag.STRESS))))
         assertEquals(true, csv.lines().first { it.startsWith("$yesterday,") }.endsWith(",alcohol|stress"))
     }
 
     @Test fun `missing values are empty fields`() {
-        val csv = dailyCsv(data, emptyMap())
+        val csv = dailyCsv(snap, now, Goals(), emptyMap())
         assertEquals(false, csv.contains("null"))
         val empty = TODAY.minusDays(20)
         assertEquals("$empty,,,,,,,,,,,,,,", csv.lines().first { it.startsWith("$empty,") })
     }
 
+    @Test fun `rows run from the window start to today`() {
+        val rows = dailyCsv(snap, now, Goals(), emptyMap()).lines().drop(1).filter { it.isNotEmpty() }
+        assertEquals(30, rows.size)
+        assertEquals(true, rows.first().startsWith("${TODAY.minusDays(29)},"))
+        assertEquals(true, rows.last().startsWith("$TODAY,"))
+    }
+
     @Test fun `journal has one row per tag`() {
         val csv = journalCsv(mapOf(TODAY to DayJournal(tags = setOf(Tag.ALCOHOL, Tag.NAP))))
-        assertEquals(listOf("date,tag", "$TODAY,Alcohol", "$TODAY,Napped"), csv.lines().filter { it.isNotEmpty() })
+        assertEquals(listOf("date,tag", "$TODAY,alcohol", "$TODAY,nap"), csv.lines().filter { it.isNotEmpty() })
     }
 
     @Test fun `heart rate rows carry the local offset`() {
@@ -62,7 +69,7 @@ class ExportTest {
     @Test fun `a day with steps but no recovery still has a row`() {
         val d = TODAY.minusDays(25)
         val snap = HealthSnapshot(dailyActivity = listOf(app.fitdash.health.DayActivity(d, 4321, 0.0, 0.0)))
-        val csv = dailyCsv(buildToday(snap, now), emptyMap())
+        val csv = dailyCsv(snap, now, Goals(), emptyMap())
         assertEquals(true, csv.lines().any { it.startsWith("$d,") && it.contains("4321") })
     }
 }

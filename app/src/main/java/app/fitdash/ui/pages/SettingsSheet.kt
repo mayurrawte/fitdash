@@ -87,6 +87,7 @@ import app.fitdash.ui.today.BackgroundAccess
 import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.Locale
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.roundToInt
@@ -214,12 +215,12 @@ fun SettingsSheet(
                 RowGroup {
                     ListRow(NavIcons.info, "Data sources", null, onClick = { showInfo = true })
                     if (canAskHistory) ListRow(NavIcons.trends, "Read older data", "Up to 6 months of history instead of 30 days", onClick = { onAskHistory() }, divider = true)
-                    val exports = listOfNotNull(
-                        listOf("Export daily table", "CSV, ${data.daysBack + 1} days", "text/csv") to suspend { exportDaily(context, data, JournalStore.get(context).flow.value) },
-                        snapshot?.let { s ->
-                            listOf("Export raw data", "Heart rate, sleep stages, workouts, journal", "application/zip") to suspend { exportRaw(context, s, JournalStore.get(context).flow.value, ZoneId.systemDefault()) }
-                        },
-                    )
+                    val exports = snapshot?.let { s ->
+                        listOf(
+                            listOf("Export daily table", "CSV, ${data.daysBack + 1} days", "text/csv") to suspend { exportDaily(context, s, data.goals, JournalStore.get(context).flow.value, ZonedDateTime.now()) },
+                            listOf("Export raw data", "Heart rate, sleep stages, workouts, journal", "application/zip") to suspend { exportRaw(context, s, JournalStore.get(context).flow.value, ZoneId.systemDefault()) },
+                        )
+                    }.orEmpty()
                     for ((text, export) in exports) {
                         val (title, subtitle, type) = text
                         ListRow(
