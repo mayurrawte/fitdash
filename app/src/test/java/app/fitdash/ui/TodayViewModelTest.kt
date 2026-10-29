@@ -9,6 +9,9 @@ import app.fitdash.health.SnapshotStore
 import app.fitdash.health.CachedSnapshot
 import app.fitdash.health.HealthSource
 import app.fitdash.health.SourceStatus
+import app.fitdash.settings.Entry
+import app.fitdash.settings.JournalStore
+import app.fitdash.settings.NutrientKind
 import app.fitdash.settings.Settings
 import app.fitdash.ui.today.TodayUiState
 import app.fitdash.ui.today.TodayViewModel
@@ -29,9 +32,11 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import app.fitdash.metrics.Tuning
 import org.junit.Assert.assertFalse
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import java.time.Instant
 import java.time.ZonedDateTime
 
@@ -49,6 +54,8 @@ private class FakeSource(
     val waterAdded = mutableListOf<Double>()
     val waterDeleted = mutableListOf<String>()
     val heights = mutableListOf<Double>()
+    val nutrientsAdded = mutableListOf<Pair<NutrientKind, Double>>()
+    val nutrientsDeleted = mutableListOf<String>()
     var history: String? = null
     var progress: List<ReadProgress> = emptyList()
     override val allPermissions = setOf("read", "x.WRITE_water")
@@ -74,11 +81,19 @@ private class FakeSource(
         if (canWrite) heights += meters
         return canWrite
     }
+    override suspend fun addNutrient(kind: NutrientKind, amount: Double, at: Instant): String? {
+        if (!canWrite) return null
+        nutrientsAdded += kind to amount
+        return "nutrition-${nutrientsAdded.size}"
+    }
+    override suspend fun deleteNutrient(id: String): Boolean { nutrientsDeleted += id; return true }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TodayViewModelTest {
     private val now = TODAY.atTime(8, 10).atZone(IST)
+
+    @get:Rule val tmp = TemporaryFolder()
 
     @Before fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
     @After fun tearDown() = Dispatchers.resetMain()
@@ -377,5 +392,25 @@ class TodayViewModelTest {
         val vm = load(source)
         vm.addWater(250)
         assertEquals("Couldn't save to Health Connect", vm.messages.first())
+    }
+
+    @Test fun `adding protein journals the entry with its record id, removing deletes both`() {
+        val source = FakeSource()
+        val journal = JournalStore(tmp.newFile())
+        val vm = TodayViewModel(source, { now }, work = Dispatchers.Main, journal = journal).also { it.load() }
+        vm.addNutrient(NutrientKind.PROTEIN, 25.0)
+        assertEquals(listOf(NutrientKind.PROTEIN to 25.0), source.nutrientsAdded)
+        assertEquals(listOf(Entry(now.toInstant(), 25.0, "nutrition-1")), journal.flow.value[TODAY]!!.protein)
+        vm.removeNutrient(NutrientKind.PROTEIN, now.toInstant())
+        assertEquals(listOf("nutrition-1"), source.nutrientsDeleted)
+        assertEquals(null, journal.flow.value[TODAY])
+    }
+
+    @Test fun `a failed nutrient write keeps the entry without an id and shows a message`() = runBlocking {
+        val journal = JournalStore(tmp.newFile())
+        val vm = TodayViewModel(FakeSource(canWrite = false), { now }, work = Dispatchers.Main, journal = journal).also { it.load() }
+        vm.addNutrient(NutrientKind.CAFFEINE, 95.0)
+        assertEquals("Couldn't save to Health Connect", vm.messages.first())
+        assertEquals(listOf(Entry(now.toInstant(), 95.0, null)), journal.flow.value[TODAY]!!.caffeine)
     }
 }

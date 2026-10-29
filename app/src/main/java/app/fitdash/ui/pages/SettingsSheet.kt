@@ -123,6 +123,10 @@ fun SettingsSheet(
                         "Active minutes", "${settings.activeGoal} min", settings.activeGoal > 10, settings.activeGoal < 120,
                         { store.update { it.copy(activeGoal = it.activeGoal - 5) } }, { store.update { it.copy(activeGoal = it.activeGoal + 5) } },
                     )
+                    Stepper(
+                        "Protein", "${settings.proteinGoalG} g", settings.proteinGoalG > 50, settings.proteinGoalG < 250,
+                        { store.update { it.copy(proteinGoalG = it.proteinGoalG - 10) } }, { store.update { it.copy(proteinGoalG = it.proteinGoalG + 10) } },
+                    )
                 }
             }
             item {

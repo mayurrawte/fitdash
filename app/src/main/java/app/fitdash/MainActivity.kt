@@ -47,6 +47,7 @@ import android.graphics.Color.TRANSPARENT
 import app.fitdash.health.HealthReader
 import androidx.health.connect.client.HealthConnectClient
 import app.fitdash.health.SnapshotCache
+import app.fitdash.settings.JournalStore
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.LoadingScreen
 import app.fitdash.ui.MessageScreen
@@ -83,7 +84,7 @@ class MainActivity : ComponentActivity() {
         openPage.value = intent.pageExtra()
         super.onCreate(savedInstanceState)
         clearShareCache(applicationContext)
-        val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) }, store = SnapshotCache(applicationContext), onCacheSaved = { FitdashWidget().updateAll(applicationContext) }) } } }
+        val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) }, store = SnapshotCache(applicationContext), onCacheSaved = { FitdashWidget().updateAll(applicationContext) }, journal = JournalStore.get(applicationContext)) } } }
         splash.setKeepOnScreenCondition { vm.state.value == TodayUiState.Loading && SystemClock.uptimeMillis() - splashStart < SPLASH_MAX_MILLIS }
         splash.setOnExitAnimationListener { provider ->
             val view = provider.view
@@ -121,6 +122,7 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
         TodayViewModel(
             HealthReader(context.applicationContext), settings = store.flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) },
             store = SnapshotCache(context.applicationContext), onCacheSaved = { FitdashWidget().updateAll(context.applicationContext) },
+            journal = JournalStore.get(context.applicationContext),
         )
     }
     val settings by store.flow.collectAsStateWithLifecycle()
@@ -179,6 +181,8 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
                 onSelectDate = vm::select,
                 onAddWater = vm::addWater,
                 onUndoWater = vm::undoWater,
+                onAddNutrient = vm::addNutrient,
+                onRemoveNutrient = vm::removeNutrient,
                 onSetHeight = vm::setHeight,
                 onAskHistory = { askPermissions.launch(vm.permissions) },
                 onAskBackground = { askPermissions.launch(setOf(BACKGROUND_PERMISSION)) },

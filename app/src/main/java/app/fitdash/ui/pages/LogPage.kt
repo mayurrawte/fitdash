@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -38,11 +39,17 @@ import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.wakingWindow
 import app.fitdash.metrics.waterDue
 import app.fitdash.settings.JournalStore
+import app.fitdash.settings.NutrientKind
 import app.fitdash.ui.LocalPrefs
+import app.fitdash.ui.clock
 import app.fitdash.ui.components.Bottle
 import app.fitdash.ui.components.HeroCard
+import app.fitdash.ui.components.ListRow
+import app.fitdash.ui.components.MiniRing
 import app.fitdash.ui.components.NumberWithUnits
+import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.Pill
+import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.SegmentedControl
 import app.fitdash.ui.components.StripCard
 import app.fitdash.ui.components.tappable
@@ -54,6 +61,7 @@ import app.fitdash.ui.theme.Space
 import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Type
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -61,7 +69,16 @@ import java.time.ZonedDateTime
 private const val UNDO_MILLIS = 3000L
 
 @Composable
-fun LogPage(data: TodayData, chrome: PageChrome, journal: JournalStore, onAddWater: (Int) -> Unit, onUndoWater: () -> Unit, playBuild: Boolean) {
+fun LogPage(
+    data: TodayData,
+    chrome: PageChrome,
+    journal: JournalStore,
+    onAddWater: (Int) -> Unit,
+    onUndoWater: () -> Unit,
+    onAddNutrient: (NutrientKind, Double) -> Unit,
+    onRemoveNutrient: (NutrientKind, Instant) -> Unit,
+    playBuild: Boolean,
+) {
     val prefs = LocalPrefs.current
     val haptic = LocalHapticFeedback.current
     val segments = if (playBuild) listOf("Water", "Tags") else listOf("Water", "Protein", "Caffeine", "Tags")
@@ -72,6 +89,9 @@ fun LogPage(data: TodayData, chrome: PageChrome, journal: JournalStore, onAddWat
     var adds by remember { mutableIntStateOf(0) }
     var canUndo by remember { mutableStateOf(false) }
     var custom by remember { mutableStateOf(false) }
+    val days by journal.flow.collectAsState()
+    val day = days[data.date]
+    val zone = ZoneId.systemDefault()
     LaunchedEffect(adds) {
         if (adds > 0) {
             canUndo = true
@@ -125,6 +145,59 @@ fun LogPage(data: TodayData, chrome: PageChrome, journal: JournalStore, onAddWat
                         }
                     }
                 }
+            } else if (segments[segment] == "Protein" || segments[segment] == "Caffeine") {
+                val kind = if (segments[segment] == "Protein") NutrientKind.PROTEIN else NutrientKind.CAFFEINE
+                val list = (if (kind == NutrientKind.PROTEIN) day?.protein else day?.caffeine).orEmpty()
+                if (kind == NutrientKind.PROTEIN) revealItem("protein", 0) {
+                    val grams = list.sumOf { it.amount }
+                    HeroCard(null, "Protein", tint = Tint.PEACH) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MiniRing("protein", (grams / prefs.proteinGoalG).toFloat(), Palette.Text, diameter = 72.dp, stroke = 7.dp)
+                            Column(Modifier.padding(start = Space.l)) {
+                                NumberWithUnits(listOf(grams.roundToInt().toString() to "g"), style = Type.hero)
+                                Text("of ${prefs.proteinGoalG} g", style = Type.body, color = Palette.Muted)
+                            }
+                        }
+                    }
+                } else revealItem("caffeine", 0) {
+                    HeroCard(null, "Caffeine", tint = Tint.SAND) {
+                        Column {
+                            NumberWithUnits(listOf(list.size.toString() to if (list.size == 1) "cup" else "cups"), style = Type.hero)
+                            Text(list.maxOfOrNull { it.at }?.let { "Last at ${clock(it, zone)}" } ?: "None today", style = Type.body, color = Palette.Muted)
+                        }
+                    }
+                }
+                if (data.isToday) item(key = "${kind.name}-add") {
+                    Row(Modifier.padding(horizontal = Space.l).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (kind == NutrientKind.PROTEIN) {
+                            Pill("+10 g", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { onAddNutrient(kind, 10.0) }, Modifier.weight(1f))
+                            Pill("+25 g", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { onAddNutrient(kind, 25.0) }, Modifier.weight(1f))
+                            Pill("Custom", Palette.Text, Palette.Divider, { custom = true }, Modifier.weight(1f))
+                        } else {
+                            Pill("+1 coffee", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { onAddNutrient(kind, 95.0) }, Modifier.weight(1f))
+                            Pill("+1 tea", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), { onAddNutrient(kind, 47.0) }, Modifier.weight(1f))
+                        }
+                    }
+                }
+                if (list.isNotEmpty()) item(key = "${kind.name}-entries") {
+                    RowGroup {
+                        list.sortedByDescending { it.at }.forEachIndexed { i, entry ->
+                            val amount = if (kind == NutrientKind.PROTEIN) "${entry.amount.roundToInt()} g" else "${entry.amount.roundToInt()} mg"
+                            ListRow(
+                                if (kind == NutrientKind.PROTEIN) NavIcons.bolt else NavIcons.cup, amount, clock(entry.at, zone),
+                                trailing = {
+                                    Text(
+                                        "Remove",
+                                        Modifier.clip(RoundedCornerShape(8.dp)).tappable({ onRemoveNutrient(kind, entry.at) }, "Remove $amount").padding(Space.s),
+                                        style = Type.label,
+                                        color = Palette.Accent,
+                                    )
+                                },
+                                divider = i > 0,
+                            )
+                        }
+                    }
+                }
             } else {
                 item(key = "soon") { Text("Coming in the next step", Modifier.padding(horizontal = Space.xl), style = Type.body, color = Palette.Muted) }
             }
@@ -147,18 +220,19 @@ fun LogPage(data: TodayData, chrome: PageChrome, journal: JournalStore, onAddWat
         }
     }
     if (custom) {
+        val protein = segments[segment] == "Protein"
         var ml by remember { mutableStateOf("") }
         val amount = ml.toIntOrNull()?.takeIf { it > 0 }
         AlertDialog(
             onDismissRequest = { custom = false },
             containerColor = LocalTheme.current.bgMid,
-            title = { Text("WATER", style = Type.label, color = Palette.Muted) },
-            text = { NumberField(ml, "ml", Modifier.fillMaxWidth(), digits = 4) { ml = it } },
+            title = { Text(if (protein) "PROTEIN" else "WATER", style = Type.label, color = Palette.Muted) },
+            text = { NumberField(ml, if (protein) "g" else "ml", Modifier.fillMaxWidth(), digits = if (protein) 3 else 4) { ml = it } },
             confirmButton = {
                 TextButton(
                     onClick = {
                         if (prefs.haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        add(amount!!)
+                        if (protein) onAddNutrient(NutrientKind.PROTEIN, amount!!.toDouble()) else add(amount!!)
                         custom = false
                     },
                     enabled = amount != null,

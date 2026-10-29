@@ -15,6 +15,7 @@ import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.HeartRateVariabilityRmssdRecord
 import androidx.health.connect.client.records.HeightRecord
 import androidx.health.connect.client.records.HydrationRecord
+import androidx.health.connect.client.records.NutritionRecord
 import androidx.health.connect.client.records.OxygenSaturationRecord
 import androidx.health.connect.client.records.PowerRecord
 import androidx.health.connect.client.records.Record
@@ -33,9 +34,12 @@ import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Length
+import androidx.health.connect.client.units.Mass
 import androidx.health.connect.client.units.Volume
+import app.fitdash.BuildConfig
 import app.fitdash.metrics.Tuning
 import app.fitdash.metrics.overlapFraction
+import app.fitdash.settings.NutrientKind
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import java.util.concurrent.atomic.AtomicInteger
@@ -77,10 +81,12 @@ class HealthReader(private val context: Context) : HealthSource {
 
     private val writeWater = HealthPermission.getWritePermission(HydrationRecord::class)
     private val writeHeight = HealthPermission.getWritePermission(HeightRecord::class)
+    private val writeNutrition = HealthPermission.getWritePermission(NutritionRecord::class)
     private val history = HISTORY_PERMISSION.takeIf { it in declared }
 
     override val allPermissions: Set<String> =
-        types.map { HealthPermission.getReadPermission(it.type) }.toSet() + writeWater + writeHeight + listOfNotNull(history)
+        types.map { HealthPermission.getReadPermission(it.type) }.toSet() + writeWater + writeHeight + listOfNotNull(history) +
+            listOfNotNull(writeNutrition.takeIf { BuildConfig.FLAVOR != "play" })
 
     override val historyPermission: String? get() = history
 
@@ -294,6 +300,33 @@ class HealthReader(private val context: Context) : HealthSource {
         } catch (e: Exception) {
             false
         }
+    }
+
+    override suspend fun addNutrient(kind: NutrientKind, amount: Double, at: Instant): String? {
+        if (writeNutrition !in grantedPermissions()) return null
+        val offset = ZoneId.systemDefault().rules.getOffset(at)
+        val record = NutritionRecord(
+            startTime = at, startZoneOffset = offset, endTime = at.plusSeconds(1), endZoneOffset = offset,
+            protein = Mass.grams(amount).takeIf { kind == NutrientKind.PROTEIN },
+            caffeine = Mass.milligrams(amount).takeIf { kind == NutrientKind.CAFFEINE },
+            metadata = Metadata.manualEntry(),
+        )
+        return try {
+            client.insertRecords(listOf(record)).recordIdsList.first()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun deleteNutrient(id: String): Boolean = try {
+        client.deleteRecords(NutritionRecord::class, listOf(id), emptyList())
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        false
     }
 
     private suspend inline fun <reified T : Record> latest(now: ZonedDateTime): T? =

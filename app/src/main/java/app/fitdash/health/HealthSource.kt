@@ -1,5 +1,6 @@
 package app.fitdash.health
 
+import app.fitdash.settings.NutrientKind
 import java.time.Instant
 import java.time.ZonedDateTime
 
@@ -19,4 +20,6 @@ interface HealthSource {
     suspend fun addWater(liters: Double, at: Instant): String?
     suspend fun deleteWater(id: String): Boolean
     suspend fun setHeight(meters: Double, at: Instant): Boolean
+    suspend fun addNutrient(kind: NutrientKind, amount: Double, at: Instant): String?
+    suspend fun deleteNutrient(id: String): Boolean
 }

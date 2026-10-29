@@ -16,6 +16,9 @@ import java.time.Duration
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.buildToday
 import app.fitdash.metrics.withEstimatedRestingHr
+import app.fitdash.settings.Entry
+import app.fitdash.settings.JournalStore
+import app.fitdash.settings.NutrientKind
 import app.fitdash.settings.Settings
 import app.fitdash.ui.aiSummary
 import kotlinx.coroutines.CoroutineDispatcher
@@ -68,6 +71,7 @@ class TodayViewModel(
     private val store: SnapshotStore? = null,
     // After each save, so home-screen widgets redraw from the new cache.
     private val onCacheSaved: suspend () -> Unit = {},
+    private val journal: JournalStore? = null,
 ) : ViewModel() {
     private val _state = MutableStateFlow<TodayUiState>(TodayUiState.Loading)
     val state: StateFlow<TodayUiState> = _state
@@ -182,6 +186,40 @@ class TodayViewModel(
                 rebuild()
                 messageChannel.trySend("Couldn't save to Health Connect")
             }
+        }
+    }
+
+    fun addNutrient(kind: NutrientKind, amount: Double) {
+        val journal = journal ?: return
+        val now = clock()
+        val date = now.toLocalDate()
+        val at = now.toInstant()
+        journal.add(date, kind, Entry(at, amount, null))
+        viewModelScope.launch {
+            val id = source.addNutrient(kind, amount, at)
+            val day = journal.flow.value[date]
+            val kept = (if (kind == NutrientKind.PROTEIN) day?.protein else day?.caffeine).orEmpty().any { it.at == at }
+            if (id == null) {
+                writeFailed()
+            } else if (kept) {
+                journal.remove(date, kind, at)
+                journal.add(date, kind, Entry(at, amount, id))
+            } else {
+                // Removed while the write was running: the record it named must go too.
+                source.deleteNutrient(id)
+            }
+        }
+    }
+
+    fun removeNutrient(kind: NutrientKind, at: Instant) {
+        val journal = journal ?: return
+        val date = at.atZone(clock().zone).toLocalDate()
+        val day = journal.flow.value[date]
+        val entry = (if (kind == NutrientKind.PROTEIN) day?.protein else day?.caffeine).orEmpty().firstOrNull { it.at == at }
+        journal.remove(date, kind, at)
+        val id = entry?.recordId ?: return
+        viewModelScope.launch {
+            if (!source.deleteNutrient(id)) messageChannel.trySend("Couldn't save to Health Connect")
         }
     }
 

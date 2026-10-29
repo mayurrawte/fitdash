@@ -43,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import app.fitdash.BuildConfig
 import app.fitdash.settings.JournalStore
+import app.fitdash.settings.NutrientKind
 import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.PreviewData
 import app.fitdash.ui.components.BottomBar
@@ -63,6 +64,7 @@ import app.fitdash.ui.today.TodayUiState
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.io.File
+import java.time.Instant
 import java.time.LocalDate
 
 private val NAV = listOf(
@@ -83,6 +85,8 @@ fun PagerScreen(
     onSelectDate: (LocalDate) -> Unit,
     onAddWater: (Int) -> Unit,
     onUndoWater: () -> Unit,
+    onAddNutrient: (NutrientKind, Double) -> Unit,
+    onRemoveNutrient: (NutrientKind, Instant) -> Unit,
     onSetHeight: (Int) -> Unit,
     onAskHistory: () -> Unit = {},
     onSync: (String) -> Unit = {},
@@ -164,7 +168,7 @@ fun PagerScreen(
                         0 -> TodayPage(data, chrome, goTo, onSelectDate, { sharing = true }, askAi, settings.miles, { workout = it }, onSync, state.refreshing, progress)
                         1 -> SleepPage(data, chrome)
                         2 -> ActivityPage(data, chrome, settings.miles, { workout = it })
-                        3 -> LogPage(data, chrome, journal, onAddWater, onUndoWater, BuildConfig.FLAVOR == "play")
+                        3 -> LogPage(data, chrome, journal, onAddWater, onUndoWater, onAddNutrient, onRemoveNutrient, BuildConfig.FLAVOR == "play")
                         else -> TrendsPage(data, chrome)
                     }
                 }
@@ -242,7 +246,7 @@ private fun PagePreview(page: Int, data: TodayData = PreviewData.today(21, 30)) 
             ThemedBackground()
             when (page) {
                 0 -> TodayPage(data, chrome, {}, {}, {}, {})
-                3 -> LogPage(data, chrome, JournalStore(File("journal-preview.json")), {}, {}, false)
+                3 -> LogPage(data, chrome, JournalStore(File("journal-preview.json")), {}, {}, { _, _ -> }, { _, _ -> }, false)
                 else -> SleepPage(data, chrome)
             }
         }
