@@ -27,7 +27,9 @@ import app.fitdash.metrics.nightAxisFraction
 import app.fitdash.metrics.regularityBand
 import app.fitdash.ui.components.Chart
 import app.fitdash.ui.components.CountUpText
+import app.fitdash.ui.components.ScoreChips
 import app.fitdash.ui.components.SectionCard
+import app.fitdash.ui.regularityChips
 import app.fitdash.ui.components.rememberDrawProgress
 import app.fitdash.ui.regularityWord
 import app.fitdash.ui.theme.Motion
@@ -56,8 +58,7 @@ fun RegularityCard(data: TodayData, zone: ZoneId) {
             Column(Modifier.width(120.dp)) {
                 CountUpText("regularity-${data.date}", v.sri.toLong(), Type.hero, color = Palette.Text)
                 Text(regularityWord(band), style = Type.body.copy(fontWeight = FontWeight.Medium), color = colour)
-                val spread = listOfNotNull(v.bedtimeSpreadMin?.let { "bed ± $it min" }, v.wakeSpreadMin?.let { "wake ± $it min" }).joinToString(" · ")
-                if (spread.isNotEmpty()) Text(spread, style = Type.tiny, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
+                ScoreChips(regularityChips(v), Modifier.padding(top = Space.xs))
             }
             Spacer(Modifier.width(Space.m))
             NightBars(v.nights, zone, colour, Modifier.weight(1f))

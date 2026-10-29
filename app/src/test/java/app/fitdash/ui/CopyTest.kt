@@ -14,6 +14,10 @@ import app.fitdash.metrics.regularityBand
 import app.fitdash.ui.components.ScoreChip
 import app.fitdash.ui.components.statusWord
 import app.fitdash.metrics.Good
+import app.fitdash.metrics.Regularity
+import app.fitdash.metrics.sleepScoreParts
+import app.fitdash.night
+import app.fitdash.TODAY
 import app.fitdash.metrics.HeartSummary
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
@@ -233,5 +237,38 @@ class IssueUrlTest {
         assertEquals("Slept 7h 32m.", morningReadout(sleep, null, null))
         assertNull(morningReadout(null, null, null))
         assertEquals("Resting heart rate higher than your usual.", morningReadout(null, heart(rhr = 70.0, rhrRange = 58.0..64.0), null))
+    }
+
+    @Test fun `sleep chips show each part against its maximum`() {
+        val n = night(TODAY, 8.0, stages = true)
+        val p = sleepScoreParts(n, 8.0)!!
+        val chips = sleepChips(n, 8.0)
+        assertEquals(
+            listOf("Duration ${p.duration} of 50", "Efficiency ${p.efficiency} of 15", "Restoration ${p.restoration} of 20", "Restfulness ${p.restfulness} of 15"),
+            chips.map { it.label },
+        )
+        assertEquals(listOf(MetricKind.SLEEP_HOURS, MetricKind.EFFICIENCY, MetricKind.DEEP, MetricKind.AWAKENINGS), chips.map { it.kind })
+        assertEquals(Status.GOOD, chips[0].status)
+    }
+
+    @Test fun `sleep chips without stages are duration only`() {
+        val chips = sleepChips(night(TODAY, 8.0), 8.0)
+        assertEquals(1, chips.size)
+        assertEquals("Duration only", chips[0].label)
+        assertEquals(MetricKind.SLEEP_HOURS, chips[0].kind)
+        assertEquals(Status.GOOD, chips[0].status)
+        assertEquals(Status.ATTENTION, sleepChips(night(TODAY, 3.0), 8.0)[0].status)
+        assertEquals(Status.BELOW_USUAL, sleepChips(night(TODAY, 4.0), 8.0)[0].status)
+    }
+
+    @Test fun `regularity chips grade each spread and skip a missing one`() {
+        fun reg(bed: Int?, wake: Int?) = Regularity(80, 14, 13, bed, wake, emptyList())
+        val chips = regularityChips(reg(62, 55))
+        assertEquals(listOf("Bedtime ± 62 min", "Wake ± 55 min"), chips.map { it.label })
+        assertEquals(listOf(Status.ATTENTION, Status.BELOW_USUAL), chips.map { it.status })
+        assertEquals(listOf(null, null), chips.map { it.kind })
+        assertEquals(Status.GOOD, regularityChips(reg(30, null))[0].status)
+        assertEquals(1, regularityChips(reg(30, null)).size)
+        assertTrue(regularityChips(reg(null, null)).isEmpty())
     }
 }

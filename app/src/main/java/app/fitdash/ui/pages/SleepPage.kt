@@ -46,7 +46,10 @@ import app.fitdash.ui.components.NumberTile
 import app.fitdash.ui.components.RangeBar
 import app.fitdash.ui.components.SectionCard
 import app.fitdash.ui.components.SectionLabel
+import app.fitdash.ui.components.ScoreChips
 import app.fitdash.ui.components.SemiGauge
+import app.fitdash.ui.sleepChips
+import app.fitdash.health.SleepSession
 import app.fitdash.ui.components.SpanBar
 import app.fitdash.ui.components.StatTile
 import app.fitdash.ui.components.TileGrid
@@ -113,6 +116,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                         style = Type.tiny,
                         color = Palette.Muted,
                     )
+                    ScoreChips(sleepChips(SleepSession(s.start, s.end, s.stages), data.goals.sleepHours), Modifier.padding(top = Space.s))
                     if (s.goalPercent < 100) {
                         val avg = weekHours.takeIf { it.size >= 3 }?.average()
                         Text(

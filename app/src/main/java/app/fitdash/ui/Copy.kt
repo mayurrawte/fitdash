@@ -1,5 +1,6 @@
 package app.fitdash.ui
 
+import app.fitdash.health.SleepSession
 import app.fitdash.health.SourceStatus
 import app.fitdash.health.Workout
 import app.fitdash.metrics.ExerciseType
@@ -15,11 +16,14 @@ import app.fitdash.metrics.HeartSummary
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.RangeStatus
 import app.fitdash.metrics.ReadinessResult
+import app.fitdash.metrics.Regularity
 import app.fitdash.metrics.SleepSummary
 import app.fitdash.metrics.Status
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.Tuning
+import app.fitdash.metrics.asleepDuration
+import app.fitdash.metrics.sleepScoreParts
 import app.fitdash.metrics.rangeStatus
 import app.fitdash.ui.components.ScoreChip
 import java.text.BreakIterator
@@ -210,6 +214,36 @@ fun recoveryChips(r: ReadinessResult.Ready, heart: HeartSummary?, sleep: SleepSu
             else -> Status.GOOD
         }
         chips += ScoreChip("$name · $word", status, kind)
+    }
+    return chips
+}
+
+fun sleepChips(night: SleepSession, goalHours: Double): List<ScoreChip> {
+    val parts = sleepScoreParts(night, goalHours)
+    if (parts == null) {
+        val share = minOf(asleepDuration(night).seconds / 3600.0 / goalHours, 1.0)
+        val status = if (share >= 0.8) Status.GOOD else if (share >= 0.5) Status.BELOW_USUAL else Status.ATTENTION
+        return listOf(ScoreChip("Duration only", status, MetricKind.SLEEP_HOURS))
+    }
+    val rows = listOf(
+        Triple("Duration", parts.duration to Tuning.SLEEP_W_DURATION.toInt(), MetricKind.SLEEP_HOURS),
+        Triple("Efficiency", parts.efficiency to Tuning.SLEEP_W_EFFICIENCY.toInt(), MetricKind.EFFICIENCY),
+        Triple("Restoration", parts.restoration to Tuning.SLEEP_W_RESTORATION.toInt(), MetricKind.DEEP),
+        Triple("Restfulness", parts.restfulness to Tuning.SLEEP_W_RESTFULNESS.toInt(), MetricKind.AWAKENINGS),
+    )
+    return rows.map { (name, score, kind) ->
+        val share = score.first.toDouble() / score.second
+        val status = if (share >= 0.8) Status.GOOD else if (share >= 0.5) Status.BELOW_USUAL else Status.ATTENTION
+        ScoreChip("$name ${score.first} of ${score.second}", status, kind)
+    }
+}
+
+fun regularityChips(r: Regularity): List<ScoreChip> {
+    val chips = mutableListOf<ScoreChip>()
+    for ((name, spread) in listOf("Bedtime" to r.bedtimeSpreadMin, "Wake" to r.wakeSpreadMin)) {
+        if (spread == null) continue
+        val status = if (spread > 60) Status.ATTENTION else if (spread > 30) Status.BELOW_USUAL else Status.GOOD
+        chips += ScoreChip("$name ± $spread min", status)
     }
     return chips
 }
