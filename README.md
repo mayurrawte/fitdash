@@ -29,7 +29,7 @@ Read the full [privacy policy](https://mayurrawte.is-a.dev/fitdash/privacy.html)
 Don't take our word for it. Check the APK you downloaded:
 
 ```
-# 1. No INTERNET permission (only Health Connect READ permissions, plus WRITE_HYDRATION and WRITE_HEIGHT)
+# 1. No INTERNET permission (only Health Connect READ permissions, plus WRITE_HYDRATION, WRITE_HEIGHT and WRITE_NUTRITION)
 #    plus WAKE_LOCK and RECEIVE_BOOT_COMPLETED, which Android's WorkManager uses to keep the opt-in background
 #    refresh (Settings › Background refresh) scheduled. It only updates the private copy and the widget.
 aapt dump permissions fitdash.apk

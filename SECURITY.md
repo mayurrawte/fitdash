@@ -15,7 +15,7 @@ aapt dump permissions fitdash.apk
 apksigner verify --print-certs fitdash.apk
 ```
 
-- The permissions list should contain only Health Connect READ permissions, plus `WRITE_HYDRATION` and `WRITE_HEIGHT` (and `app.fitdash.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, which Android adds automatically). There should be no `INTERNET`.
+- The permissions list should contain only Health Connect READ permissions, plus `WRITE_HYDRATION`, `WRITE_HEIGHT` and `WRITE_NUTRITION` (and `app.fitdash.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, which Android adds automatically). There should be no `INTERNET`.
 - The signing certificate SHA-256 should be:
 
 ```
