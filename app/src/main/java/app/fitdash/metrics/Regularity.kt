@@ -4,6 +4,7 @@ import app.fitdash.health.SleepSession
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
@@ -46,6 +47,13 @@ private fun minutesFromEvening(t: Instant, zone: ZoneId): Int {
     val z = t.atZone(zone)
     val m = z.hour * 60 + z.minute
     return if (m >= EVENING_MIN) m - EVENING_MIN else m + DAY_MINUTES - EVENING_MIN
+}
+
+fun medianBedtime(starts: List<Instant>, zone: ZoneId, nights: Int = REGULARITY_NIGHTS.toInt()): LocalTime? {
+    val xs = starts.sorted().takeLast(nights).map { minutesFromEvening(it, zone) }.sorted()
+    if (xs.isEmpty()) return null
+    val m = (xs[(xs.size - 1) / 2] + xs[xs.size / 2]) / 2
+    return LocalTime.of((m + EVENING_MIN) % DAY_MINUTES / 60, (m + EVENING_MIN) % 60)
 }
 
 fun clockSpreadMinutes(times: List<Instant>, zone: ZoneId): Int? {

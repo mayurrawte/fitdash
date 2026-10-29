@@ -27,6 +27,7 @@ import java.text.BreakIterator
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -263,10 +264,16 @@ fun initial(name: String): String {
 
 fun streakLine(days: Int): String? = if (days >= 3) "$days days in a row" else null
 
-private val CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
-private val CLOCK_12 = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
+val CLOCK = DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
+val CLOCK_12 = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)
 
 fun formatTime12(t: Instant, zone: ZoneId): String = CLOCK_12.format(t.atZone(zone))
+
+fun bedtimeLine(debtHours: Double, target: LocalTime?, clock24: Boolean): String? {
+    if (target == null) return null
+    val time = (if (clock24) CLOCK else CLOCK_12).format(target)
+    return if (debtHours > 2) "Aim for bed by $time tonight" else "Bedtime target $time"
+}
 
 fun formatTime(t: Instant, zone: ZoneId, clock24: Boolean): String = if (clock24) CLOCK.format(t.atZone(zone)) else CLOCK_12.format(t.atZone(zone))
 

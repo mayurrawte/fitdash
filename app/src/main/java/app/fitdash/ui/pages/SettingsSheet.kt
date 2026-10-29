@@ -27,6 +27,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -64,6 +66,8 @@ import app.fitdash.ui.GITHUB_REPO_URL
 import app.fitdash.ui.issueUrl
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.theme.LocalTheme
+import app.fitdash.ui.CLOCK
+import app.fitdash.ui.CLOCK_12
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Space
 import app.fitdash.ui.today.BackgroundAccess
@@ -98,6 +102,7 @@ fun SettingsSheet(
     var showInfo by remember { mutableStateOf(false) }
     var showHeight by remember { mutableStateOf(false) }
     var showName by remember { mutableStateOf(false) }
+    var showBedtime by remember { mutableStateOf(false) }
     val heightCm = heightMeters?.let { (it * 100).roundToInt() } ?: settings.heightCm
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -132,6 +137,7 @@ fun SettingsSheet(
             item {
                 RowGroup {
                     ListRow(NavIcons.walk, "Height", heightCm?.let { formatHeight(it, settings.miles) } ?: "Not set", onClick = { showHeight = true })
+                    ListRow(NavIcons.moonSmall, "Bedtime", settings.bedtimeTarget?.let { (if (settings.clock24) CLOCK else CLOCK_12).format(it) } ?: "From your last 14 nights", onClick = { showBedtime = true }, divider = true)
                     ListRow(NavIcons.info, "Name", settings.name ?: "Not set", onClick = { showName = true }, divider = true)
                 }
             }
@@ -240,6 +246,12 @@ fun SettingsSheet(
             showName = false
         }
     }
+    if (showBedtime) {
+        BedtimeDialog(settings.bedtimeTarget, settings.clock24, onDismiss = { showBedtime = false }) { time ->
+            store.update { it.copy(bedtimeTarget = time) }
+            showBedtime = false
+        }
+    }
     if (showHeight) {
         HeightDialog(heightCm, settings.miles, onDismiss = { showHeight = false }) { cm ->
             store.update { it.copy(heightCm = cm) }
@@ -277,6 +289,24 @@ private fun HeightDialog(current: Int?, miles: Boolean, onDismiss: () -> Unit, o
             TextButton(onClick = { onSave(value!!) }, enabled = valid) { Text("SAVE", style = Type.label, color = if (valid) Palette.Accent else Palette.Faint) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", style = Type.label, color = Palette.Muted) } },
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BedtimeDialog(current: java.time.LocalTime?, clock24: Boolean, onDismiss: () -> Unit, onSave: (java.time.LocalTime?) -> Unit) {
+    val state = rememberTimePickerState(current?.hour ?: 23, current?.minute ?: 0, clock24)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = LocalTheme.current.bgMid,
+        title = { Text("BEDTIME", style = Type.label, color = Palette.Muted) },
+        text = { TimePicker(state) },
+        confirmButton = {
+            TextButton(onClick = { onSave(java.time.LocalTime.of(state.hour, state.minute)) }) { Text("SAVE", style = Type.label, color = Palette.Accent) }
+        },
+        dismissButton = {
+            TextButton(onClick = { onSave(null) }) { Text("USE MY NIGHTS", style = Type.label, color = Palette.Muted) }
+        },
     )
 }
 

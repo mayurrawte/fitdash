@@ -273,4 +273,12 @@ class IssueUrlTest {
         assertEquals(1, regularityChips(reg(30, null)).size)
         assertTrue(regularityChips(reg(null, null)).isEmpty())
     }
+
+    @Test fun `bedtime line asks for an early night only when in debt`() {
+        val target = java.time.LocalTime.of(23, 15)
+        assertEquals("Aim for bed by 11:15 PM tonight", bedtimeLine(2.4, target, false))
+        assertEquals("Bedtime target 11:15 PM", bedtimeLine(0.5, target, false))
+        assertEquals("Bedtime target 23:15", bedtimeLine(0.5, target, true))
+        assertNull(bedtimeLine(2.4, null, false))
+    }
 }

@@ -13,7 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import app.fitdash.ui.components.cardSurface
 import androidx.compose.ui.unit.dp
+import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.MetricKind
+import app.fitdash.metrics.medianBedtime
+import app.fitdash.ui.bedtimeLine
+import app.fitdash.ui.formatHoursShort
+import app.fitdash.ui.components.ScoreChip
 import app.fitdash.metrics.Status
 import app.fitdash.metrics.TYPICAL_AWAKE
 import app.fitdash.metrics.TYPICAL_DEEP
@@ -115,7 +120,9 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                         style = Type.tiny,
                         color = Palette.Muted,
                     )
-                    ScoreChips(sleepChips(s, data.goals.sleepHours), Modifier.padding(top = Space.s))
+                    val debt = data.fitness.sleepDebt.value.hours
+                    val debtChip = ScoreChip("Sleep debt ${formatHoursShort(debt)}", if (debt > 5) Status.ATTENTION else if (debt > 2) Status.BELOW_USUAL else Status.GOOD, fitness = FitnessCard.SLEEP_DEBT)
+                    ScoreChips(sleepChips(s, data.goals.sleepHours) + debtChip, Modifier.padding(top = Space.s))
                     if (s.goalPercent < 100) {
                         val avg = weekHours.takeIf { it.size >= 3 }?.average()
                         Text(
@@ -128,6 +135,10 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
             item(key = "span") {
                 Column(Modifier.padding(horizontal = Space.l).fillMaxWidth().cardSurface().padding(horizontal = Space.l, vertical = Space.m)) {
                     SpanBar(clock(s.start, zone), clock(s.end, zone))
+                    val target = LocalPrefs.current.bedtimeTarget ?: medianBedtime(data.regularity?.value?.nights.orEmpty().mapNotNull { it.start }, zone)
+                    bedtimeLine(data.fitness.sleepDebt.value.hours, target, LocalPrefs.current.clock24)?.let {
+                        Text(it, Modifier.padding(top = Space.s), style = Type.small, color = Palette.Muted)
+                    }
                 }
             }
             item(key = "regularity") { RegularityCard(data, zone) }

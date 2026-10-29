@@ -149,4 +149,16 @@ class SleepQualityTest {
         assertNull(sleepGuideline(13))
         assertEquals("National Sleep Foundation 2015", NSF_SLEEP.title)
     }
+
+    @Test fun `medianBedtime sits across midnight`() {
+        val starts = listOf(at("2026-10-09", "23:00"), at("2026-10-10", "23:30"), at("2026-10-11", "01:00"))
+        assertEquals(java.time.LocalTime.of(23, 30), medianBedtime(starts, IST))
+        assertNull(medianBedtime(emptyList(), IST))
+    }
+
+    @Test fun `medianBedtime uses only the last 14 nights`() {
+        val old = (1..10).map { at(TODAY.minusDays(30L + it), 20) }
+        val recent = (1..14).map { at(TODAY.minusDays(it.toLong()), 23) }
+        assertEquals(java.time.LocalTime.of(23, 0), medianBedtime(old + recent, IST))
+    }
 }
