@@ -3,6 +3,7 @@ package app.fitdash.ui.theme
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -115,9 +116,10 @@ object Space {
 }
 
 @Composable
-fun FitdashTheme(content: @Composable () -> Unit) {
-    val t = LOOK
-    val scheme = lightColorScheme(primary = t.accent, background = t.bgBottom, surface = t.card, onBackground = t.text, onSurface = t.text)
+fun FitdashTheme(dark: Boolean = false, content: @Composable () -> Unit) {
+    val t = if (dark) DARK else LOOK
+    val scheme = if (dark) darkColorScheme(primary = t.accent, background = t.bgBottom, surface = t.card, onBackground = t.text, onSurface = t.text)
+    else lightColorScheme(primary = t.accent, background = t.bgBottom, surface = t.card, onBackground = t.text, onSurface = t.text)
     CompositionLocalProvider(LocalTheme provides t) {
         MaterialTheme(colorScheme = scheme, content = content)
     }
@@ -130,11 +132,11 @@ fun ThemedBackground(modifier: Modifier = Modifier) {
         drawRect(Brush.verticalGradient(listOf(t.bgTop, t.bgMid, t.bgBottom)))
         val yellowR = 150.dp.toPx()
         val yellowC = Offset(size.width, 0f)
-        val yellow = Color(0xFFFFF6C8)
+        val yellow = t.glowWarm
         drawCircle(Brush.radialGradient(listOf(yellow, yellow.copy(alpha = 0f)), center = yellowC, radius = yellowR), radius = yellowR, center = yellowC)
         val lilacR = 160.dp.toPx()
         val lilacC = Offset(0f, size.height * 0.35f)
-        val lilac = Color(0xFFD9C9F5)
+        val lilac = t.glowCool
         drawCircle(Brush.radialGradient(listOf(lilac.copy(alpha = 0.6f), lilac.copy(alpha = 0f)), center = lilacC, radius = lilacR), radius = lilacR, center = lilacC)
     }
 }
@@ -148,7 +150,7 @@ fun TintScope(tint: Tint?, content: @Composable () -> Unit) {
     val t = LocalTheme.current
     if (tint == null) return content()
     val ink = t.tintInk[tint.ordinal]
-    CompositionLocalProvider(LocalTheme provides t.copy(card = t.tints[tint.ordinal], muted = ink, faint = ink, hairline = Color.White.copy(alpha = 0.6f)), content = content)
+    CompositionLocalProvider(LocalTheme provides t.copy(card = t.tints[tint.ordinal], muted = ink, faint = ink, hairline = t.text.copy(alpha = 0.12f)), content = content)
 }
 
 @Composable

@@ -2,6 +2,7 @@ package app.fitdash.widget
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
@@ -47,8 +48,10 @@ import app.fitdash.settings.SettingsStore
 import app.fitdash.ui.formatDuration
 import app.fitdash.ui.morningReadout
 import app.fitdash.ui.formatSteps
+import app.fitdash.ui.theme.DARK
 import app.fitdash.ui.theme.LOOK
 import app.fitdash.ui.theme.ThemeTokens
+import app.fitdash.ui.theme.resolveDark
 import app.fitdash.ui.theme.scoreColor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -81,7 +84,8 @@ class FitdashWidget : GlanceAppWidget() {
                 buildToday(it.snapshot, ZonedDateTime.now(), goals = Goals(settings.stepGoal, settings.sleepHours, settings.waterGoalMl / 1000.0, settings.activeGoal))
             }
         }
-        provideContent { WidgetContent(LOOK, data, settings.showSuggestions) }
+        val systemDark = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        provideContent { WidgetContent(if (resolveDark(settings.theme, systemDark)) DARK else LOOK, data, settings.showSuggestions) }
     }
 }
 

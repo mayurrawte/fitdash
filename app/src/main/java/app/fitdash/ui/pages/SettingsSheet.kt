@@ -50,6 +50,7 @@ import androidx.health.connect.client.HealthConnectClient
 import app.fitdash.BuildConfig
 import app.fitdash.health.SourceStatus
 import app.fitdash.settings.SettingsStore
+import app.fitdash.settings.ThemeChoice
 import app.fitdash.ui.components.ListRow
 import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.NavIcons
@@ -172,6 +173,7 @@ fun SettingsSheet(
                 }
             }
             item { Label("FEEL") }
+            item { SegmentedControl(listOf("System", "Light", "Dark"), settings.theme.ordinal, { i -> store.update { it.copy(theme = ThemeChoice.entries[i]) } }) }
             item { ToggleRow("Haptics", settings.haptics, { v -> store.update { it.copy(haptics = v) } }, "A light tick on taps") }
             item { ToggleRow("Reduce motion", settings.reduceMotion, { v -> store.update { it.copy(reduceMotion = v) } }, "No draw-in or count-up animations, still orb") }
             item { Label("DATA") }

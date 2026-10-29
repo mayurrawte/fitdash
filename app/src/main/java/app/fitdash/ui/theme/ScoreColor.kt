@@ -16,9 +16,9 @@ fun scoreColor(score: Int, bad: Color, warn: Color, good: Color): Color {
 
 // Three clear pastels: a blend of the dark text greens and ambers turns olive on white.
 fun scoreColor(score: Int, t: ThemeTokens): Color = when {
-    score >= 70 -> Color(0xFF8DB85A)
-    score >= 50 -> Color(0xFFE3A06F)
-    else -> Color(0xFFD9604F)
+    score >= 70 -> t.scoreGood
+    score >= 50 -> t.scoreWarn
+    else -> t.scoreBad
 }
 
 @Composable

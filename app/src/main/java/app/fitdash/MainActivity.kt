@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,6 +58,7 @@ import app.fitdash.ui.pages.PagerScreen
 import app.fitdash.ui.theme.FitdashTheme
 import app.fitdash.ui.theme.LocalTheme
 import app.fitdash.ui.theme.Palette
+import app.fitdash.ui.theme.resolveDark
 import androidx.compose.runtime.CompositionLocalProvider
 import app.fitdash.ui.theme.LocalReduceMotion
 import app.fitdash.ui.LocalPrefs
@@ -95,11 +97,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             val store = SettingsStore.get(this@MainActivity)
             val settings by store.flow.collectAsStateWithLifecycle()
-            LaunchedEffect(Unit) {
-                val bars = SystemBarStyle.light(TRANSPARENT, TRANSPARENT)
+            val dark = resolveDark(settings.theme, isSystemInDarkTheme())
+            LaunchedEffect(dark) {
+                val bars = if (dark) SystemBarStyle.dark(TRANSPARENT) else SystemBarStyle.light(TRANSPARENT, TRANSPARENT)
                 (this@MainActivity as ComponentActivity).enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
             }
-            FitdashTheme {
+            FitdashTheme(dark) {
                 CompositionLocalProvider(LocalPrefs provides settings, LocalReduceMotion provides (settings.reduceMotion || android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f)) { App(store, openPage) }
             }
         }

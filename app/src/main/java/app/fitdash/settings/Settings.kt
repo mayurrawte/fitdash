@@ -6,6 +6,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.roundToInt
 
+enum class ThemeChoice { SYSTEM, LIGHT, DARK }
+
 data class Settings(
     val stepGoal: Int = 9000,
     val sleepHours: Double = 8.0,
@@ -34,6 +36,7 @@ data class Settings(
     val moveNudge: Boolean = false,
     val name: String? = null,
     val nameAsked: Boolean = false,
+    val theme: ThemeChoice = ThemeChoice.SYSTEM,
 )
 
 class SettingsStore(context: Context) {
@@ -66,6 +69,7 @@ class SettingsStore(context: Context) {
         moveNudge = prefs.getBoolean("moveNudge", false),
         name = prefs.getString("name", null)?.takeIf { it.isNotBlank() },
         nameAsked = prefs.getBoolean("nameAsked", false),
+        theme = prefs.getString("theme", null)?.let { runCatching { ThemeChoice.valueOf(it) }.getOrNull() } ?: ThemeChoice.SYSTEM,
     )
 
     fun update(change: (Settings) -> Settings) {
@@ -79,7 +83,8 @@ class SettingsStore(context: Context) {
             .putBoolean("showSuggestions", s.showSuggestions).putBoolean("showBody", s.showBody).putBoolean("showSleepScore", s.showSleepScore)
             .putInt("birthYear", s.birthYear ?: 0).putString("gender", s.gender?.name).putBoolean("backgroundRefresh", s.backgroundRefresh)
             .putBoolean("waterReminders", s.waterReminders).putBoolean("moveNudge", s.moveNudge)
-            .putString("name", s.name).putBoolean("nameAsked", s.nameAsked).apply()
+            .putString("name", s.name).putBoolean("nameAsked", s.nameAsked)
+            .putString("theme", s.theme.name).apply()
         _flow.value = s
     }
 
