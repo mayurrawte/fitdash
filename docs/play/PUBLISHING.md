@@ -106,7 +106,7 @@ Activity
 - Total calories burned: shows daily calories on the Activity page.
 - Exercise: adds up exercise session time as Active minutes on the Activity page.
 
-Write permissions (fitdash writes only the water and height you enter yourself, and never changes or deletes any other data)
+Write permissions (fitdash writes only the water and height you enter yourself, and never changes or deletes any other data). The GitHub build also writes nutrition (protein and caffeine).
 - WRITE_HYDRATION: log water you drink from the Today page
 - WRITE_HEIGHT: save your height, entered in Settings, used to calculate BMI
 
