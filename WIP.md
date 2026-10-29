@@ -2,6 +2,16 @@
 
 Last updated: 2026-10-27. Everything below is committed on `main`. Released: **v0.8.0** (tag `v0.8.0`, code 9, on GitHub; live on the Play internal track, sent for review on the closed Alpha track 26 Oct). Site: https://mayurrawte.is-a.dev/fitdash/
 
+## 29 Oct: v0.9.0 (code 10) ready
+
+Branch `polish-0.9`, not merged, not tagged. Shipped since v0.8.0: first-run name with a greeting and an initial avatar; dark mode (system, light, dark) with the widget following; a Log tab with instant water logging and journal tags (protein and caffeine on the GitHub build only); score chips that show what moved recovery, sleep and regularity, tappable to the metric; tag patterns on Trends after ten tagged days; a sleep debt chip and a bedtime target on Sleep; a weekly review on Today at the start of the week; an opt-in morning check for overnight vitals outside your usual range; a day timeline card on Today; CSV export of the daily table and raw data from Settings.
+
+Polish in this release: the alert quotes the same usual range as the metric sheets and respects °F; the journal saves off the main thread and a damaged file no longer crashes the app; the splash follows the app's theme on Android 13 and later; the bedtime target appears after three nights.
+
+Migration: existing users on the old Teal or Graphite themes now follow the system setting. The name step shows once after the update. On the GitHub build, protein and caffeine logged before the nutrition permission are written once it is granted.
+
+Device checks owed (not yet run on the Pixel): light and dark at 1.0 and 1.3 font scale, the dark splash, the week review "×", the timeline at 1.3, the bedtime picker on a small screen. To be updated after the checks.
+
 ## 26 Oct: v0.8.0 (code 9) released
 
 The three branches below were merged into `main` (one import conflict in `TodayPage.kt`, both sides kept), 190 unit tests pass, lint has no errors. Tagged `v0.8.0` and pushed; CI built the APK and Play AAB onto the GitHub release. Play: published to internal testing at 22:57, then promoted to Closed testing - Alpha and submitted for review (quick checks, then Google's review). Not yet checked on a phone; Mayur will test the Play build.

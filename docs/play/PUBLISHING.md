@@ -85,6 +85,10 @@ Ask AI and Share day. Both build text or an image on the device and open the And
 
 Uncertainty to check: Google defines "collect" as data transmitted off the device by the app, and "share" as transfer to a third party. Google's guidance says a transfer the user starts themselves is not "sharing" in this sense, but it describes this under specific conditions (user-initiated, expected by the user, and so on). Read the current definitions in the Data safety help page and decide whether the account holder is comfortable with "No". If in doubt, the conservative answer is to declare Health and fitness data as shared, optional, user-initiated, purpose App functionality. Also confirm that Health Connect data read only on the device does not count as "collected"; Google's definition says it does not.
 
+### 0.9.0 notes
+
+The Play build reads Health Connect data and writes only water and height. Journal tags, your name and nutrition entries stay on the phone. CSV export leaves the phone only when the user shares the file. The answers in the table above do not change.
+
 The Health Connect read and write permissions still need their own declaration, below.
 
 ## 8. Health Connect declaration
