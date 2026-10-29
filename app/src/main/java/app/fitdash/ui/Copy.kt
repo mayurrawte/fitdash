@@ -13,7 +13,6 @@ import app.fitdash.metrics.RegularityBand
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.HeartSummary
 import app.fitdash.metrics.MetricKind
-import app.fitdash.metrics.debtLevel
 import app.fitdash.metrics.RangeStatus
 import app.fitdash.metrics.ReadinessResult
 import app.fitdash.metrics.Regularity
@@ -22,6 +21,7 @@ import app.fitdash.metrics.Status
 import app.fitdash.metrics.Suggestion
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.Tuning
+import app.fitdash.metrics.debtLevel
 import app.fitdash.metrics.rangeStatus
 import app.fitdash.ui.components.ScoreChip
 import java.text.BreakIterator
@@ -187,8 +187,7 @@ fun sleepWord(score: Int) = when {
 fun recoveryChips(r: ReadinessResult.Ready, heart: HeartSummary?, sleep: SleepSummary?): List<ScoreChip> {
     val chips = mutableListOf<ScoreChip>()
     for (c in Component.entries) {
-        val part = r.parts[c]
-        if (c !in r.used || part == null) continue
+        val part = r.parts[c] ?: continue
         val (value, base, kind) = when (c) {
             Component.HRV -> Triple(heart?.hrv, heart?.hrvBaseline, MetricKind.HRV)
             Component.RESTING_HR -> Triple(heart?.restingHr, heart?.restingHrBaseline, MetricKind.RESTING_HR)
@@ -219,21 +218,18 @@ fun recoveryChips(r: ReadinessResult.Ready, heart: HeartSummary?, sleep: SleepSu
 
 fun sleepChips(night: SleepSummary, goalHours: Double): List<ScoreChip> {
     val parts = night.parts
-    if (parts == null) {
-        val share = minOf(night.asleep.seconds / 3600.0 / goalHours, 1.0)
-        val status = if (share >= 0.8) Status.GOOD else if (share >= 0.5) Status.BELOW_USUAL else Status.ATTENTION
-        return listOf(ScoreChip("Duration only", status, MetricKind.SLEEP_HOURS))
+    val rows = if (parts == null) {
+        listOf(Triple("Duration only", minOf(night.asleep.seconds / 3600.0 / goalHours, 1.0), MetricKind.SLEEP_HOURS))
+    } else {
+        listOf(
+            Triple("Duration", parts.duration to Tuning.SLEEP_W_DURATION.toInt(), MetricKind.SLEEP_HOURS),
+            Triple("Efficiency", parts.efficiency to Tuning.SLEEP_W_EFFICIENCY.toInt(), MetricKind.EFFICIENCY),
+            Triple("Restoration", parts.restoration to Tuning.SLEEP_W_RESTORATION.toInt(), MetricKind.DEEP),
+            Triple("Restfulness", parts.restfulness to Tuning.SLEEP_W_RESTFULNESS.toInt(), MetricKind.AWAKENINGS),
+        ).map { (name, score, kind) -> Triple("$name ${score.first} of ${score.second}", score.first.toDouble() / score.second, kind) }
     }
-    val rows = listOf(
-        Triple("Duration", parts.duration to Tuning.SLEEP_W_DURATION.toInt(), MetricKind.SLEEP_HOURS),
-        Triple("Efficiency", parts.efficiency to Tuning.SLEEP_W_EFFICIENCY.toInt(), MetricKind.EFFICIENCY),
-        Triple("Restoration", parts.restoration to Tuning.SLEEP_W_RESTORATION.toInt(), MetricKind.DEEP),
-        Triple("Restfulness", parts.restfulness to Tuning.SLEEP_W_RESTFULNESS.toInt(), MetricKind.AWAKENINGS),
-    )
-    return rows.map { (name, score, kind) ->
-        val share = score.first.toDouble() / score.second
-        val status = if (share >= 0.8) Status.GOOD else if (share >= 0.5) Status.BELOW_USUAL else Status.ATTENTION
-        ScoreChip("$name ${score.first} of ${score.second}", status, kind)
+    return rows.map { (label, share, kind) ->
+        ScoreChip(label, if (share >= 0.8) Status.GOOD else if (share >= 0.5) Status.BELOW_USUAL else Status.ATTENTION, kind)
     }
 }
 
@@ -273,7 +269,7 @@ fun formatTime12(t: Instant, zone: ZoneId): String = CLOCK_12.format(t.atZone(zo
 fun bedtimeLine(debtHours: Double, target: LocalTime?, clock24: Boolean): String? {
     if (target == null) return null
     val time = (if (clock24) CLOCK else CLOCK_12).format(target)
-    return if (debtLevel(debtHours) > 0) "Aim for bed by $time tonight" else "Bedtime target $time"
+    return if (debtLevel(debtHours) != Status.GOOD) "Aim for bed by $time tonight" else "Bedtime target $time"
 }
 
 fun formatTime(t: Instant, zone: ZoneId, clock24: Boolean): String = if (clock24) CLOCK.format(t.atZone(zone)) else CLOCK_12.format(t.atZone(zone))
@@ -294,14 +290,6 @@ fun formatTemp(c: Double, f: Boolean): String = formatNumber(if (f) c * 1.8 + 32
 fun formatClock(t: Instant, zone: ZoneId): String = CLOCK.format(t.atZone(zone))
 
 fun dayLetter(d: LocalDate): String = d.dayOfWeek.getDisplayName(TextStyle.NARROW, Locale.ENGLISH)
-
-fun vitalKind(label: String) = when (label) {
-    "Resting HR" -> MetricKind.RESTING_HR
-    "HRV" -> MetricKind.HRV
-    "SpO₂" -> MetricKind.SPO2
-    "Respiratory rate" -> MetricKind.RESPIRATORY
-    else -> MetricKind.SKIN_TEMP
-}
 
 fun metricName(kind: MetricKind) = when (kind) {
     MetricKind.RECOVERY -> "Recovery"

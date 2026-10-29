@@ -49,6 +49,7 @@ import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.Tuning
 import app.fitdash.metrics.activeMinutes
+import app.fitdash.metrics.morningAlert
 import app.fitdash.metrics.rangeStatus
 import app.fitdash.metrics.rangeWord
 import app.fitdash.metrics.showWeekReview
@@ -63,7 +64,6 @@ import app.fitdash.ui.formatDate
 import app.fitdash.ui.formatKm
 import app.fitdash.ui.formatNumber
 import app.fitdash.ui.metricName
-import app.fitdash.ui.vitalKind
 import app.fitdash.ui.formatSteps
 import app.fitdash.ui.greeting
 import app.fitdash.ui.initial
@@ -150,6 +150,16 @@ fun TodayPage(
     val stepsStreak = data.streaks.firstOrNull { it.kind == MetricKind.STEPS }?.let { streakLine(it.days) }
     val goal = data.goals.steps
     val goalText = if (goal % 1000 == 0) "of ${goal / 1000}k" else "of ${formatSteps(goal.toLong())}"
+    val hd = data.heartDay?.takeIf { prefs.showHeartRate }
+    val workouts = data.workouts.takeIf { prefs.showWorkouts }.orEmpty()
+    val timeline = remember(data, hd, workouts) {
+        data.timeline
+            ?.let { t -> t.copy(hr = hd?.line.orEmpty(), spans = if (workouts.isEmpty()) t.spans.filter { it.kind != SpanKind.WORKOUT } else t.spans) }
+            ?.takeIf { it.spans.isNotEmpty() || it.hr.isNotEmpty() }
+    }
+    val review = remember(data, prefs.weekReviewSeen) {
+        if (data.isToday && showWeekReview(data.date, prefs.weekReviewSeen)) weekReview(data.series, data.date.minusDays(1)) else null
+    }
     PageColumn(chrome, accent = score?.let { scoreColor(it) } ?: Palette.Calibrating) {
         item(key = "greeting") {
             Row(Modifier.padding(horizontal = Space.xl, vertical = Space.xs), verticalAlignment = Alignment.CenterVertically) {
@@ -177,24 +187,18 @@ fun TodayPage(
             )
         }
         if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing, progress, chrome.error) }
-        if (data.isToday) data.morningAlert.forEach { r ->
+        if (data.isToday) morningAlert(data.vitals, data.heart).forEach { r ->
             revealItem("alert-${r.label}", 0) {
-                val kind = vitalKind(r.label)
                 val range = r.range!!
                 val side = if (r.value > range.endInclusive) "above" else "below"
-                StripCard(metricOpener(MetricRef.Kind(kind)), "${metricName(kind)} details", tint = Tint.ROSE) {
+                StripCard(metricOpener(MetricRef.Kind(r.kind)), "${metricName(r.kind)} details", tint = Tint.ROSE) {
                     Text("${r.label} ${formatNumber(r.value)} ${r.unit}, $side your usual ${formatNumber(range.start)} to ${formatNumber(range.endInclusive)}", style = Type.body, color = Palette.Text)
                 }
             }
         }
-        data.timeline
-            ?.let { t -> t.copy(hr = if (prefs.showHeartRate) t.hr else emptyList(), spans = t.spans.filter { prefs.showWorkouts || it.kind != SpanKind.WORKOUT }) }
-            ?.takeIf { it.spans.isNotEmpty() || it.hr.isNotEmpty() }
-            ?.let { t ->
-                revealItem("timeline", 1) {
-                    DayTimeline(t, { onOpen(1) }, { onOpenWorkout(data.workouts[it]) }, if (prefs.showHeartRate) metricOpener(MetricRef.Kind(MetricKind.HEART_RATE)) else null)
-                }
-            }
+        if (timeline != null) revealItem("timeline", 1) {
+            DayTimeline(timeline, { onOpen(1) }, { onOpenWorkout(workouts[it]) }, if (prefs.showHeartRate) metricOpener(MetricRef.Kind(MetricKind.HEART_RATE)) else null)
+        }
         revealItem("readout", 2) {
             StripCard(null, null) {
                 Icon(NavIcons.sparkle, null, Modifier.padding(end = Space.m).size(18.dp), tint = Palette.Accent)
@@ -205,14 +209,12 @@ fun TodayPage(
                         val list = if (tags.size == 1) tags[0] else tags.dropLast(1).joinToString(", ") + " and " + tags.last()
                         Text("Yesterday you tagged $list.", style = Type.small, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
                     }
-                    (data.readiness as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.used)?.let { Text(it, style = Type.small, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs)) } }
+                    (data.readiness as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.parts.keys)?.let { Text(it, style = Type.small, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs)) } }
                     if (data.isToday) missingRecoveryLine(data.sources)?.let { Text(it, style = Type.secondary, color = Palette.Warn, modifier = Modifier.padding(top = Space.xs)) }
                 }
             }
         }
-        if (data.isToday && showWeekReview(data.date, prefs.weekReviewSeen)) weekReview(data.series, data.date.minusDays(1))?.let { review ->
-            revealItem("week", 3) { WeekReviewCard(review, onDismiss = onDismissWeekReview) }
-        }
+        if (review != null) revealItem("week", 3) { WeekReviewCard(review, onDismiss = onDismissWeekReview) }
         revealItem("hero", 4) {
             val s = data.sleep
             val onSteps = s == null && hasSteps
@@ -303,8 +305,6 @@ fun TodayPage(
             }
         }
         revealItem("tiles", 5) { TileGrid(tiles) }
-        val hd = data.heartDay?.takeIf { prefs.showHeartRate }
-        val workouts = data.workouts.takeIf { prefs.showWorkouts }.orEmpty()
         if (hd != null || workouts.isNotEmpty()) revealItem("rows", 6) {
             var expanded by rememberSaveable(data.date) { mutableStateOf(false) }
             Column(Modifier.animateContentSize()) {
@@ -318,18 +318,14 @@ fun TodayPage(
                             trailing = { HeartDayLine("heart-row-${data.date}", hd.line, Modifier.size(70.dp, 28.dp)) },
                         )
                     }
-                    if (workouts.size == 1) {
-                        val w = workouts.first()
-                        ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) }, divider = hd != null)
-                    }
                     if (workouts.size > 1) {
                         // Several sessions fold into one row: "4 workouts · 78 min · 7.7 km", tap to expand.
                         val km = workouts.mapNotNull { it.distanceMeters }.sum() / 1000
                         val subtitle = listOfNotNull("${activeMinutes(workouts)}m", km.takeIf { it > 0 }?.let { formatKm(it, miles) }).joinToString(" · ")
                         ListRow(NavIcons.flame, "${workouts.size} workouts", subtitle, Modifier.semantics { contentDescription = "${workouts.size} workouts, ${if (expanded) "collapse" else "expand"}" }, onClick = { expanded = !expanded }, divider = hd != null)
-                        if (expanded) workouts.forEach { w ->
-                            ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) }, divider = true)
-                        }
+                    }
+                    if (workouts.size == 1 || expanded) workouts.forEach { w ->
+                        ListRow(workoutIconVector(workoutIcon(w.type)), workoutTitle(w), workoutLine(w, zone, miles, prefs.clock24), Modifier.semantics { contentDescription = "${workoutTitle(w)} details" }, onClick = { onOpenWorkout(w) }, divider = hd != null || workouts.size > 1)
                     }
                 }
             }

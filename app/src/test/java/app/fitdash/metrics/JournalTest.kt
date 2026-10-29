@@ -16,12 +16,12 @@ class JournalTest {
     private fun seriesWhere(hrv: (LocalDate) -> Double?) = mapOf(MetricKind.HRV to window(TODAY).map { DayValue(it, hrv(it)) })
 
     @Test fun `needs five tagged and five untagged days`() {
-        assertTrue(tagEffects(journalWith(Tag.ALCOHOL, 4), seriesWhere { 40.0 }, TODAY).isEmpty())
+        assertTrue(tagEffects(journalWith(Tag.ALCOHOL, 4), seriesWhere { 40.0 }, window(TODAY)).isEmpty())
     }
 
     @Test fun `mean difference against untagged days on the following night`() {
         val journal = journalWith(Tag.ALCOHOL, 10)
-        val eff = tagEffects(journal, seriesWhere { d -> if (d.minusDays(1) in journal) 30.0 else 40.0 }, TODAY).single()
+        val eff = tagEffects(journal, seriesWhere { d -> if (d.minusDays(1) in journal) 30.0 else 40.0 }, window(TODAY)).single()
         assertEquals(Tag.ALCOHOL, eff.tag)
         assertEquals(10, eff.days)
         assertEquals(-10.0, eff.hrvMs!!, 1e-6)
@@ -32,7 +32,7 @@ class JournalTest {
     @Test fun `ten tags spread over three kinds yields nothing`() {
         val kinds = listOf(Tag.ALCOHOL, Tag.STRESS, Tag.TRAVEL)
         val journal = (1..10).associate { TODAY.minusDays(it.toLong()) to DayJournal(setOf(kinds[it % 3])) }
-        assertTrue(tagEffects(journal, seriesWhere { 40.0 }, TODAY).isEmpty())
+        assertTrue(tagEffects(journal, seriesWhere { 40.0 }, window(TODAY)).isEmpty())
     }
 
     @Test fun `deep share is deep over sleep hours and effects sort by hrv`() {
@@ -43,7 +43,7 @@ class JournalTest {
             MetricKind.SLEEP_HOURS to window(TODAY).map { DayValue(it, 8.0) },
             MetricKind.DEEP to window(TODAY).map { DayValue(it, if (it in alcohol) 48.0 else 96.0) },
         )
-        val effects = tagEffects(journal, series, TODAY)
+        val effects = tagEffects(journal, series, window(TODAY))
         assertEquals(listOf(Tag.STRESS, Tag.ALCOHOL), effects.map { it.tag })
         assertEquals(-0.1, effects[1].deepShare!!, 1e-6)
         assertEquals(0.0, effects[0].deepShare!!, 1e-6)
@@ -53,7 +53,7 @@ class JournalTest {
         val journal = journalWith(Tag.ALCOHOL, 10) + (11..30).associate { TODAY.minusDays(it.toLong()) to DayJournal(setOf(Tag.STRESS)) }
         val window = window(TODAY)
         assertTrue(window.count { journal[it] == null } < 5)
-        assertTrue(tagEffects(journal, seriesWhere { 40.0 }, TODAY).isEmpty())
+        assertTrue(tagEffects(journal, seriesWhere { 40.0 }, window(TODAY)).isEmpty())
     }
 
     @Test fun `exactly five tagged and five untagged days gives one effect`() {
@@ -61,6 +61,6 @@ class JournalTest {
         val journal = window.take(5).associateWith { DayJournal(setOf(Tag.ALCOHOL)) } +
             window.drop(5).dropLast(5).associateWith { DayJournal(setOf(Tag.STRESS)) }
         assertEquals(5, window.count { journal[it] == null })
-        assertEquals(listOf(Tag.ALCOHOL), tagEffects(journal, seriesWhere { 40.0 }, TODAY).map { it.tag }.filter { it == Tag.ALCOHOL })
+        assertEquals(listOf(Tag.ALCOHOL), tagEffects(journal, seriesWhere { 40.0 }, window(TODAY)).map { it.tag }.filter { it == Tag.ALCOHOL })
     }
 }

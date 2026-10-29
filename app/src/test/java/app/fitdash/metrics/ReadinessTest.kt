@@ -36,7 +36,7 @@ class ReadinessTest {
         // 0.4*70 + 0.3*70 + 0.3*80 = 73
         assertEquals(
             ReadinessResult.Ready(
-                73, Band.PRIMED, setOf(Component.HRV, Component.RESTING_HR, Component.SLEEP),
+                73, Band.PRIMED,
                 mapOf(Component.HRV to 70.0, Component.RESTING_HR to 70.0, Component.SLEEP to 80.0),
             ),
             readiness(snap, TODAY, IST),
@@ -54,7 +54,7 @@ class ReadinessTest {
         val snap = history(TODAY, 10, hrv = null) + day(TODAY, rhr = 60.0, sleepHours = 8.0)
         // (0.3*70 + 0.3*100) / 0.6 = 85
         assertEquals(
-            ReadinessResult.Ready(85, Band.PRIMED, setOf(Component.RESTING_HR, Component.SLEEP), mapOf(Component.RESTING_HR to 70.0, Component.SLEEP to 100.0)),
+            ReadinessResult.Ready(85, Band.PRIMED, mapOf(Component.RESTING_HR to 70.0, Component.SLEEP to 100.0)),
             readiness(snap, TODAY, IST),
         )
     }
@@ -62,7 +62,7 @@ class ReadinessTest {
     @Test fun `zero HRV baseline drops HRV instead of dividing by zero`() {
         val snap = history(TODAY, 10, hrv = 0.0) + day(TODAY, hrv = 40.0, rhr = 60.0, sleepHours = 8.0)
         assertEquals(
-            ReadinessResult.Ready(85, Band.PRIMED, setOf(Component.RESTING_HR, Component.SLEEP), mapOf(Component.RESTING_HR to 70.0, Component.SLEEP to 100.0)),
+            ReadinessResult.Ready(85, Band.PRIMED, mapOf(Component.RESTING_HR to 70.0, Component.SLEEP to 100.0)),
             readiness(snap, TODAY, IST),
         )
     }

@@ -11,6 +11,7 @@ import app.fitdash.settings.DayJournal
 import app.fitdash.settings.Tag
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZonedDateTime
 
 data class WeekDay(val date: LocalDate, val score: Int?)
@@ -27,7 +28,6 @@ data class TodayData(
     val sleep: SleepSummary?,
     val heart: HeartSummary?,
     val vitals: List<VitalReading>,
-    val morningAlert: List<VitalReading>,
     val activity: ActivitySummary?,
     val movementScore: Int?,
     val readinessWeek: List<WeekDay>,
@@ -68,6 +68,8 @@ data class TodayData(
     val yesterdayTags: Set<Tag> = emptySet(),
     val taggedDays: Int = 0,
     val timeline: DayTimelineData? = null,
+    // The bedtime target from Settings, else the median of the last 14 nights.
+    val bedtime: LocalTime? = null,
 )
 
 data class DayScores(val sleep: Int?, val readiness: Int?, val movement: Int?)
@@ -105,6 +107,9 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
     val bmiValue = snap.weightKg?.let { w -> snap.heightMeters?.let { h -> bmi(w, h) } }
     val reg = regularity(snap.sleep, date, zone)
     val vitals = vitals(snap, date, zone)
+    val dayHr = heartDay(snap, date, zone)
+    val bedtime = goals.bedtime ?: medianBedtime(reg.value?.value?.nights.orEmpty().mapNotNull { it.start }, zone)
+    val days = window(date)
     return TodayData(
         date = date,
         isToday = isToday,
@@ -113,7 +118,6 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         sleep = sleep,
         heart = heart,
         vitals = vitals,
-        morningAlert = morningAlert(vitals, heart),
         activity = activity,
         movementScore = activity?.goalPercent?.coerceAtMost(100),
         readinessWeek = week.map { WeekDay(it.date, it.recovery) },
@@ -148,7 +152,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         heightMeters = snap.heightMeters,
         bmi = bmiValue,
         bmiBand = bmiValue?.let(::bmiBand),
-        heartDay = heartDay(snap, date, zone),
+        heartDay = dayHr,
         workouts = dayWorkouts,
         workoutHr = dayWorkouts.associate { it.start to spanLine(snap.heartRate, it.start, it.end) },
         weekWorkouts = weekWorkouts(snap, date, zone),
@@ -159,9 +163,10 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         regularity = reg.value,
         regularityProgress = reg.progress,
         regularityLastWeek = regularity(snap.sleep, date.minusDays(7), zone).value?.value?.sri,
-        tagEffects = tagEffects(journal, series, date),
+        tagEffects = tagEffects(journal, series, days),
         yesterdayTags = journal[prev]?.tags.orEmpty(),
-        taggedDays = window(date).count { !journal[it]?.tags.isNullOrEmpty() },
-        timeline = dayTimeline(snap, date, zone, goals.bedtime ?: medianBedtime(reg.value?.value?.nights.orEmpty().mapNotNull { it.start }, zone), now, dayWorkouts),
+        taggedDays = days.count { !journal[it]?.tags.isNullOrEmpty() },
+        timeline = dayTimeline(snap.sleep, date, zone, bedtime, now, dayWorkouts, dayHr?.line, activity?.hourly.orEmpty()),
+        bedtime = bedtime,
     )
 }

@@ -11,8 +11,8 @@ data class TagEffect(val tag: Tag, val days: Int, val hrvMs: Double?, val restin
 // Each side needs this many days before a difference is worth showing.
 const val MIN_TAG_DAYS = 5
 
-fun tagEffects(journal: Map<LocalDate, DayJournal>, series: Map<MetricKind, List<DayValue>>, end: LocalDate): List<TagEffect> {
-    val days = window(end)
+fun tagEffects(journal: Map<LocalDate, DayJournal>, series: Map<MetricKind, List<DayValue>>, days: List<LocalDate>): List<TagEffect> {
+    if (journal.values.all { it.tags.isEmpty() }) return emptyList()
     val values = listOf(MetricKind.HRV, MetricKind.RESTING_HR, MetricKind.SLEEP_SCORE, MetricKind.DEEP, MetricKind.SLEEP_HOURS)
         .associateWith { kind -> series[kind].orEmpty().mapNotNull { v -> v.value?.let { v.date to it } }.toMap() }
     val deep = values.getValue(MetricKind.DEEP).mapNotNull { (d, v) -> values.getValue(MetricKind.SLEEP_HOURS)[d]?.takeIf { it > 0 }?.let { d to v / 60 / it } }.toMap()

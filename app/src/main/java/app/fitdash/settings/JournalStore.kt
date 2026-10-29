@@ -23,7 +23,11 @@ data class DayJournal(
     val tags: Set<Tag> = emptySet(),
     val protein: List<Entry> = emptyList(),
     val caffeine: List<Entry> = emptyList(),
-)
+) {
+    fun entries(kind: NutrientKind) = if (kind == NutrientKind.PROTEIN) protein else caffeine
+
+    fun withEntries(kind: NutrientKind, list: List<Entry>) = if (kind == NutrientKind.PROTEIN) copy(protein = list) else copy(caffeine = list)
+}
 
 class JournalStore(private val file: File) {
     private val _flow = MutableStateFlow(emptyMap<LocalDate, DayJournal>())
@@ -43,13 +47,9 @@ class JournalStore(private val file: File) {
             for (key in root.keys()) {
                 val day = root.getJSONObject(key)
                 val tags = day.optJSONArray("tags") ?: JSONArray()
-                val protein = day.optJSONArray("protein") ?: JSONArray()
-                val caffeine = day.optJSONArray("caffeine") ?: JSONArray()
-                days[LocalDate.parse(key)] = DayJournal(
-                    tags = (0 until tags.length()).mapNotNull { i -> runCatching { Tag.valueOf(tags.getString(i)) }.getOrNull() }.toSet(),
-                    protein = entries(protein),
-                    caffeine = entries(caffeine),
-                )
+                var j = DayJournal(tags = (0 until tags.length()).mapNotNull { i -> runCatching { Tag.valueOf(tags.getString(i)) }.getOrNull() }.toSet())
+                for (kind in NutrientKind.entries) j = j.withEntries(kind, entries(day.optJSONArray(kind.name.lowercase()) ?: JSONArray()))
+                days[LocalDate.parse(key)] = j
             }
             _flow.value = days
         }
@@ -59,13 +59,12 @@ class JournalStore(private val file: File) {
         d.copy(tags = if (tag in d.tags) d.tags - tag else d.tags + tag)
     }
 
-    fun add(date: LocalDate, kind: NutrientKind, entry: Entry) = update(date) { d ->
-        if (kind == NutrientKind.PROTEIN) d.copy(protein = d.protein + entry) else d.copy(caffeine = d.caffeine + entry)
-    }
+    fun add(date: LocalDate, kind: NutrientKind, entry: Entry) = update(date) { d -> d.withEntries(kind, d.entries(kind) + entry) }
 
-    fun remove(date: LocalDate, kind: NutrientKind, at: Instant) = update(date) { d ->
-        if (kind == NutrientKind.PROTEIN) d.copy(protein = d.protein.filter { it.at != at })
-        else d.copy(caffeine = d.caffeine.filter { it.at != at })
+    fun remove(date: LocalDate, kind: NutrientKind, at: Instant) = update(date) { d -> d.withEntries(kind, d.entries(kind).filter { it.at != at }) }
+
+    fun setRecordId(date: LocalDate, kind: NutrientKind, at: Instant, recordId: String) = update(date) { d ->
+        d.withEntries(kind, d.entries(kind).map { if (it.at == at) it.copy(recordId = recordId) else it })
     }
 
     private fun update(date: LocalDate, change: (DayJournal) -> DayJournal) {
@@ -77,10 +76,9 @@ class JournalStore(private val file: File) {
             val entries = { list: List<Entry> ->
                 JSONArray(list.map { JSONObject().put("at", it.at.toString()).put("amount", it.amount).put("recordId", it.recordId ?: "") })
             }
-            root.put(
-                d.toString(),
-                JSONObject().put("tags", JSONArray(j.tags.map { it.name })).put("protein", entries(j.protein)).put("caffeine", entries(j.caffeine)),
-            )
+            val json = JSONObject().put("tags", JSONArray(j.tags.map { it.name }))
+            for (kind in NutrientKind.entries) json.put(kind.name.lowercase(), entries(j.entries(kind)))
+            root.put(d.toString(), json)
         }
         val tmp = File.createTempFile("journal", ".tmp", file.parentFile)
         tmp.writeText(root.toString())

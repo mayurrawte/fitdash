@@ -1,5 +1,6 @@
 package app.fitdash.metrics
 
+import java.time.DayOfWeek
 import java.time.LocalDate
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -32,8 +33,8 @@ fun weekReview(series: Map<MetricKind, List<DayValue>>, end: LocalDate): WeekRev
 
 // Monday to Wednesday, until the review has been dismissed this week.
 fun showWeekReview(today: LocalDate, seen: LocalDate?): Boolean {
-    val monday = today.with(java.time.DayOfWeek.MONDAY)
-    return today.dayOfWeek <= java.time.DayOfWeek.WEDNESDAY && (seen == null || seen.isBefore(monday))
+    val monday = today.with(DayOfWeek.MONDAY)
+    return today.dayOfWeek <= DayOfWeek.WEDNESDAY && (seen == null || seen.isBefore(monday))
 }
 
 // One plain sentence on the biggest change; small wobbles are not news.

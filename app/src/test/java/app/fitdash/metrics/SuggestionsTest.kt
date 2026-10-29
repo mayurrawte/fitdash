@@ -7,7 +7,7 @@ import java.time.Duration
 import java.time.Instant
 
 class SuggestionsTest {
-    private fun ready(score: Int) = ReadinessResult.Ready(score, band(score), Component.entries.toSet(), emptyMap())
+    private fun ready(score: Int) = ReadinessResult.Ready(score, band(score), emptyMap())
 
     private fun sleep(hours: Double) = SleepSummary(
         asleep = Duration.ofSeconds((hours * 3600).toLong()),

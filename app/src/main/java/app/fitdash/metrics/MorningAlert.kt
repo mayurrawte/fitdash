@@ -5,8 +5,8 @@ import java.time.ZonedDateTime
 
 fun morningAlert(vitals: List<VitalReading>, heart: HeartSummary?): List<VitalReading> {
     val readings = listOfNotNull(
-        heart?.restingHr?.let { VitalReading("Resting HR", "bpm", it, heart.restingHrBaseline, heart.restingHrRange, Good.LOWER) },
-        heart?.hrv?.let { VitalReading("HRV", "ms", it, heart.hrvBaseline, heart.hrvRange, Good.HIGHER) },
+        heart?.restingHr?.let { VitalReading("Resting HR", "bpm", it, heart.restingHrBaseline, heart.restingHrRange, Good.LOWER, MetricKind.RESTING_HR) },
+        heart?.hrv?.let { VitalReading("HRV", "ms", it, heart.hrvBaseline, heart.hrvRange, Good.HIGHER, MetricKind.HRV) },
     ) + vitals
     return readings.filter { it.range != null && rangeStatus(it.value, it.range, it.good) == RangeStatus.BAD_SIDE }
 }

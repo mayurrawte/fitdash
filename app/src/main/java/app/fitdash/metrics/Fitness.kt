@@ -129,9 +129,9 @@ val GABBETT = Source("Gabbett 2016", "The training–injury prevention paradox: 
 data class SleepDebt(val hours: Double, val nights: List<Double>)
 
 fun debtLevel(hours: Double) = when {
-    hours < 2 -> 0
-    hours <= 5 -> 2
-    else -> 3
+    hours < 2 -> Status.GOOD
+    hours <= 5 -> Status.BELOW_USUAL
+    else -> Status.ATTENTION
 }
 
 fun sleepDebt(nightHours: List<Double?>, goalHours: Double): FitnessValue<SleepDebt> {

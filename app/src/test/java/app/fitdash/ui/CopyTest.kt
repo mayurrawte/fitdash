@@ -33,7 +33,7 @@ import java.time.ZoneId
 
 class CopyTest {
     @Test fun `recovery chips name the inputs used and only those`() {
-        val r = ReadinessResult.Ready(42, Band.STEADY, setOf(Component.HRV), mapOf(Component.HRV to 30.0))
+        val r = ReadinessResult.Ready(42, Band.STEADY, mapOf(Component.HRV to 30.0))
         val heart = HeartSummary(hrv = 37.0, hrvBaseline = 44.0, restingHr = 76.0, restingHrBaseline = 60.0, hrvTrend = emptyList(), restingHrTrend = emptyList(), hrvRange = null, restingHrRange = null)
         val chips = recoveryChips(r, heart = heart, sleep = null)
         assertEquals(listOf(ScoreChip("HRV 37 ms · below usual", Status.ATTENTION, MetricKind.HRV)), chips)
@@ -41,7 +41,7 @@ class CopyTest {
 
     @Test fun `recovery chips for every input`() {
         val r = ReadinessResult.Ready(
-            60, Band.STEADY, Component.entries.toSet(),
+            60, Band.STEADY,
             mapOf(Component.HRV to 70.0, Component.RESTING_HR to 55.0, Component.SLEEP to 95.0),
         )
         val sleep = SleepSummary(

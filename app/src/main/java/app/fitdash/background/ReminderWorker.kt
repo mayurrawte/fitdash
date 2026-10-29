@@ -73,7 +73,8 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
             }
             val lastMorning = sent.getLong("morning", 0L).takeIf { it > 0 }?.let(Instant::ofEpochMilli)
             if (settings.morningAlert && live != null && cached != null && morningAlertDue(now, lastMorning)) {
-                val readings = buildToday(cached, now).morningAlert
+                val data = buildToday(cached, now)
+                val readings = morningAlert(data.vitals, data.heart)
                 if (readings.isNotEmpty()) {
                     Reminders.notify(applicationContext, MORNING_ID, "Overnight vitals outside your range", readings.joinToString(" · ") { "${it.label} ${formatNumber(it.value)} ${it.unit}" })
                     sent.edit().putLong("morning", now.toInstant().toEpochMilli()).apply()

@@ -22,6 +22,8 @@ private val COLUMNS = listOf(
     "water_l" to (MetricKind.WATER to 2),
 )
 
+private val ISO = DateTimeFormatter.ISO_OFFSET_DATE_TIME
+
 fun csvField(value: String): String =
     if (value.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) "\"" + value.replace("\"", "\"\"") + "\"" else value
 
@@ -44,7 +46,7 @@ fun dailyCsv(data: TodayData, journal: Map<LocalDate, DayJournal>): String {
 fun heartRateCsv(snapshot: HealthSnapshot, zone: ZoneId): String {
     val out = StringBuilder("time,bpm\n")
     for (s in snapshot.heartRate) {
-        out.append(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(s.time.atZone(zone))).append(',')
+        out.append(ISO.format(s.time.atZone(zone))).append(',')
             .append("%.1f".format(Locale.ENGLISH, s.value)).append('\n')
     }
     return out.toString()
@@ -54,8 +56,8 @@ fun sleepStagesCsv(snapshot: HealthSnapshot, zone: ZoneId): String {
     val out = StringBuilder("start,end,stage\n")
     for (session in snapshot.sleep) {
         for (st in session.stages) {
-            out.append(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(st.start.atZone(zone))).append(',')
-                .append(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(st.end.atZone(zone))).append(',')
+            out.append(ISO.format(st.start.atZone(zone))).append(',')
+                .append(ISO.format(st.end.atZone(zone))).append(',')
                 .append(st.type.name.lowercase()).append('\n')
         }
     }
@@ -65,8 +67,8 @@ fun sleepStagesCsv(snapshot: HealthSnapshot, zone: ZoneId): String {
 fun workoutsCsv(snapshot: HealthSnapshot, zone: ZoneId): String {
     val out = StringBuilder("start,end,type,title,distance_km,kcal,steps,avg_hr,max_hr,app\n")
     for (w in snapshot.workouts) {
-        out.append(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(w.start.atZone(zone))).append(',')
-            .append(DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(w.end.atZone(zone))).append(',')
+        out.append(ISO.format(w.start.atZone(zone))).append(',')
+            .append(ISO.format(w.end.atZone(zone))).append(',')
             .append(w.type).append(',')
             .append(csvField(w.title.orEmpty())).append(',')
             .append(w.distanceMeters?.let { "%.2f".format(Locale.ENGLISH, it / 1000) }.orEmpty()).append(',')

@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.debtLevel
-import app.fitdash.metrics.medianBedtime
 import app.fitdash.ui.bedtimeLine
 import app.fitdash.ui.formatHoursShort
 import app.fitdash.ui.components.ScoreChip
@@ -72,7 +71,6 @@ import androidx.compose.ui.text.style.TextAlign
 import kotlin.math.roundToLong
 import app.fitdash.ui.metricName
 import app.fitdash.ui.rangeNote
-import app.fitdash.ui.vitalKind
 import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Space
@@ -117,7 +115,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                         color = Palette.Muted,
                     )
                     val debt = data.fitness.sleepDebt.value.hours
-                    val debtChip = ScoreChip("Sleep debt ${formatHoursShort(debt)}", when (debtLevel(debt)) { 0 -> Status.GOOD; 2 -> Status.BELOW_USUAL; else -> Status.ATTENTION }, fitness = FitnessCard.SLEEP_DEBT)
+                    val debtChip = ScoreChip("Sleep debt ${formatHoursShort(debt)}", debtLevel(debt), fitness = FitnessCard.SLEEP_DEBT)
                     ScoreChips(sleepChips(s, data.goals.sleepHours) + debtChip, Modifier.padding(top = Space.s))
                     if (s.goalPercent < 100) {
                         val avg = weekHours.takeIf { it.size >= 3 }?.average()
@@ -131,8 +129,7 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
             item(key = "span") {
                 Column(Modifier.padding(horizontal = Space.l).fillMaxWidth().cardSurface().padding(horizontal = Space.l, vertical = Space.m)) {
                     SpanBar(clock(s.start, zone), clock(s.end, zone))
-                    val target = LocalPrefs.current.bedtimeTarget ?: medianBedtime(data.regularity?.value?.nights.orEmpty().mapNotNull { it.start }, zone)
-                    if (data.isToday) bedtimeLine(data.fitness.sleepDebt.value.hours, target, LocalPrefs.current.clock24)?.let {
+                    if (data.isToday) bedtimeLine(data.fitness.sleepDebt.value.hours, data.bedtime, LocalPrefs.current.clock24)?.let {
                         Text(it, Modifier.padding(top = Space.s), style = Type.small, color = Palette.Muted)
                     }
                 }
@@ -241,13 +238,12 @@ fun SleepPage(data: TodayData, chrome: PageChrome) {
                 TileGrid(
                     data.vitals.mapIndexed<VitalReading, @Composable (Modifier) -> Unit> { i, v ->
                         { m ->
-                            val kind = vitalKind(v.label)
-                            val f = LocalPrefs.current.fahrenheit && kind == MetricKind.SKIN_TEMP
+                            val f = LocalPrefs.current.fahrenheit && v.kind == MetricKind.SKIN_TEMP
                             StatTile(
                                 v.label, if (f) formatTempDelta(v.value, true) else formatNumber(v.value), if (f) "°F" else v.unit, rangeNote(v.value, v.range, v.good), m,
                                 status = v.range?.let { rangeWord(rangeStatus(v.value, it, v.good)) },
-                                onClick = opener(kind),
-                                description = "${metricName(kind)} details",
+                                onClick = opener(v.kind),
+                                description = "${metricName(v.kind)} details",
                                 tint = VITAL_TINTS[i % VITAL_TINTS.size],
                             ) { v.range?.let { RangeBar("vital-${v.label}", v.value, it, v.good) } ?: EmptyTrack() }
                         }

@@ -31,6 +31,7 @@ import app.fitdash.metrics.FitnessCard
 import app.fitdash.metrics.debtLevel
 import app.fitdash.metrics.LoadBand
 import app.fitdash.metrics.MissingInput
+import app.fitdash.metrics.Status
 import app.fitdash.metrics.TodayData
 import app.fitdash.ui.components.Chart
 import app.fitdash.ui.components.EmptyTrack
@@ -156,7 +157,7 @@ private fun Vo2Tile(data: TodayData, chrome: PageChrome, m: Modifier, tint: Tint
 private fun SleepDebtTile(data: TodayData, m: Modifier, tint: Tint) {
     val d = data.fitness.sleepDebt
     val open = metricOpener(MetricRef.Fitness(FitnessCard.SLEEP_DEBT))
-    val colour = bandColour(debtLevel(d.value.hours))
+    val colour = bandColour(when (debtLevel(d.value.hours)) { Status.GOOD -> 0; Status.BELOW_USUAL -> 2; else -> 3 })
     StatTile(fitnessCardName(FitnessCard.SLEEP_DEBT), formatHoursShort(d.value.hours).removeSuffix(" h"), "h", "last 7 nights · tap for the formula", m, onClick = open, description = metricDescription(MetricRef.Fitness(FitnessCard.SLEEP_DEBT)), tint = tint) {
         NightStrip(d.value.nights, data.goals.sleepHours, colour)
     }

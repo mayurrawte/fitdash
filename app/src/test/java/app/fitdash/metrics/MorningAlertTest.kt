@@ -33,9 +33,9 @@ class MorningAlertTest {
     }
 
     @Test fun `vitals outside their range are returned`() {
-        val spo2 = VitalReading("SpO₂", "%", 91.0, 96.0, 94.0..99.0, Good.HIGHER)
-        val steady = VitalReading("Respiratory rate", "br/min", 15.0, 15.0, 13.0..17.0, Good.MIDDLE)
-        val noRange = VitalReading("Skin temperature", "°C", 1.0, null, null, Good.MIDDLE)
+        val spo2 = VitalReading("SpO₂", "%", 91.0, 96.0, 94.0..99.0, Good.HIGHER, MetricKind.SPO2)
+        val steady = VitalReading("Respiratory rate", "br/min", 15.0, 15.0, 13.0..17.0, Good.MIDDLE, MetricKind.RESPIRATORY)
+        val noRange = VitalReading("Skin temperature", "°C", 1.0, null, null, Good.MIDDLE, MetricKind.SKIN_TEMP)
         assertEquals(listOf(spo2), morningAlert(listOf(spo2, steady, noRange), null))
     }
 

@@ -25,6 +25,7 @@ data class VitalReading(
     val baseline: Double?,
     val range: ClosedFloatingPointRange<Double>?,
     val good: Good,
+    val kind: MetricKind,
 )
 
 data class ActivitySummary(
@@ -56,16 +57,16 @@ fun heartSummary(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): Heart
     )
 }
 
-private data class VitalSource(val label: String, val unit: String, val samples: List<Sample>, val good: Good)
+private data class VitalSource(val label: String, val unit: String, val samples: List<Sample>, val good: Good, val kind: MetricKind)
 
 fun vitals(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): List<VitalReading> =
     listOf(
-        VitalSource("SpO₂", "%", snapshot.spo2, Good.HIGHER),
-        VitalSource("Respiratory rate", "br/min", snapshot.respiratoryRate, Good.MIDDLE),
-        VitalSource("Skin temperature", "°C", snapshot.skinTempDelta, Good.MIDDLE),
+        VitalSource("SpO₂", "%", snapshot.spo2, Good.HIGHER, MetricKind.SPO2),
+        VitalSource("Respiratory rate", "br/min", snapshot.respiratoryRate, Good.MIDDLE, MetricKind.RESPIRATORY),
+        VitalSource("Skin temperature", "°C", snapshot.skinTempDelta, Good.MIDDLE, MetricKind.SKIN_TEMP),
     ).mapNotNull { s ->
         val daily = dailyMean(s.samples, zone)
-        daily[date]?.let { VitalReading(s.label, s.unit, it, baseline(daily, date), normalRange(daily, date), s.good) }
+        daily[date]?.let { VitalReading(s.label, s.unit, it, baseline(daily, date), normalRange(daily, date), s.good, s.kind) }
     }
 
 fun stepsOn(snapshot: HealthSnapshot, date: LocalDate, zone: ZoneId): Long? {

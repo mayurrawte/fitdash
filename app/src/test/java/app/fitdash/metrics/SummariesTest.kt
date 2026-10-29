@@ -66,7 +66,7 @@ class SummariesTest {
     @Test fun `vitals show last night against baseline`() {
         val spo2 = (1..5).map { Sample(at(TODAY.minusDays(it.toLong()), 4), 96.0) } + Sample(at(TODAY, 4), 94.0)
         val v = vitals(HealthSnapshot(spo2 = spo2), TODAY, IST)
-        assertEquals(listOf(VitalReading("SpO₂", "%", 94.0, 96.0, 96.0..96.0, Good.HIGHER)), v)
+        assertEquals(listOf(VitalReading("SpO₂", "%", 94.0, 96.0, 96.0..96.0, Good.HIGHER, MetricKind.SPO2)), v)
     }
 
     @Test fun `vitals are empty when last night has none`() {
