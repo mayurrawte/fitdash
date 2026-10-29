@@ -58,6 +58,8 @@ import app.fitdash.ui.share.ShareRender
 import app.fitdash.ui.theme.ThemedBackground
 import app.fitdash.health.Workout
 import app.fitdash.metrics.ReadinessResult
+import app.fitdash.metrics.TagEffect
+import app.fitdash.settings.Tag
 import app.fitdash.metrics.TodayData
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.today.TodayUiState
@@ -242,6 +244,17 @@ private fun LogWaterLargeText() = PagePreview(3)
 @Composable
 private fun LogTags() = PagePreview(3, initialSegment = 3)
 
+@Preview(heightDp = 1500)
+@Composable
+private fun TrendsInsights() = PagePreview(4, PreviewData.today(21, 30).copy(tagEffects = listOf(
+    TagEffect(Tag.ALCOHOL, 8, -9.0, 4.0, -6.0, -0.05),
+    TagEffect(Tag.STRESS, 6, -3.0, null, null, null),
+)))
+
+@Preview(heightDp = 1500)
+@Composable
+private fun TrendsInsightsEmpty() = PagePreview(4, PreviewData.today(21, 30).copy(taggedDays = 3))
+
 @Composable
 private fun PagePreview(page: Int, data: TodayData = PreviewData.today(21, 30), initialSegment: Int = 0) {
     val chrome = PageChrome(data.date, data.date, false, 29, {}, {}, {}, {}, {}, {})
@@ -251,6 +264,7 @@ private fun PagePreview(page: Int, data: TodayData = PreviewData.today(21, 30), 
             when (page) {
                 0 -> TodayPage(data, chrome, {}, {}, {}, {})
                 3 -> LogPage(data, chrome, JournalStore(File("journal-preview.json")), {}, {}, { _, _ -> }, { _, _ -> }, false, initialSegment)
+                4 -> TrendsPage(data, chrome)
                 else -> SleepPage(data, chrome)
             }
         }
