@@ -10,6 +10,7 @@ import app.fitdash.widget.FitdashWidget
 import android.content.Intent
 import app.fitdash.ui.share.clearShareCache
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.os.SystemClock
@@ -49,6 +50,7 @@ import androidx.health.connect.client.HealthConnectClient
 import app.fitdash.health.SnapshotCache
 import app.fitdash.settings.JournalStore
 import app.fitdash.settings.SettingsStore
+import app.fitdash.settings.ThemeChoice
 import app.fitdash.ui.LoadingScreen
 import app.fitdash.ui.MessageScreen
 import app.fitdash.ui.NameScreen
@@ -100,6 +102,15 @@ class MainActivity : ComponentActivity() {
             val settings by store.flow.collectAsStateWithLifecycle()
             val dark = resolveDark(settings.theme, isSystemInDarkTheme())
             val animationsOff = remember { android.provider.Settings.Global.getFloat(contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
+            LaunchedEffect(settings.theme) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    splashScreen.setSplashScreenTheme(when (settings.theme) {
+                        ThemeChoice.LIGHT -> R.style.Theme_Fitdash_Starting_Day
+                        ThemeChoice.DARK -> R.style.Theme_Fitdash_Starting_Night
+                        ThemeChoice.SYSTEM -> R.style.Theme_Fitdash_Starting
+                    })
+                }
+            }
             LaunchedEffect(dark) {
                 val bars = if (dark) SystemBarStyle.dark(TRANSPARENT) else SystemBarStyle.light(TRANSPARENT, TRANSPARENT)
                 (this@MainActivity as ComponentActivity).enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)

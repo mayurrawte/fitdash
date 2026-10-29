@@ -5,4 +5,14 @@
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_ring</item>
         <item name="postSplashScreenTheme">@android:style/Theme.Material.NoActionBar</item>
     </style>
+    <style name="Theme.Fitdash.Starting.Day" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#F4F3EF</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_ring</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.Material.NoActionBar</item>
+    </style>
+    <style name="Theme.Fitdash.Starting.Night" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#15121F</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_ring</item>
+        <item name="postSplashScreenTheme">@android:style/Theme.Material.NoActionBar</item>
+    </style>
 </resources>
