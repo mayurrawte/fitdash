@@ -67,6 +67,7 @@ data class TodayData(
     val tagEffects: List<TagEffect> = emptyList(),
     val yesterdayTags: Set<Tag> = emptySet(),
     val taggedDays: Int = 0,
+    val timeline: DayTimelineData? = null,
 )
 
 data class DayScores(val sleep: Int?, val readiness: Int?, val movement: Int?)
@@ -161,5 +162,6 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         tagEffects = tagEffects(journal, series, date),
         yesterdayTags = journal[prev]?.tags.orEmpty(),
         taggedDays = window(date).count { !journal[it]?.tags.isNullOrEmpty() },
+        timeline = dayTimeline(snap, date, zone, goals.bedtime ?: medianBedtime(reg.value?.value?.nights.orEmpty().mapNotNull { it.start }, zone), now, dayWorkouts),
     )
 }

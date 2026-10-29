@@ -131,7 +131,7 @@ class TodayViewModel(
 
     private fun currentGoals() = settings.value.goals()
 
-    private fun Settings.goals() = Goals(stepGoal, sleepHours, waterGoalMl / 1000.0, activeGoal, birthYear, gender)
+    private fun Settings.goals() = Goals(stepGoal, sleepHours, waterGoalMl / 1000.0, activeGoal, birthYear, gender, bedtimeTarget)
 
     private fun build(read: HealthSnapshot, now: ZonedDateTime, date: LocalDate, goals: Goals, water: Double = 0.0): Pair<TodayData, String> {
         val today = now.toLocalDate()

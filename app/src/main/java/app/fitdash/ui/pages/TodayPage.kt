@@ -77,6 +77,7 @@ import app.fitdash.ui.workoutLine
 import app.fitdash.ui.workoutTitle
 import app.fitdash.ui.components.Bars
 import app.fitdash.ui.components.CountUpText
+import app.fitdash.ui.components.DayTimeline
 import app.fitdash.ui.components.DeltaArrow
 import app.fitdash.ui.components.EmptyTrack
 import app.fitdash.ui.components.HeartDayLine
@@ -174,8 +175,13 @@ fun TodayPage(
             )
         }
         if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing, progress, chrome.error) }
+        data.timeline?.let { t ->
+            revealItem("timeline", 0) {
+                DayTimeline(t, { onOpen(1) }, { onOpenWorkout(data.workouts[it]) }, metricOpener(MetricRef.Kind(MetricKind.HEART_RATE)))
+            }
+        }
         if (data.isToday) data.morningAlert.forEach { r ->
-            revealItem("alert-${r.label}", 0) {
+            revealItem("alert-${r.label}", 1) {
                 val kind = when (r.label) {
                     "Resting HR" -> MetricKind.RESTING_HR
                     "HRV" -> MetricKind.HRV
@@ -190,7 +196,7 @@ fun TodayPage(
                 }
             }
         }
-        revealItem("readout", 1) {
+        revealItem("readout", 2) {
             StripCard(null, null) {
                 Icon(NavIcons.sparkle, null, Modifier.padding(end = Space.m).size(18.dp), tint = Palette.Accent)
                 Column {
@@ -206,9 +212,9 @@ fun TodayPage(
             }
         }
         if (data.isToday && showWeekReview(data.date, prefs.weekReviewSeen)) weekReview(data.series, data.date.minusDays(1))?.let { review ->
-            revealItem("week", 2) { WeekReviewCard(review, onDismiss = onDismissWeekReview) }
+            revealItem("week", 3) { WeekReviewCard(review, onDismiss = onDismissWeekReview) }
         }
-        revealItem("hero", 3) {
+        revealItem("hero", 4) {
             val s = data.sleep
             val onSteps = s == null && hasSteps
             HeroCard(
@@ -297,10 +303,10 @@ fun TodayPage(
                 }
             }
         }
-        revealItem("tiles", 4) { TileGrid(tiles) }
+        revealItem("tiles", 5) { TileGrid(tiles) }
         val hd = data.heartDay?.takeIf { prefs.showHeartRate }
         val workouts = data.workouts.takeIf { prefs.showWorkouts }.orEmpty()
-        if (hd != null || workouts.isNotEmpty()) revealItem("rows", 5) {
+        if (hd != null || workouts.isNotEmpty()) revealItem("rows", 6) {
             var expanded by rememberSaveable(data.date) { mutableStateOf(false) }
             Column(Modifier.animateContentSize()) {
                 RowGroup {
@@ -331,13 +337,13 @@ fun TodayPage(
         }
         if (prefs.showSuggestions && data.suggestions.isNotEmpty()) {
             val first = data.suggestions.first()
-            revealItem("suggestion-0", 6) {
+            revealItem("suggestion-0", 7) {
                 StripCard(null, null) {
                     Icon(suggestionIcon(first.kind), null, Modifier.padding(end = Space.m).size(20.dp), tint = Palette.Accent)
                     Text(suggestionText(first), style = Type.body.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium, lineHeight = 22.sp), color = Palette.Text)
                 }
             }
-            if (data.suggestions.size > 1) revealItem("suggestions-more", 7) {
+            if (data.suggestions.size > 1) revealItem("suggestions-more", 8) {
                 RowGroup { data.suggestions.drop(1).forEachIndexed { i, s -> ListRow(suggestionIcon(s.kind), suggestionText(s), null, divider = i > 0) } }
             }
         }

@@ -2,6 +2,7 @@ package app.fitdash.metrics
 
 import app.fitdash.health.HealthSnapshot
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.math.roundToInt
 
@@ -12,6 +13,7 @@ data class Goals(
     val activeMinutes: Int = Tuning.ACTIVE_MINUTES_GOAL,
     val birthYear: Int? = null,
     val gender: Gender? = null,
+    val bedtime: LocalTime? = null,
 ) {
     fun age(year: Int): Int? = birthYear?.let { year - it }
 }

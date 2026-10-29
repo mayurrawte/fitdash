@@ -226,6 +226,14 @@ private fun TodayWeekReview() = PagePreview(0, PreviewData.today(21, 30).copy(da
 @Composable
 private fun TodayAlert() = PagePreview(0, PreviewData.today(8, 0).copy(morningAlert = listOf(VitalReading("Resting HR", "bpm", 76.0, 66.0, 62.0..70.0, Good.LOWER), VitalReading("HRV", "ms", 37.0, 47.0, 40.0..55.0, Good.HIGHER))))
 
+@Preview(heightDp = 900)
+@Composable
+private fun TodayTimeline() = PagePreview(0, PreviewData.today(14, 0))
+
+@Preview(heightDp = 900, fontScale = 1.3f)
+@Composable
+private fun TodayTimelineLargeText() = PagePreview(0, PreviewData.today(14, 0))
+
 @Preview(heightDp = 1500)
 @Composable
 private fun TodayPastDate() = PagePreview(0, PreviewData.today(21, 30).copy(isToday = false))
