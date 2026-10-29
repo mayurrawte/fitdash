@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
@@ -31,12 +32,12 @@ private val BUBBLE_X = listOf(0.3f, 0.62f, 0.45f, 0.72f)
 
 @Composable
 fun Bottle(fraction: Float, modifier: Modifier = Modifier) {
-    val level by animateFloatAsState(fraction.coerceIn(0f, 1f), Motion.settle, label = "bottle-level")
     val still = LocalReduceMotion.current
-    val motion = rememberInfiniteTransition(label = "bottle")
+    val level by animateFloatAsState(fraction.coerceIn(0f, 1f), if (still) snap() else Motion.settle, label = "bottle-level")
+    val motion = if (still) null else rememberInfiniteTransition(label = "bottle")
     // Five turns in ten seconds, so the 0.6 speed layer also lands on a whole turn and the loop has no seam.
-    val phase by motion.animateFloat(0f, 10 * PI.toFloat(), infiniteRepeatable(tween(10_000, easing = LinearEasing)), label = "bottle-wave")
-    val rise by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "bottle-bubbles")
+    val phase = motion?.animateFloat(0f, 10 * PI.toFloat(), infiniteRepeatable(tween(10_000, easing = LinearEasing)), label = "bottle-wave")
+    val rise = motion?.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "bottle-bubbles")
     val outline = Palette.Accent.copy(alpha = 0.3f)
     val deep = Palette.Deep
     val rem = Palette.Rem
@@ -51,7 +52,7 @@ fun Bottle(fraction: Float, modifier: Modifier = Modifier) {
             val amp = 4.dp.toPx()
             val brush = Brush.verticalGradient(listOf(deep, rem), startY = top - amp, endY = body.bottom)
             listOf(0.6f to 0.45f, 1f to 1f).forEach { (speed, alpha) ->
-                val shift = if (still) 0f else phase * speed
+                val shift = (phase?.value ?: 0f) * speed
                 val wave = Path().apply {
                     moveTo(0f, size.height)
                     for (i in 0..24) {
@@ -64,7 +65,7 @@ fun Bottle(fraction: Float, modifier: Modifier = Modifier) {
                 drawPath(wave, brush, alpha = alpha)
             }
             BUBBLE_X.forEachIndexed { i, bx ->
-                val t = if (still) i / 4f else (rise + i / 4f) % 1f
+                val t = rise?.let { (it.value + i / 4f) % 1f } ?: (i / 4f)
                 val y = body.bottom - (body.bottom - top) * t
                 if (y > top + amp) drawCircle(Color.White.copy(alpha = 0.35f * (1 - t)), radius = (2.5f + i % 2).dp.toPx(), center = Offset(size.width * bx, y))
             }

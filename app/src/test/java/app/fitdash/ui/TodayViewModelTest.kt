@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -302,6 +303,8 @@ class TodayViewModelTest {
         assertEquals(before + 0.25, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
         advanceUntilIdle()
         assertEquals(before, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
+        vm.undoWater()
+        assertEquals(before, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
     }
 
     @Test fun `undo deletes the entry that was just added`() {
@@ -314,6 +317,40 @@ class TodayViewModelTest {
         assertEquals(0.0, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
         vm.undoWater()
         assertEquals(listOf("water-1"), source.waterDeleted)
+    }
+
+    @Test fun `undo during a pending add deletes that add, not the one before`() = runTest {
+        val source = FakeSource()
+        val vm = TodayViewModel(source, clock = { now }, work = UnconfinedTestDispatcher(testScheduler))
+        vm.load(); advanceUntilIdle()
+        vm.addWater(250); advanceUntilIdle()
+        source.writeDelay = 100
+        vm.addWater(500)
+        vm.undoWater()
+        assertEquals(0.25, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
+        advanceUntilIdle()
+        assertEquals(listOf("water-2"), source.waterDeleted)
+        assertEquals(0.25, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
+    }
+
+    @Test fun `a read that finishes before a pending add lands keeps the add`() = runTest {
+        val source = FakeSource()
+        val vm = TodayViewModel(source, clock = { now }, work = UnconfinedTestDispatcher(testScheduler))
+        vm.load(); advanceUntilIdle()
+        source.gate = CompletableDeferred()
+        source.writeDelay = 100
+        vm.load()
+        vm.addWater(250)
+        source.gate!!.complete(Unit)
+        assertEquals(0.25, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
+        advanceUntilIdle()
+        assertEquals(0.25, (vm.state.value as TodayUiState.Ready).data.waterLiters, 1e-9)
+    }
+
+    @Test fun `undo with nothing to undo says so`() = runBlocking {
+        val vm = load(FakeSource())
+        vm.undoWater()
+        assertEquals("Nothing to undo", withTimeoutOrNull(1000) { vm.messages.first() })
     }
 
     @Test fun `saving height writes metres then reads again`() {

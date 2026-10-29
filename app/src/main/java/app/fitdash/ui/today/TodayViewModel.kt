@@ -20,7 +20,9 @@ import app.fitdash.settings.Settings
 import app.fitdash.ui.aiSummary
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,10 +91,14 @@ class TodayViewModel(
     val permissionNeeded: Flow<Unit> = permissionRequests.receiveAsFlow()
     private val messageChannel = Channel<String>(Channel.CONFLATED)
     val messages: Flow<String> = messageChannel.receiveAsFlow()
-    private var lastWaterId: String? = null
+    // The latest water add, its write possibly still running, so Undo always deletes the record it names.
+    private var lastWater: Deferred<String?>? = null
+    private var undoneWater: Deferred<String?>? = null
     private var lastWaterLiters = 0.0
     // Water written or undone since the last read, shown at once instead of waiting for Health Connect.
     private var pendingWater = 0.0
+    // The part of pendingWater Health Connect has confirmed; a read started after that already includes it.
+    private var confirmedWater = 0.0
 
     init {
         viewModelScope.launch { settings.map { it.goals() }.distinctUntilChanged().drop(1).collect { rebuild() } }
@@ -104,16 +110,15 @@ class TodayViewModel(
     }
 
     private fun rebuild() {
-        val read = snapshot ?: return
+        val snapshot = snapshot ?: return
         // Past midnight the stored "now" is yesterday; refreshing it keeps "today" meaning today until the next read.
         val now = lastNow?.let { if (it.toLocalDate() == clock().toLocalDate()) it else clock().also { n -> lastNow = n } } ?: return
         val goals = currentGoals()
         val date = selectedDate.value ?: now.toLocalDate()
-        val today = now.toLocalDate()
-        val snapshot = if (pendingWater == 0.0) read else read.copy(waterDaily = read.waterDaily + (today to (read.waterDaily[today] ?: 0.0) + pendingWater))
+        val water = pendingWater
         rebuildJob?.cancel()
         rebuildJob = viewModelScope.launch {
-            val (data, text) = withContext(work) { build(snapshot, now, date, goals) }
+            val (data, text) = withContext(work) { build(snapshot, now, date, goals, water) }
             val prev = _state.value as? TodayUiState.Ready
             _state.value = TodayUiState.Ready(data, text, prev?.refreshing ?: false, prev?.error ?: false, prev?.canAskHistory ?: false, prev?.background ?: BackgroundAccess.UNSUPPORTED)
         }
@@ -123,7 +128,9 @@ class TodayViewModel(
 
     private fun Settings.goals() = Goals(stepGoal, sleepHours, waterGoalMl / 1000.0, activeGoal, birthYear, gender)
 
-    private fun build(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate, goals: Goals): Pair<TodayData, String> {
+    private fun build(read: HealthSnapshot, now: ZonedDateTime, date: LocalDate, goals: Goals, water: Double = 0.0): Pair<TodayData, String> {
+        val today = now.toLocalDate()
+        val snapshot = if (water == 0.0) read else read.copy(waterDaily = read.waterDaily + (today to (read.waterDaily[today] ?: 0.0) + water))
         val data = buildToday(snapshot, now, date, goals, augmented = true)
         return data to aiSummary(snapshot, data, now)
     }
@@ -140,27 +147,37 @@ class TodayViewModel(
         val liters = ml / 1000.0
         pendingWater += liters
         rebuild()
+        val add = viewModelScope.async { source.addWater(liters, clock().toInstant()) }
+        lastWater = add
+        lastWaterLiters = liters
         viewModelScope.launch {
-            val id = source.addWater(liters, clock().toInstant())
-            if (id == null) {
+            if (add.await() != null) {
+                confirmedWater += liters
+            } else if (undoneWater !== add) {
+                if (lastWater === add) lastWater = null
                 pendingWater -= liters
                 rebuild()
                 writeFailed()
-            } else {
-                lastWaterId = id
-                lastWaterLiters = liters
             }
         }
     }
 
     fun undoWater() {
-        val id = lastWaterId ?: return
+        val add = lastWater
+        if (add == null) {
+            messageChannel.trySend("Nothing to undo")
+            return
+        }
         val liters = lastWaterLiters
-        lastWaterId = null
+        lastWater = null
+        undoneWater = add
         pendingWater -= liters
         rebuild()
         viewModelScope.launch {
-            if (!source.deleteWater(id)) {
+            val id = add.await() ?: return@launch
+            if (source.deleteWater(id)) {
+                confirmedWater -= liters
+            } else {
                 pendingWater += liters
                 rebuild()
                 messageChannel.trySend("Couldn't save to Health Connect")
@@ -233,6 +250,7 @@ class TodayViewModel(
                 } else {
                     // Straight after the permission sheet there is nothing to show yet; the Welcome button must not look stuck.
                     if (_state.value !is TodayUiState.Ready) _state.value = TodayUiState.Loading
+                    val seen = confirmedWater
                     val result = readFresh(source, raw, lastRead, lastFullRead, now) { _progress.value = it }
                     val read = result.snapshot
                     if (result.full) lastFullRead = now.toInstant()
@@ -242,11 +260,12 @@ class TodayViewModel(
                     val goals = currentGoals()
                     val (augmented, built) = withContext(work) {
                         val augmented = withEstimatedRestingHr(read, now.zone, now.toLocalDate())
-                        augmented to build(augmented, now, date, goals)
+                        augmented to build(augmented, now, date, goals, pendingWater - seen)
                     }
                     raw = read
                     snapshot = augmented
-                    pendingWater = 0.0
+                    pendingWater -= seen
+                    confirmedWater -= seen
                     lastNow = now
                     lastRead = now.toInstant()
                     store?.let { st ->
