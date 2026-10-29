@@ -44,6 +44,7 @@ import app.fitdash.health.Workout
 import app.fitdash.metrics.Good
 import app.fitdash.metrics.MetricKind
 import app.fitdash.metrics.ReadinessResult
+import app.fitdash.metrics.SpanKind
 import app.fitdash.metrics.SuggestionKind
 import app.fitdash.metrics.TodayData
 import app.fitdash.metrics.Tuning
@@ -176,13 +177,8 @@ fun TodayPage(
             )
         }
         if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing, progress, chrome.error) }
-        data.timeline?.let { t ->
-            revealItem("timeline", 0) {
-                DayTimeline(t, { onOpen(1) }, { onOpenWorkout(data.workouts[it]) }, metricOpener(MetricRef.Kind(MetricKind.HEART_RATE)))
-            }
-        }
         if (data.isToday) data.morningAlert.forEach { r ->
-            revealItem("alert-${r.label}", 1) {
+            revealItem("alert-${r.label}", 0) {
                 val kind = vitalKind(r.label)
                 val range = r.range!!
                 val side = if (r.value > range.endInclusive) "above" else "below"
@@ -191,6 +187,14 @@ fun TodayPage(
                 }
             }
         }
+        data.timeline
+            ?.let { t -> t.copy(hr = if (prefs.showHeartRate) t.hr else emptyList(), spans = t.spans.filter { prefs.showWorkouts || it.kind != SpanKind.WORKOUT }) }
+            ?.takeIf { it.spans.isNotEmpty() || it.hr.isNotEmpty() }
+            ?.let { t ->
+                revealItem("timeline", 1) {
+                    DayTimeline(t, { onOpen(1) }, { onOpenWorkout(data.workouts[it]) }, if (prefs.showHeartRate) metricOpener(MetricRef.Kind(MetricKind.HEART_RATE)) else null)
+                }
+            }
         revealItem("readout", 2) {
             StripCard(null, null) {
                 Icon(NavIcons.sparkle, null, Modifier.padding(end = Space.m).size(18.dp), tint = Palette.Accent)

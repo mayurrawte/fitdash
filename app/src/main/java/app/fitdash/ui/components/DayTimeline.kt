@@ -27,7 +27,7 @@ import app.fitdash.ui.theme.Tint
 import app.fitdash.ui.theme.Type
 
 @Composable
-fun DayTimeline(data: DayTimelineData, onSleep: () -> Unit, onWorkout: (Int) -> Unit, onHeart: () -> Unit) {
+fun DayTimeline(data: DayTimelineData, onSleep: () -> Unit, onWorkout: (Int) -> Unit, onHeart: (() -> Unit)?) {
     val measurer = rememberTextMeasurer()
     val tinyStyle = Type.tiny
     val faint = Palette.Faint
@@ -41,7 +41,7 @@ fun DayTimeline(data: DayTimelineData, onSleep: () -> Unit, onWorkout: (Int) -> 
     val maxSteps = (data.steps.maxOrNull() ?: 0L).coerceAtLeast(1L)
     val known = data.hr.filterNotNull()
     val runs = lineRuns(data.hr)
-    StripCard(onHeart, "Heart rate details", Modifier.height(84.dp)) {
+    StripCard(onHeart, onHeart?.let { "Heart rate details" }, Modifier.height(84.dp)) {
         Canvas(
             Modifier.fillMaxSize().pointerInput(data) {
                 detectTapGestures { o ->
@@ -50,7 +50,7 @@ fun DayTimeline(data: DayTimelineData, onSleep: () -> Unit, onWorkout: (Int) -> 
                     when (hit?.kind) {
                         SpanKind.SLEEP, SpanKind.NAP -> onSleep()
                         SpanKind.WORKOUT -> onWorkout(data.spans.filter { it.kind == SpanKind.WORKOUT }.indexOf(hit))
-                        null -> onHeart()
+                        null -> onHeart?.invoke()
                     }
                 }
             },
