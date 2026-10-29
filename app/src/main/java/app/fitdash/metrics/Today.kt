@@ -27,6 +27,7 @@ data class TodayData(
     val sleep: SleepSummary?,
     val heart: HeartSummary?,
     val vitals: List<VitalReading>,
+    val morningAlert: List<VitalReading>,
     val activity: ActivitySummary?,
     val movementScore: Int?,
     val readinessWeek: List<WeekDay>,
@@ -102,6 +103,7 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
     val week = trend.takeLast(Tuning.WEEK_DAYS.toInt())
     val bmiValue = snap.weightKg?.let { w -> snap.heightMeters?.let { h -> bmi(w, h) } }
     val reg = regularity(snap.sleep, date, zone)
+    val vitals = vitals(snap, date, zone)
     return TodayData(
         date = date,
         isToday = isToday,
@@ -109,7 +111,8 @@ fun buildToday(snapshot: HealthSnapshot, now: ZonedDateTime, date: LocalDate = n
         readiness = readiness,
         sleep = sleep,
         heart = heart,
-        vitals = vitals(snap, date, zone),
+        vitals = vitals,
+        morningAlert = morningAlert(vitals, heart),
         activity = activity,
         movementScore = activity?.goalPercent?.coerceAtMost(100),
         readinessWeek = week.map { WeekDay(it.date, it.recovery) },

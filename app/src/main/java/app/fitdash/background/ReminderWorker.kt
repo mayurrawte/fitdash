@@ -19,10 +19,14 @@ import app.fitdash.R
 import app.fitdash.health.Availability
 import app.fitdash.health.HealthReader
 import app.fitdash.health.SnapshotCache
+import app.fitdash.metrics.buildToday
+import app.fitdash.metrics.morningAlert
+import app.fitdash.metrics.morningAlertDue
 import app.fitdash.metrics.moveDue
 import app.fitdash.metrics.waterDue
 import app.fitdash.metrics.wakingWindow
 import app.fitdash.settings.SettingsStore
+import app.fitdash.ui.formatNumber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,6 +40,7 @@ private const val WORK_NAME = "reminders"
 private const val CHANNEL = "reminders"
 private const val WATER_ID = 1
 private const val MOVE_ID = 2
+private const val MORNING_ID = 3
 private const val ACTION_ADD_WATER = "app.fitdash.ADD_WATER"
 
 // Every hour in the waking day: a water reminder when behind pace, and a move nudge after a still hour.
@@ -65,6 +70,14 @@ class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWork
             if (settings.moveNudge && live != null && moveDue(live.stepsLastHour, live.latestSteps, now, window, lastMove)) {
                 Reminders.notify(applicationContext, MOVE_ID, "Time to stretch your legs", "Under 250 steps in the last hour. A few minutes of walking helps.")
                 sent.edit().putLong("move", now.toInstant().toEpochMilli()).apply()
+            }
+            val lastMorning = sent.getLong("morning", 0L).takeIf { it > 0 }?.let(Instant::ofEpochMilli)
+            if (settings.morningAlert && live != null && cached != null && morningAlertDue(now, lastMorning)) {
+                val readings = buildToday(cached, now).morningAlert
+                if (readings.isNotEmpty()) {
+                    Reminders.notify(applicationContext, MORNING_ID, "Overnight vitals outside your range", readings.joinToString(" · ") { "${it.label} ${formatNumber(it.value)} ${it.unit}" })
+                    sent.edit().putLong("morning", now.toInstant().toEpochMilli()).apply()
+                }
             }
         } catch (e: CancellationException) {
             throw e

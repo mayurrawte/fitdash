@@ -57,10 +57,12 @@ import app.fitdash.ui.theme.Palette
 import app.fitdash.ui.share.ShareRender
 import app.fitdash.ui.theme.ThemedBackground
 import app.fitdash.health.Workout
+import app.fitdash.metrics.Good
 import app.fitdash.metrics.ReadinessResult
 import app.fitdash.metrics.TagEffect
 import app.fitdash.settings.Tag
 import app.fitdash.metrics.TodayData
+import app.fitdash.metrics.VitalReading
 import app.fitdash.ui.LocalPrefs
 import app.fitdash.ui.today.TodayUiState
 import kotlinx.coroutines.flow.drop
@@ -219,6 +221,10 @@ private fun TodayNoData() = PagePreview(0, PreviewData.today(21, 30).copy(sleep 
 @Preview(heightDp = 1500)
 @Composable
 private fun TodayWeekReview() = PagePreview(0, PreviewData.today(21, 30).copy(date = LocalDate.of(2026, 10, 12)))
+
+@Preview(heightDp = 1500)
+@Composable
+private fun TodayAlert() = PagePreview(0, PreviewData.today(8, 0).copy(morningAlert = listOf(VitalReading("Resting HR", "bpm", 76.0, 66.0, 62.0..70.0, Good.LOWER), VitalReading("HRV", "ms", 37.0, 47.0, 40.0..55.0, Good.HIGHER))))
 
 @Preview(heightDp = 1500)
 @Composable

@@ -180,6 +180,13 @@ fun SettingsSheet(
                         if (v && background != BackgroundAccess.GRANTED) onAskBackground()
                     }, "After an hour under 250 steps, in your waking hours")
                 }
+                item {
+                    ToggleRow("Morning check", settings.morningAlert && background == BackgroundAccess.GRANTED, { v ->
+                        store.update { it.copy(morningAlert = v) }
+                        if (v && Build.VERSION.SDK_INT >= 33) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        if (v && background != BackgroundAccess.GRANTED) onAskBackground()
+                    }, "When overnight vitals leave your usual range")
+                }
             }
             item { Label("FEEL") }
             item { SegmentedControl(listOf("System", "Light", "Dark"), settings.theme.ordinal, { i -> store.update { it.copy(theme = ThemeChoice.entries[i]) } }) }
