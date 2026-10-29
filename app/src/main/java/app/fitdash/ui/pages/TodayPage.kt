@@ -213,7 +213,7 @@ fun TodayPage(
             // Left out when the hero shows steps (no sleep, steps above zero).
             if (a != null && (data.sleep != null || !hasSteps)) add { m ->
                 StatTile("Steps", formatSteps(a.steps), goalText, null, m, icon = NavIcons.walk, onClick = metricOpener(MetricRef.Kind(MetricKind.STEPS)), description = "Steps details", tint = Tint.SKY) {
-                    Bars("today-steps-${data.date}", a.hourly.dropWhile { it == 0L }.dropLastWhile { it == 0L }.map { it.toFloat() }, height = 40.dp)
+                    Bars("today-steps-${data.date}", a.hourly.map { it.toFloat() }, height = 40.dp)
                     stepsStreak?.let { Text(it, Modifier.padding(top = Space.s), style = Type.small, color = Palette.Muted) }
                 }
             }

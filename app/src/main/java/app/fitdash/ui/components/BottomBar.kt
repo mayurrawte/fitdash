@@ -73,7 +73,7 @@ fun BottomBar(items: List<NavItem>, pager: PagerState, onSelect: (Int) -> Unit, 
                     Modifier
                         .layout { measurable, constraints ->
                             val placeable = measurable.measure(constraints.copy(maxWidth = Constraints.Infinity))
-                            layout((placeable.width * reveal).roundToInt(), placeable.height) { placeable.place(0, 0) }
+                            layout((placeable.width * reveal).roundToInt().coerceAtLeast(0), placeable.height) { placeable.place(0, 0) }
                         }
                         .padding(start = 6.dp),
                     style = Type.body.copy(fontSize = 12.5.sp, fontWeight = FontWeight.Bold),
