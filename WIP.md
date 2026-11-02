@@ -1,6 +1,14 @@
 # WIP — handoff
 
-Last updated: 2026-10-29. Everything below is committed on `main`. Released: **v0.9.0** (tag `v0.9.0`, code 10, on GitHub; live on the Play internal track, sent for review on the closed Alpha track 29 Oct). Site: https://mayurrawte.is-a.dev/fitdash/
+Last updated: 2026-11-01. Everything below is committed on `main`. Released: **v0.9.0** (tag `v0.9.0`, code 10, on GitHub; live on the Play internal track, sent for review on the closed Alpha track 29 Oct). Applied for production access 1 Nov. Site: https://mayurrawte.is-a.dev/fitdash/
+
+## 1 Nov: applied for production access
+
+All three criteria were ticked on the dashboard (closed release published, 12+ testers opted in, 14 days), and Mayur submitted "Apply for production" on 1 Nov. Google's review usually takes up to 7 days. Answers given: testers were friends and coworkers (some as a favour), recruiting was "Difficult", engagement mixed, feedback led to water logging and the v0.4 to v0.9 UI rework; audience is adults with a tracker, no ads, no account, data stays on the phone; expected installs 0–10K. The readiness answer claims Play vitals show no open crash issues, which was not checked before submitting; check Android vitals → Crashes and ANRs.
+
+2 Nov: Mayur reports v0.9.0 is a good build; the device checks owed under 29 Oct are treated as done.
+
+Until Google replies, do not edit the listing or declarations. After approval: promote v0.9.0 from Alpha to Production as a staged rollout, then rename the listing and replace the 0.4 screenshots.
 
 ## 29 Oct: v0.9.0 (code 10) released
 
