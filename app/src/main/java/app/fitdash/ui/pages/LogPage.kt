@@ -19,6 +19,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import java.time.LocalTime
+import java.time.Duration
+import app.fitdash.ui.formatHoursShort
+import app.fitdash.ui.formatDuration
+import app.fitdash.metrics.loggedNight
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -92,12 +100,15 @@ fun LogPage(
     onUndoWater: () -> Unit,
     onAddNutrient: (NutrientKind, Double) -> Unit,
     onRemoveNutrient: (NutrientKind, Instant) -> Unit,
+    onAddSleep: (Instant, Instant) -> Unit = { _, _ -> },
+    onRemoveSleep: () -> Unit = {},
     initialSegment: Int = 0,
 ) {
     val prefs = LocalPrefs.current
     val haptic = LocalHapticFeedback.current
-    val segments = if (BuildConfig.FLAVOR == "play") listOf("Water", "Tags") else listOf("Water", "Protein", "Caffeine", "Tags")
-    var segment by rememberSaveable { mutableIntStateOf(initialSegment) }
+    val segments = if (BuildConfig.FLAVOR == "play") listOf("Water", "Sleep", "Tags") else listOf("Water", "Sleep", "Protein", "Caffeine", "Tags")
+    // Without a watch, typing in last night's sleep is the main thing to do here.
+    var segment by rememberSaveable { mutableIntStateOf(if (prefs.phoneOnly && initialSegment == 0) 1 else initialSegment) }
     val kind = when (segments[segment]) {
         "Protein" -> NutrientKind.PROTEIN
         "Caffeine" -> NutrientKind.CAFFEINE
@@ -110,6 +121,10 @@ fun LogPage(
     var adds by remember { mutableIntStateOf(0) }
     var canUndo by remember { mutableStateOf(false) }
     var custom by remember { mutableStateOf(false) }
+    var bed by rememberSaveable { mutableStateOf(data.bedtime ?: LocalTime.of(23, 0)) }
+    var wake by rememberSaveable { mutableStateOf(LocalTime.of(7, 0)) }
+    var picking by remember { mutableStateOf<Boolean?>(null) }
+    var savedNight by rememberSaveable { mutableStateOf<String?>(null) }
     val days by journal.flow.collectAsState()
     val day = days[data.date]
     val zone = ZoneId.systemDefault()
@@ -163,6 +178,60 @@ fun LogPage(
                     if (entries.isNotEmpty()) item(key = "water-entries") {
                         Column(Modifier.padding(horizontal = Space.xl), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                             entries.forEach { Text(it, style = Type.secondary, color = Palette.Muted) }
+                        }
+                    }
+                }
+            } else if (segments[segment] == "Sleep") {
+                val (start, end) = loggedNight(bed, wake, data.date, zone)
+                val hours = Duration.between(start, end).toMinutes() / 60.0
+                val problem = when {
+                    end > Instant.now() -> "Wake-up time is still to come"
+                    hours < 1 || hours > 16 -> "A night is between 1 and 16 hours"
+                    else -> null
+                }
+                revealItem("sleep", 0) {
+                    HeroCard(null, "Sleep", tint = Tint.SKY) {
+                        Column {
+                            NumberWithUnits(listOf((data.sleep?.asleep?.let { formatDuration(it) } ?: "Not logged") to ""), style = Type.hero)
+                            Text(if (data.isToday) "Last night" else "Night before ${formatDate(data.date)}", style = Type.body, color = Palette.Muted)
+                        }
+                    }
+                }
+                item(key = "sleep-times") {
+                    RowGroup {
+                        ListRow(NavIcons.moonSmall, "Went to bed", formatTime(bed, prefs.clock24), onClick = { picking = true })
+                        ListRow(NavIcons.sun, "Woke up", formatTime(wake, prefs.clock24), onClick = { picking = false }, divider = true)
+                    }
+                }
+                item(key = "sleep-add") {
+                    Column(Modifier.padding(horizontal = Space.l), verticalArrangement = Arrangement.spacedBy(Space.s)) {
+                        Pill(
+                            "Save ${formatHoursShort(hours)}", if (problem == null) Palette.Accent else Palette.Faint, pillBorder,
+                            {
+                                if (problem == null) {
+                                    onAddSleep(start, end)
+                                    savedNight = "Saved ${formatTime(bed, prefs.clock24)} to ${formatTime(wake, prefs.clock24)}"
+                                }
+                            },
+                            Modifier.fillMaxWidth(),
+                        )
+                        Text(problem ?: "Saved to Health Connect, like a watch would", style = Type.small, color = if (problem != null) Palette.Warn else Palette.Muted)
+                    }
+                }
+                savedNight?.let { saved ->
+                    item(key = "sleep-saved") {
+                        RowGroup {
+                            ListRow(
+                                NavIcons.moonSmall, saved, null,
+                                trailing = {
+                                    Text(
+                                        "Remove",
+                                        Modifier.clip(RoundedCornerShape(8.dp)).tappable({ savedNight = null; onRemoveSleep() }, "Remove $saved").padding(Space.s),
+                                        style = Type.label,
+                                        color = Palette.Accent,
+                                    )
+                                },
+                            )
                         }
                     }
                 }
@@ -258,6 +327,12 @@ fun LogPage(
             }
         }
     }
+    picking?.let { isBed ->
+        TimeDialog(if (isBed) "WENT TO BED" else "WOKE UP", if (isBed) bed else wake, prefs.clock24, onDismiss = { picking = null }) { t ->
+            if (isBed) bed = t else wake = t
+            picking = null
+        }
+    }
     if (custom) {
         val protein = kind == NutrientKind.PROTEIN
         var ml by remember { mutableStateOf("") }
@@ -280,4 +355,18 @@ fun LogPage(
             dismissButton = { TextButton(onClick = { custom = false }) { Text("CANCEL", style = Type.label, color = Palette.Muted) } },
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimeDialog(title: String, current: LocalTime, clock24: Boolean, onDismiss: () -> Unit, onSave: (LocalTime) -> Unit) {
+    val state = rememberTimePickerState(current.hour, current.minute, clock24)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = LocalTheme.current.bgMid,
+        title = { Text(title, style = Type.label, color = Palette.Muted) },
+        text = { TimePicker(state) },
+        confirmButton = { TextButton(onClick = { onSave(LocalTime.of(state.hour, state.minute)) }) { Text("OK", style = Type.label, color = Palette.Accent) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", style = Type.label, color = Palette.Muted) } },
+    )
 }

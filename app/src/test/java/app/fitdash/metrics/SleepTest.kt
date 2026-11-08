@@ -14,8 +14,27 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.Duration
+import java.time.LocalTime
 
 class SleepTest {
+    @Test fun `logged night with a late bedtime starts the evening before`() {
+        val (start, end) = loggedNight(LocalTime.of(23, 30), LocalTime.of(7, 0), TODAY, IST)
+        assertEquals(TODAY.minusDays(1).atTime(23, 30).atZone(IST).toInstant(), start)
+        assertEquals(TODAY.atTime(7, 0).atZone(IST).toInstant(), end)
+    }
+
+    @Test fun `logged night after midnight starts the same day`() {
+        val (start, end) = loggedNight(LocalTime.of(0, 45), LocalTime.of(8, 15), TODAY, IST)
+        assertEquals(TODAY.atTime(0, 45).atZone(IST).toInstant(), start)
+        assertEquals(Duration.ofMinutes(450), Duration.between(start, end))
+    }
+
+    @Test fun `logged night without stages still scores`() {
+        val (start, end) = loggedNight(LocalTime.of(23, 0), LocalTime.of(7, 0), TODAY, IST)
+        val summary = summarizeSleep(TODAY, listOf(SleepSession(start, end, emptyList())), IST)
+        assertTrue(summary != null && summary.score > 0 && !summary.hasStages)
+    }
+
     @Test fun `nightEnding picks the longest session, not a nap`() {
         val main = night(TODAY, 7.0)
         val nap = SleepSession(at(TODAY, 14), at(TODAY, 14, 40), emptyList())

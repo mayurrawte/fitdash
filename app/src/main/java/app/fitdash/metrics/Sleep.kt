@@ -7,6 +7,7 @@ import app.fitdash.health.Sample
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneId
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -31,6 +32,13 @@ data class SleepSummary(
     val parts: SleepScoreParts? = null,
     val goalPercent: Int = 100,
 )
+
+// A night typed in by hand: waking up on `date`, and a bedtime after the wake-up time means the evening before.
+fun loggedNight(bed: LocalTime, wake: LocalTime, date: LocalDate, zone: ZoneId): Pair<Instant, Instant> {
+    val end = date.atTime(wake).atZone(zone).toInstant()
+    val start = (if (bed < wake) date else date.minusDays(1)).atTime(bed).atZone(zone).toInstant()
+    return start to end
+}
 
 fun nightEnding(date: LocalDate, sessions: List<SleepSession>, zone: ZoneId): SleepSession? =
     sessions

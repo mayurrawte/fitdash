@@ -215,6 +215,8 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
                     onRemoveNutrient = vm::removeNutrient,
                     onSetHeight = vm::setHeight,
                     onPhoneOnly = setPhoneOnly,
+                    onAddSleep = vm::addSleep,
+                    onRemoveSleep = vm::removeSleep,
                     onAskHistory = { askPermissions.launch(vm.permissions) },
                     onAskBackground = { askPermissions.launch(setOf(BACKGROUND_PERMISSION)) },
                     openPage = page,

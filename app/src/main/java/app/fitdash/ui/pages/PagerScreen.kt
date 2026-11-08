@@ -96,6 +96,8 @@ fun PagerScreen(
     onRemoveNutrient: (NutrientKind, Instant) -> Unit,
     onSetHeight: (Int) -> Unit,
     onPhoneOnly: (Boolean) -> Unit = {},
+    onAddSleep: (Instant, Instant) -> Unit = { _, _ -> },
+    onRemoveSleep: () -> Unit = {},
     onAskHistory: () -> Unit = {},
     onSync: (String) -> Unit = {},
     onAskBackground: () -> Unit = {},
@@ -176,7 +178,7 @@ fun PagerScreen(
                         0 -> TodayPage(data, chrome, goTo, onSelectDate, { sharing = true }, askAi, settings.miles, { workout = it }, onSync, state.refreshing, progress) { store.update { it.copy(weekReviewSeen = today) } }
                         1 -> SleepPage(data, chrome)
                         2 -> ActivityPage(data, chrome, settings.miles, { workout = it })
-                        3 -> LogPage(data, chrome, journal, onAddWater, onUndoWater, onAddNutrient, onRemoveNutrient)
+                        3 -> LogPage(data, chrome, journal, onAddWater, onUndoWater, onAddNutrient, onRemoveNutrient, onAddSleep, onRemoveSleep)
                         else -> TrendsPage(data, chrome)
                     }
                 }

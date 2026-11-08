@@ -108,6 +108,9 @@ class TodayViewModel(
     // The part of pendingWater Health Connect has confirmed; a read started after that already includes it.
     private var confirmedWater = 0.0
 
+    // The night typed in this session, so it can be removed again.
+    private var lastSleep: String? = null
+
     init {
         viewModelScope.launch { settings.map { it.goals() }.distinctUntilChanged().drop(1).collect { rebuild() } }
         journal?.let { j -> viewModelScope.launch { j.flow.drop(1).collect { rebuild() } } }
@@ -226,6 +229,24 @@ class TodayViewModel(
         }
     }
 
+    fun addSleep(start: Instant, end: Instant) {
+        viewModelScope.launch {
+            val id = source.addSleep(start, end)
+            if (id != null) {
+                lastSleep = id
+                load()
+            } else writeFailed()
+        }
+    }
+    fun removeSleep() {
+        val id = lastSleep ?: return
+        viewModelScope.launch {
+            if (source.deleteSleep(id)) {
+                lastSleep = null
+                load()
+            } else messageChannel.trySend("Couldn't save to Health Connect")
+        }
+    }
     fun setHeight(cm: Int) {
         viewModelScope.launch {
             if (source.setHeight(cm / 100.0, clock().toInstant())) load() else writeFailed()

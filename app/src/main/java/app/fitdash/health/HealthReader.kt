@@ -83,11 +83,12 @@ class HealthReader(private val context: Context) : HealthSource {
     private val writeWater = HealthPermission.getWritePermission(HydrationRecord::class)
     private val writeHeight = HealthPermission.getWritePermission(HeightRecord::class)
     private val writeSteps = HealthPermission.getWritePermission(StepsRecord::class)
+    private val writeSleep = HealthPermission.getWritePermission(SleepSessionRecord::class)
     private val writeNutrition = HealthPermission.getWritePermission(NutritionRecord::class)
     private val history = HISTORY_PERMISSION.takeIf { it in declared }
 
     override val allPermissions: Set<String> =
-        types.map { HealthPermission.getReadPermission(it.type) }.toSet() + writeWater + writeHeight + writeSteps + listOfNotNull(history) +
+        types.map { HealthPermission.getReadPermission(it.type) }.toSet() + writeWater + writeHeight + writeSteps + writeSleep + listOfNotNull(history) +
             listOfNotNull(writeNutrition.takeIf { BuildConfig.FLAVOR != "play" })
 
     override val historyPermission: String? get() = history
@@ -303,6 +304,31 @@ class HealthReader(private val context: Context) : HealthSource {
         } catch (e: Exception) {
             false
         }
+    }
+
+    override suspend fun addSleep(start: Instant, end: Instant): String? {
+        if (writeSleep !in grantedPermissions()) return null
+        val zone = ZoneId.systemDefault().rules
+        val record = SleepSessionRecord(
+            startTime = start, startZoneOffset = zone.getOffset(start), endTime = end, endZoneOffset = zone.getOffset(end),
+            metadata = Metadata.manualEntry(),
+        )
+        return try {
+            client.insertRecords(listOf(record)).recordIdsList.first()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    override suspend fun deleteSleep(id: String): Boolean = try {
+        client.deleteRecords(SleepSessionRecord::class, listOf(id), emptyList())
+        true
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        false
     }
 
     override suspend fun setHeight(meters: Double, at: Instant): Boolean {

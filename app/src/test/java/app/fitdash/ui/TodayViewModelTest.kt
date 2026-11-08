@@ -83,6 +83,8 @@ private class FakeSource(
         return "water-${waterAdded.size}"
     }
     override suspend fun deleteWater(id: String): Boolean { waterDeleted += id; return true }
+    override suspend fun addSleep(start: Instant, end: Instant): String? = if (canWrite) "sleep" else null
+    override suspend fun deleteSleep(id: String): Boolean = true
     override suspend fun addSteps(start: Instant, end: Instant, count: Long): Boolean {
         if (canWrite) stepsAdded += count
         return canWrite
