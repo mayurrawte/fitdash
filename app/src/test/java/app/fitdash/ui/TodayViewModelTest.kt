@@ -55,6 +55,7 @@ private class FakeSource(
     val waterAdded = mutableListOf<Double>()
     val waterDeleted = mutableListOf<String>()
     val heights = mutableListOf<Double>()
+    val stepsAdded = mutableListOf<Long>()
     val nutrientsAdded = mutableListOf<Pair<NutrientKind, Double>>()
     val nutrientTimes = mutableListOf<Instant>()
     // When set, each addNutrient call waits on its own deferred, completed by the test with the record id.
@@ -82,6 +83,10 @@ private class FakeSource(
         return "water-${waterAdded.size}"
     }
     override suspend fun deleteWater(id: String): Boolean { waterDeleted += id; return true }
+    override suspend fun addSteps(start: Instant, end: Instant, count: Long): Boolean {
+        if (canWrite) stepsAdded += count
+        return canWrite
+    }
     override suspend fun setHeight(meters: Double, at: Instant): Boolean {
         if (canWrite) heights += meters
         return canWrite
@@ -119,6 +124,12 @@ class TodayViewModelTest {
     @Test fun `granted but nothing written`() {
         val empty = HealthSnapshot(sources = listOf(SourceStatus("Sleep", true, false, emptySet())))
         assertEquals(TodayUiState.NoData, load(FakeSource(snapshot = empty)).state.value)
+    }
+
+    @Test fun `phone only goes ready with nothing written`() {
+        val empty = HealthSnapshot(sources = listOf(SourceStatus("Sleep", true, false, emptySet())))
+        val vm = TodayViewModel(FakeSource(snapshot = empty), { now }, settings = MutableStateFlow(Settings(phoneOnly = true)), work = Dispatchers.Main).also { it.load() }
+        assertTrue(vm.state.value is TodayUiState.Ready)
     }
 
     @Test fun `data becomes ready`() {

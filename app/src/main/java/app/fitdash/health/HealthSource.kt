@@ -19,6 +19,7 @@ interface HealthSource {
     suspend fun read(now: ZonedDateTime, since: Instant? = null, onProgress: (ReadProgress) -> Unit = {}): HealthSnapshot
     suspend fun addWater(liters: Double, at: Instant): String?
     suspend fun deleteWater(id: String): Boolean
+    suspend fun addSteps(start: Instant, end: Instant, count: Long): Boolean
     suspend fun setHeight(meters: Double, at: Instant): Boolean
     suspend fun addNutrient(kind: NutrientKind, amount: Double, at: Instant): String?
     suspend fun deleteNutrient(id: String): Boolean

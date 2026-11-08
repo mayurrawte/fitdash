@@ -72,6 +72,7 @@ import app.fitdash.ui.components.NavIcons
 import app.fitdash.ui.components.RowGroup
 import app.fitdash.ui.components.SectionCard
 import app.fitdash.ui.components.SegmentedControl
+import app.fitdash.health.PhoneSteps
 import app.fitdash.ui.components.ToggleRow
 import app.fitdash.ui.formatHeight
 import app.fitdash.ui.formatLiters
@@ -107,6 +108,7 @@ fun SettingsSheet(
     sources: List<SourceStatus>,
     heightMeters: Double?,
     onSetHeight: (Int) -> Unit,
+    onPhoneOnly: (Boolean) -> Unit,
     canAskHistory: Boolean = false,
     onAskHistory: () -> Unit = {},
     background: BackgroundAccess = BackgroundAccess.UNSUPPORTED,
@@ -216,6 +218,12 @@ fun SettingsSheet(
             item { ToggleRow("Haptics", settings.haptics, { v -> store.update { it.copy(haptics = v) } }, "A light tick on taps") }
             item { ToggleRow("Reduce motion", settings.reduceMotion, { v -> store.update { it.copy(reduceMotion = v) } }, "No draw-in or count-up animations, still orb") }
             item { Label("DATA") }
+            item {
+                ToggleRow(
+                    "Phone only mode", settings.phoneOnly, onPhoneOnly,
+                    if (PhoneSteps.hasSensor(context)) "No watch or ring: the phone counts steps and you enter sleep by hand" else "This phone has no step counter, so steps are not counted",
+                )
+            }
             item {
                 RowGroup {
                     ListRow(NavIcons.info, "Data sources", null, onClick = { showInfo = true })

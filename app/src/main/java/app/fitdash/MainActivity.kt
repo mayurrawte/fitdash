@@ -1,6 +1,11 @@
 package app.fitdash
 
+import android.Manifest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.rememberCoroutineScope
 import app.fitdash.background.Reminders
+import app.fitdash.health.PhoneSteps
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import androidx.glance.appwidget.updateAll
 import app.fitdash.health.BACKGROUND_PERMISSION
@@ -139,17 +144,29 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
     }
     val settings by store.flow.collectAsStateWithLifecycle()
     val page by openPage.collectAsStateWithLifecycle()
-    LaunchedEffect(settings.backgroundRefresh) { BackgroundRefresh.apply(context.applicationContext, settings.backgroundRefresh) }
+    LaunchedEffect(settings.backgroundRefresh, settings.phoneOnly) { BackgroundRefresh.apply(context.applicationContext, settings.backgroundRefresh || settings.phoneOnly) }
     LaunchedEffect(settings.waterReminders, settings.moveNudge, settings.morningAlert) { Reminders.apply(context.applicationContext, settings.waterReminders || settings.moveNudge || settings.morningAlert) }
     val state by vm.state.collectAsStateWithLifecycle()
     val askPermissions = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { vm.load() }
+
+    // Health Connect's sheet follows the activity-recognition prompt, so the write permission is asked right after.
+    val askActivity = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { askPermissions.launch(vm.permissions) }
+    val setPhoneOnly: (Boolean) -> Unit = { on ->
+        store.update { it.copy(phoneOnly = on) }
+        if (!on) PhoneSteps.reset(context.applicationContext)
+        else if (Build.VERSION.SDK_INT >= 29) askActivity.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+        else askPermissions.launch(vm.permissions)
+    }
+    val scope = rememberCoroutineScope()
+    val reader = remember { HealthReader(context.applicationContext) }
 
     val snackbar = remember { SnackbarHostState() }
     LaunchedEffect(vm) { vm.messages.collect { snackbar.showSnackbar(it) } }
     LaunchedEffect(vm) { vm.permissionNeeded.collect { askPermissions.launch(vm.permissions) } }
 
-    LifecycleResumeEffect(Unit) {
-        vm.load(force = false)
+    LifecycleResumeEffect(settings.phoneOnly) {
+        if (settings.phoneOnly) scope.launch { vm.load(force = PhoneSteps.sample(context.applicationContext, reader)) }
+        else vm.load(force = false)
         onPauseOrDispose { }
     }
 
@@ -178,6 +195,7 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
                     onOpen = { pkg -> context.packageManager.getLaunchIntentForPackage(pkg)?.let { context.startActivity(it) } },
                     onStore = { pkg -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")).setPackage("com.android.vending")) },
                     onCheck = vm::load,
+                    onUsePhone = { setPhoneOnly(true) },
                 )
                 TodayUiState.Failed -> MessageScreen(
                     title = "Couldn't read Health Connect",
@@ -196,6 +214,7 @@ private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
                     onAddNutrient = vm::addNutrient,
                     onRemoveNutrient = vm::removeNutrient,
                     onSetHeight = vm::setHeight,
+                    onPhoneOnly = setPhoneOnly,
                     onAskHistory = { askPermissions.launch(vm.permissions) },
                     onAskBackground = { askPermissions.launch(setOf(BACKGROUND_PERMISSION)) },
                     openPage = page,

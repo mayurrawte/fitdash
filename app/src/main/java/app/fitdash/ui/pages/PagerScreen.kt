@@ -95,6 +95,7 @@ fun PagerScreen(
     onAddNutrient: (NutrientKind, Double) -> Unit,
     onRemoveNutrient: (NutrientKind, Instant) -> Unit,
     onSetHeight: (Int) -> Unit,
+    onPhoneOnly: (Boolean) -> Unit = {},
     onAskHistory: () -> Unit = {},
     onSync: (String) -> Unit = {},
     onAskBackground: () -> Unit = {},
@@ -198,7 +199,7 @@ fun PagerScreen(
             )
         }
         if (sharing) ShareRender(data, onDone = { sharing = false })
-        if (showSettings) SettingsSheet(store, data, rawSnapshot.collectAsState().value, data.sources, data.heightMeters, onSetHeight, state.canAskHistory, onAskHistory, state.background, onAskBackground, onDismiss = { showSettings = false })
+        if (showSettings) SettingsSheet(store, data, rawSnapshot.collectAsState().value, data.sources, data.heightMeters, onSetHeight, onPhoneOnly, state.canAskHistory, onAskHistory, state.background, onAskBackground, onDismiss = { showSettings = false })
         if (showInfo) InfoSheet(data.sources, onDismiss = { showInfo = false })
         metric?.let { ref ->
             if (ref is MetricRef.Fitness) FitnessSheet(ref.card, data, onDismiss = { metric = null })

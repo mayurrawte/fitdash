@@ -316,7 +316,7 @@ class TodayViewModel(
                     }
                     if (read.selectedDateOutOfWindow(selectedDate.value, now)) selectedDate.value = null
                     fresh = true
-                    if (read.sources.none { it.hasData }) TodayUiState.NoData
+                    if (read.sources.none { it.hasData } && !settings.value.phoneOnly) TodayUiState.NoData
                     else TodayUiState.Ready(built.first, built.second, canAskHistory = canAskHistory, background = background)
                 }
             } catch (e: CancellationException) {

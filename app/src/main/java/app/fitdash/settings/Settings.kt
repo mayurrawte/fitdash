@@ -42,6 +42,8 @@ data class Settings(
     val bedtimeTarget: LocalTime? = null,
     val morningAlert: Boolean = false,
     val weekReviewSeen: LocalDate? = null,
+    // No watch or ring: the phone counts steps and sleep is typed in.
+    val phoneOnly: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -78,6 +80,7 @@ class SettingsStore(context: Context) {
         bedtimeTarget = prefs.getInt("bedtimeMinutes", -1).takeIf { it >= 0 }?.let { LocalTime.of(it / 60, it % 60) },
         morningAlert = prefs.getBoolean("morningAlert", false),
         weekReviewSeen = prefs.getLong("weekReviewSeen", 0L).takeIf { it > 0 }?.let { LocalDate.ofEpochDay(it) },
+        phoneOnly = prefs.getBoolean("phoneOnly", false),
     )
 
     fun update(change: (Settings) -> Settings) {
@@ -94,7 +97,8 @@ class SettingsStore(context: Context) {
             .putString("name", s.name).putBoolean("nameAsked", s.nameAsked)
             .putString("theme", s.theme.name)
             .putInt("proteinGoalG", s.proteinGoalG).putInt("bedtimeMinutes", s.bedtimeTarget?.let { it.hour * 60 + it.minute } ?: -1)
-            .putBoolean("morningAlert", s.morningAlert).putLong("weekReviewSeen", s.weekReviewSeen?.toEpochDay() ?: 0L).apply()
+            .putBoolean("morningAlert", s.morningAlert).putLong("weekReviewSeen", s.weekReviewSeen?.toEpochDay() ?: 0L)
+            .putBoolean("phoneOnly", s.phoneOnly).apply()
         _flow.value = s
     }
 

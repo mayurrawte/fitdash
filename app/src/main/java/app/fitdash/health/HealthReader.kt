@@ -27,6 +27,7 @@ import androidx.health.connect.client.records.SpeedRecord
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.records.WeightRecord
+import androidx.health.connect.client.records.metadata.Device
 import androidx.health.connect.client.records.metadata.Metadata
 import androidx.health.connect.client.request.AggregateGroupByDurationRequest
 import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
@@ -81,11 +82,12 @@ class HealthReader(private val context: Context) : HealthSource {
 
     private val writeWater = HealthPermission.getWritePermission(HydrationRecord::class)
     private val writeHeight = HealthPermission.getWritePermission(HeightRecord::class)
+    private val writeSteps = HealthPermission.getWritePermission(StepsRecord::class)
     private val writeNutrition = HealthPermission.getWritePermission(NutritionRecord::class)
     private val history = HISTORY_PERMISSION.takeIf { it in declared }
 
     override val allPermissions: Set<String> =
-        types.map { HealthPermission.getReadPermission(it.type) }.toSet() + writeWater + writeHeight + listOfNotNull(history) +
+        types.map { HealthPermission.getReadPermission(it.type) }.toSet() + writeWater + writeHeight + writeSteps + listOfNotNull(history) +
             listOfNotNull(writeNutrition.takeIf { BuildConfig.FLAVOR != "play" })
 
     override val historyPermission: String? get() = history
@@ -287,6 +289,20 @@ class HealthReader(private val context: Context) : HealthSource {
         throw e
     } catch (e: Exception) {
         false
+    }
+
+    override suspend fun addSteps(start: Instant, end: Instant, count: Long): Boolean {
+        if (writeSteps !in grantedPermissions()) return false
+        val zone = ZoneId.systemDefault().rules
+        val record = StepsRecord(start, zone.getOffset(start), end, zone.getOffset(end), count, Metadata.autoRecorded(Device(type = Device.TYPE_PHONE)))
+        return try {
+            client.insertRecords(listOf(record))
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            false
+        }
     }
 
     override suspend fun setHeight(meters: Double, at: Instant): Boolean {

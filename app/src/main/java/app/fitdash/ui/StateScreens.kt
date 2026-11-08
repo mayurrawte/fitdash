@@ -87,7 +87,7 @@ fun MessageScreen(title: String, body: String, action: String? = null, onAction:
 val PHONE_TRACKERS = listOf("com.fitbit.FitbitMobile" to "Fitbit", "com.sec.android.app.shealth" to "Samsung Health")
 
 @Composable
-fun NoDataScreen(installed: List<Pair<String, String>>, onOpen: (String) -> Unit, onStore: (String) -> Unit, onCheck: () -> Unit) {
+fun NoDataScreen(installed: List<Pair<String, String>>, onOpen: (String) -> Unit, onStore: (String) -> Unit, onCheck: () -> Unit, onUsePhone: () -> Unit) {
     var noDevice by rememberSaveable { mutableStateOf(false) }
     Column(
         Modifier.fillMaxSize().background(Palette.Background).padding(32.dp),
@@ -110,8 +110,13 @@ fun NoDataScreen(installed: List<Pair<String, String>>, onOpen: (String) -> Unit
         }
         if (noDevice) {
             Text(
-                "Your phone can count steps. Install one of these free apps, turn on Health Connect sync in it, and come back. Sleep and heart rate need a wearable.",
+                "Your phone can count steps, and you can enter your sleep by hand. No other app needed.",
                 style = Type.body, color = Palette.Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 4.dp),
+            )
+            Button(onClick = onUsePhone, modifier = Modifier.padding(top = 16.dp)) { Text("Use my phone instead") }
+            Text(
+                "Or install one of these free apps, turn on Health Connect sync in it, and come back.",
+                style = Type.body, color = Palette.Muted, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 16.dp),
             )
             PHONE_TRACKERS.forEach { (pkg, name) ->
                 val isInstalled = installed.any { it.first == pkg }
