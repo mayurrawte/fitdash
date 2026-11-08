@@ -187,7 +187,7 @@ fun TodayPage(
                 enabled = { it <= chrome.today && it >= chrome.today.minusDays(chrome.daysBack) },
             )
         }
-        if (data.isToday) item(key = "sync") { SyncRow(data, onSync, refreshing, progress, chrome.error) }
+        if (data.isToday && !prefs.phoneOnly) item(key = "sync") { SyncRow(data, onSync, refreshing, progress, chrome.error) }
         if (data.isToday && prefs.morningAlert) morningAlert(data.vitals, data.heart, data.series, data.date).forEach { r ->
             revealItem("alert-${r.label}", 0) {
                 val range = r.range!!
@@ -206,7 +206,7 @@ fun TodayPage(
             StripCard(null, null) {
                 Icon(NavIcons.sparkle, null, Modifier.padding(end = Space.m).size(18.dp), tint = Palette.Accent)
                 Column {
-                    Text(readout(data), style = Type.body, color = Palette.Text)
+                    Text(readout(data, prefs.phoneOnly), style = Type.body, color = Palette.Text)
                     val tags = data.yesterdayTags.map { it.label.lowercase() }
                     if (data.isToday && tags.isNotEmpty() && ((data.readiness as? ReadinessResult.Ready)?.score ?: 100) < 50) {
                         val list = if (tags.size == 1) tags[0] else tags.dropLast(1).joinToString(", ") + " and " + tags.last()
@@ -440,15 +440,15 @@ internal fun TrioStat(label: String, value: Int?, previous: Int?, modifier: Modi
     }
 }
 
-private fun readout(data: TodayData): String = when (val r = data.readiness) {
+private fun readout(data: TodayData, phoneOnly: Boolean): String = when (val r = data.readiness) {
     is ReadinessResult.Ready -> (if (data.isToday) morningReadout(data.sleep?.asleep, data.heart, null) else null) ?: bandAdvice(r.band)
     is ReadinessResult.Calibrating -> {
         val left = Tuning.MIN_NIGHTS - r.nights
         val usable = listOfNotNull(data.sleep?.let { "sleep" }, data.activity?.let { "steps" }, data.regularity?.let { "sleep regularity" })
         if (!data.isToday) "Not enough earlier data for this day" else listOfNotNull(
-            "Your baseline is forming: ${if (left == 1) "1 more night" else "$left more nights"} of sleep, HRV and resting heart rate.",
+            "Your baseline is forming: ${if (left == 1) "1 more night" else "$left more nights"} of ${if (phoneOnly) "logged sleep" else "sleep, HRV and resting heart rate"}.",
             if (usable.isEmpty()) null else "Usable now: ${usable.joinToString(", ")}.",
         ).joinToString(" ")
     }
-    ReadinessResult.NoData -> "No data for last night. Sync your watch, then pull down to refresh."
+    ReadinessResult.NoData -> if (phoneOnly) "No sleep logged for last night. Add it in the Log tab." else "No data for last night. Sync your watch, then pull down to refresh."
 }
