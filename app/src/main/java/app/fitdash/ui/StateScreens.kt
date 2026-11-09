@@ -10,6 +10,8 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -90,7 +92,7 @@ val PHONE_TRACKERS = listOf("com.fitbit.FitbitMobile" to "Fitbit", "com.sec.andr
 fun NoDataScreen(installed: List<Pair<String, String>>, onOpen: (String) -> Unit, onStore: (String) -> Unit, onCheck: () -> Unit, onUsePhone: () -> Unit) {
     var noDevice by rememberSaveable { mutableStateOf(false) }
     Column(
-        Modifier.fillMaxSize().background(Palette.Background).padding(32.dp),
+        Modifier.fillMaxSize().background(Palette.Background).verticalScroll(rememberScrollState()).padding(32.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

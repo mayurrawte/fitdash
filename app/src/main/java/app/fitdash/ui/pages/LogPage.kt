@@ -185,6 +185,7 @@ fun LogPage(
                 val (start, end) = loggedNight(bed, wake, data.date, zone)
                 val hours = Duration.between(start, end).toMinutes() / 60.0
                 val problem = when {
+                    data.sleep != null -> "This night is already in Health Connect"
                     end > Instant.now() -> "Wake-up time is still to come"
                     hours < 1 || hours > 16 -> "A night is between 1 and 16 hours"
                     else -> null
