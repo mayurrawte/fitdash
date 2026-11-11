@@ -331,9 +331,13 @@ class TodayViewModel(
                     confirmedWater -= seen
                     lastNow = now
                     lastRead = now.toInstant()
+                    // Saved on the side: the snapshot is tens of MB and the dashboard should not wait for it.
                     store?.let { st ->
-                        withContext(work) { st.save(CachedSnapshot(read, now.toInstant(), lastFullRead ?: now.toInstant())) }
-                        onCacheSaved()
+                        val cached = CachedSnapshot(read, now.toInstant(), lastFullRead ?: now.toInstant())
+                        viewModelScope.launch(work) {
+                            st.save(cached)
+                            onCacheSaved()
+                        }
                     }
                     if (read.selectedDateOutOfWindow(selectedDate.value, now)) selectedDate.value = null
                     fresh = true

@@ -133,6 +133,7 @@ class HealthReader(private val context: Context) : HealthSource {
                 }
             }.awaitAll().toMap()
         }
+        onProgress(ReadProgress(types.size, types.size, "Working out your numbers"))
         val records: Map<KClass<out Record>, List<Record>> = lists
         val sources = types.map { info ->
             val list = lists.getValue(info.type)
@@ -228,18 +229,20 @@ class HealthReader(private val context: Context) : HealthSource {
     // Distance, calories and steps are the parts of already-read records that fall inside the session,
     // so a session costs no extra Health Connect call.
     private fun workouts(records: Map<KClass<out Record>, List<Record>>, heartRate: List<Sample>): List<Workout> {
-        val distance = records.of<DistanceRecord>()
-        val active = records.of<ActiveCaloriesBurnedRecord>()
-        val total = records.of<TotalCaloriesBurnedRecord>()
-        val steps = records.of<StepsRecord>()
-        val hr = heartRate.sortedBy { it.time }
+        // Grouped by day so a session only looks at its own days, not the whole window.
+        val distance = records.of<DistanceRecord>().groupBy { it.startTime.epochSecond / 86_400 }
+        val active = records.of<ActiveCaloriesBurnedRecord>().groupBy { it.startTime.epochSecond / 86_400 }
+        val total = records.of<TotalCaloriesBurnedRecord>().groupBy { it.startTime.epochSecond / 86_400 }
+        val steps = records.of<StepsRecord>().groupBy { it.startTime.epochSecond / 86_400 }
+        val hr = heartRate.groupBy { it.time.epochSecond / 86_400 }
         return records.of<ExerciseSessionRecord>()
             .filter { Duration.between(it.startTime, it.endTime) >= Duration.ofMinutes(Tuning.MIN_WORKOUT_MINUTES) }
             .sortedBy { it.startTime }
             .map { s ->
-                fun <T : Record> sum(list: List<T>, start: (T) -> Instant, end: (T) -> Instant, value: (T) -> Double): Double? =
-                    list.sumOf { overlapFraction(start(it), end(it), s.startTime, s.endTime) * value(it) }.takeIf { it > 0 }
-                val inSession = hr.filter { !it.time.isBefore(s.startTime) && !it.time.isAfter(s.endTime) }
+                val days = (s.startTime.epochSecond / 86_400 - 1)..(s.endTime.epochSecond / 86_400)
+                fun <T : Record> sum(byDay: Map<Long, List<T>>, start: (T) -> Instant, end: (T) -> Instant, value: (T) -> Double): Double? =
+                    days.sumOf { d -> byDay[d].orEmpty().sumOf { overlapFraction(start(it), end(it), s.startTime, s.endTime) * value(it) } }.takeIf { it > 0 }
+                val inSession = days.flatMap { hr[it].orEmpty() }.filter { !it.time.isBefore(s.startTime) && !it.time.isAfter(s.endTime) }
                 val kcal = sum(active, { it.startTime }, { it.endTime }) { it.energy.inKilocalories }
                     ?: sum(total, { it.startTime }, { it.endTime }) { it.energy.inKilocalories }
                 Workout(
