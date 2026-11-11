@@ -1,6 +1,20 @@
 # WIP — handoff
 
-Last updated: 2026-11-01. Everything below is committed on `main`. Released: **v0.9.0** (tag `v0.9.0`, code 10, on GitHub; live on the Play internal track, sent for review on the closed Alpha track 29 Oct). Applied for production access 1 Nov. Site: https://mayurrawte.is-a.dev/fitdash/
+Last updated: 2026-11-11. Released: **v0.9.0** (tag `v0.9.0`, code 10), live on Google Play production since about 6 Nov and on GitHub. Site: https://mayurrawte.is-a.dev/fitdash/
+
+## 11 Nov: phone-only on `main`, not released
+
+`main` (06b5a52, pushed 9 Nov) has phone-only mode: "Use my phone instead" on the no-data screen, phone step counter saved to Health Connect, sleep typed in on the Log tab, and copy that points to the Log tab. Also the no-data screen scrolls and the Log tab refuses a night that is already in Health Connect. The `phone-only` branch is merged and can be deleted.
+
+Checked on the Pixel 9a (debug build, Fitbit data present): the Phone only toggle, the activity permission, the Log tab Sleep section. Turning the mode on re-reads everything with a spinner for about a minute. Not checked: phone steps with no watch data, the no-data screen, saving and removing a night.
+
+Release as v0.10.0: bump `versionCode`/`versionName`, add `changelogs/<code>.txt`, tag. Upload the AAB by hand. Before review, update the Play Health Connect declarations for WRITE_STEPS and WRITE_SLEEP and justify ACTIVITY_RECOGNITION; expect another Google review. Do not claim no-tracker support anywhere until v0.10.0 is live.
+
+Darker dark mode (ground `#08070C`, cards `#14121C`, night splash to match) is uncommitted on the `darker-dark` worktree; mockup at https://claude.ai/artifact/42swtc1Av4jTwFbCJG4Q9t.
+
+Open: Play screenshots are still the 0.4 ones; check Android vitals; trader-status declaration due 1 Feb 2027; a Reddit post for r/androidapps is drafted, to post after v0.10.0. Play Console is in the Chrome profile "Mayurs MacBook Pro" / "Browser 2", account u/1 (rawte.mayur), developer SNX Studio. The listing name stays "fitdash: Health dashboard".
+
+Toolchain: JDK 17 is gone. Use `JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home` and `JAVA_TOOL_OPTIONS=-Djava.net.preferIPv4Stack=true` (Gradle downloads time out otherwise).
 
 ## 1 Nov: applied for production access
 
