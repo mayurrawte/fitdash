@@ -28,16 +28,16 @@ val LOOK = ThemeTokens(Color(0xFFF3EEF8), Color(0xFFF4F3EF), Color(0xFFF4F3EF),
     tints = listOf(Color(0xFFD7E9FB), Color(0xFFF4DCE6), Color(0xFFFCEBD8), Color(0xFFEFE6D2), Color(0xFFDDEEFF)),
     tintInk = listOf(Color(0xFF285A99), Color(0xFF7A3D5C), Color(0xFF7A4A24), Color(0xFF5E5236), Color(0xFF163B6B)))
 
-val DARK = ThemeTokens(Color(0xFF08070C), Color(0xFF0C0A12), Color(0xFF0C0A12),
-    Color(0xFFF2EEF8), Color(0xFFA79FB8), Color(0xFF7E7790), Color(0xFFB79CF0), Color(0xFF08070C),
+val DARK = ThemeTokens(Color(0xFF050505), Color(0xFF0A0A0A), Color(0xFF0A0A0A),
+    Color(0xFFEDEDED), Color(0xFFA1A1A1), Color(0xFF7A7A7A), Color(0xFFEDEDED), Color(0xFF0A0A0A),
     Color(0xFF8FD35A), Color(0xFFF2B544), Color(0xFFF07167),
-    Color(0xFF14121C), Color(0x1AFFFFFF), Color(0x14FFFFFF), Color(0x47B79CF0), Color(0xE614121C),
-    Color(0xD914121C), Color(0x14FFFFFF),
-    Color(0xFFE6DAFB), Color(0xFFA17DF0), Color(0xFF8A66E6), Color(0x993B2D5E), Color(0xFFF2EEF8),
+    Color(0xFF111111), Color(0x1AFFFFFF), Color(0x14FFFFFF), Color(0x33FFFFFF), Color(0xE6141414),
+    Color(0xD9111111), Color(0x14FFFFFF),
+    Color(0xFFD9D9D9), Color(0xFF8C8C8C), Color(0xFF555555), Color(0x66333333), Color(0xFFEDEDED),
     Color(0xFF7A5CFF), Color(0xFFB79CF0), Color(0xFF58C7FF), Color(0xFFFFB86B),
-    Color(0xFF5A4A1E), Color(0xFF3B2D5E), Color(0xFF8FD35A), Color(0xFFF2B544), Color(0xFFF07167),
-    tints = listOf(Color(0xFF1E3550), Color(0xFF271926), Color(0xFF271D1D), Color(0xFF221E1F), Color(0xFF162F4A)),
-    tintInk = listOf(Color(0xFFBFD8F5), Color(0xFFF2C7D9), Color(0xFFF5D2AE), Color(0xFFE3D7B8), Color(0xFFB9D5F2)))
+    Color(0xFF1F1B12), Color(0xFF1A1A1A), Color(0xFF8FD35A), Color(0xFFF2B544), Color(0xFFF07167),
+    tints = listOf(Color(0xFF141A24), Color(0xFF1C1517), Color(0xFF1C1814), Color(0xFF1A1914), Color(0xFF162F4A)),
+    tintInk = listOf(Color(0xFFB4C4D8), Color(0xFFB0B0B0), Color(0xFFB0B0B0), Color(0xFFB0B0B0), Color(0xFFB9D5F2)))
 
 fun resolveDark(choice: ThemeChoice, systemDark: Boolean) = when (choice) {
     ThemeChoice.SYSTEM -> systemDark
