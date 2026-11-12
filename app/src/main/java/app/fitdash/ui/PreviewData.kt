@@ -31,15 +31,18 @@ object PreviewData {
         val plan = listOf(
             StageType.LIGHT to 20, StageType.DEEP to 40, StageType.LIGHT to 30, StageType.REM to 25, StageType.AWAKE to 10,
             StageType.LIGHT to 45, StageType.DEEP to 40, StageType.REM to 35, StageType.LIGHT to 50, StageType.REM to 37,
+            StageType.LIGHT to 40, StageType.DEEP to 25, StageType.REM to 30, StageType.LIGHT to 33,
         )
         var t = start
         val stages = plan.map { (type, min) -> val e = t.plusSeconds(min * 60L); SleepStage(t, e, type).also { t = e } }
         return SleepSession(start, t, stages)
     }
 
-    private val snapshot by lazy {
+    private val snapshot by lazy { snapshot(today) }
+
+    fun snapshot(today: LocalDate): HealthSnapshot {
         val days = (0..13).map { today.minusDays(it.toLong()) }
-        HealthSnapshot(
+        return HealthSnapshot(
             sleep = days.map { stagedNight(at(it.minusDays(1), 23, 10)) },
             hrv = days.mapIndexed { i, d -> Sample(at(d, 5), if (i == 0) 48.0 else 40.0 + i % 5) },
             restingHr = days.mapIndexed { i, d -> Sample(at(d, 7), if (i == 0) 58.0 else 60.0 + i % 3) },
@@ -50,6 +53,7 @@ object PreviewData {
                 (1..27).map { DayActivity(today.minusDays(it.toLong()), if (it == 1) 5760 else 7000L + (it % 5) * 600, 4300.0 + it * 40, 1820.0 + it * 10) },
             workouts = listOf(Workout(at(today, 18), at(today, 18, 46), ExerciseType.RUNNING, distanceMeters = 5100.0, kcal = 312.0, avgHr = 148.0, maxHr = 171.0, app = "com.fitbit.FitbitMobile")) +
                 (1..3).map { w -> val d = today.minusDays(w * 7L); Workout(at(d, 18), at(d, 18, 50), ExerciseType.RUNNING, distanceMeters = 5400.0, kcal = 330.0, avgHr = 150.0, maxHr = 172.0, app = "com.fitbit.FitbitMobile") },
+            waterDaily = mapOf(today to 1.5),
             heightMeters = 1.75,
             weightKg = 72.4,
             heartRate = (0 until 24 * 12).map { i -> Sample(at(today, 0).plusSeconds(i * 300L), if (i < 108) 56.0 + (i % 7) else if (i in 216..225) 140.0 + (i % 9) * 3 else 72.0 + (i % 11)) }.filter { it.time.isBefore(at(today, 21, 30)) },

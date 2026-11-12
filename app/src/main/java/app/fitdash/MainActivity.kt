@@ -58,6 +58,7 @@ import app.fitdash.settings.SettingsStore
 import app.fitdash.settings.ThemeChoice
 import app.fitdash.ui.LoadingScreen
 import app.fitdash.ui.MessageScreen
+import app.fitdash.ui.DemoSource
 import app.fitdash.ui.IntroScreen
 import app.fitdash.ui.NameScreen
 import app.fitdash.ui.NoDataScreen
@@ -92,7 +93,8 @@ class MainActivity : ComponentActivity() {
         openPage.value = intent.pageExtra()
         super.onCreate(savedInstanceState)
         clearShareCache(applicationContext)
-        val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) }, store = SnapshotCache(applicationContext), onCacheSaved = { FitdashWidget().updateAll(applicationContext) }, journal = JournalStore.get(applicationContext)) } } }
+        demo = BuildConfig.DEBUG && intent.getBooleanExtra("demo", false)
+        val vm: TodayViewModel by viewModels { viewModelFactory { initializer { TodayViewModel(if (demo) DemoSource else HealthReader(applicationContext), settings = SettingsStore.get(applicationContext).flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) }, store = if (demo) null else SnapshotCache(applicationContext), onCacheSaved = { FitdashWidget().updateAll(applicationContext) }, journal = JournalStore.get(applicationContext)) } } }
         splash.setKeepOnScreenCondition { vm.state.value == TodayUiState.Loading && SystemClock.uptimeMillis() - splashStart < SPLASH_MAX_MILLIS }
         splash.setOnExitAnimationListener { provider ->
             val view = provider.view
@@ -133,13 +135,16 @@ private fun Intent?.pageExtra(): Int? = this?.getIntExtra(EXTRA_PAGE, -1)?.takeI
 private const val HEALTH_CONNECT_STORE =
     "market://details?id=com.google.android.apps.healthdata&url=healthconnect%3A%2F%2Fonboarding"
 
+// Debug builds started with `--ez demo true` show sample data, for store screenshots.
+private var demo = false
+
 @Composable
 private fun App(store: SettingsStore, openPage: MutableStateFlow<Int?>) {
     val context = LocalContext.current
     val vm: TodayViewModel = viewModel {
         TodayViewModel(
-            HealthReader(context.applicationContext), settings = store.flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) },
-            store = SnapshotCache(context.applicationContext), onCacheSaved = { FitdashWidget().updateAll(context.applicationContext) },
+            if (demo) DemoSource else HealthReader(context.applicationContext), settings = store.flow, onReadFailed = { Log.w("fitdash", "Health Connect read failed", it) },
+            store = if (demo) null else SnapshotCache(context.applicationContext), onCacheSaved = { FitdashWidget().updateAll(context.applicationContext) },
             journal = JournalStore.get(context.applicationContext),
         )
     }
