@@ -62,6 +62,7 @@ import app.fitdash.ui.basedOn
 import app.fitdash.ui.dataUpTo
 import app.fitdash.ui.formatDate
 import app.fitdash.ui.formatKm
+import app.fitdash.ui.formatLiters
 import app.fitdash.ui.formatNumber
 import app.fitdash.ui.metricName
 import app.fitdash.ui.formatSteps
@@ -199,7 +200,7 @@ fun TodayPage(
                 }
             }
         }
-        if (timeline != null) revealItem("timeline", 1) {
+        if (timeline != null && !prefs.focus) revealItem("timeline", 1) {
             DayTimeline(timeline, { onOpen(1) }, { onOpenWorkout(workouts[it]) }, if (prefs.showHeartRate) metricOpener(MetricRef.Kind(MetricKind.HEART_RATE)) else null)
         }
         revealItem("readout", 2) {
@@ -217,7 +218,7 @@ fun TodayPage(
                 }
             }
         }
-        if (review != null) revealItem("week", 3) { WeekReviewCard(review, onDismiss = onDismissWeekReview) }
+        if (review != null && !prefs.focus) revealItem("week", 3) { WeekReviewCard(review, onDismiss = onDismissWeekReview) }
         revealItem("hero", 4) {
             val s = data.sleep
             val onSteps = s == null && hasSteps
@@ -281,7 +282,7 @@ fun TodayPage(
                     }
                 }
             }
-            h?.hrv?.let { v ->
+            if (!prefs.focus) h?.hrv?.let { v ->
                 add { m ->
                     StatTile(
                         "HRV", v.roundToInt().toString(), "ms", rangeNote(v, h.hrvRange, Good.HIGHER), m,
@@ -293,7 +294,7 @@ fun TodayPage(
                     ) { h.hrvRange?.let { RangeBar("today-hrv", v, it, Good.HIGHER) } ?: EmptyTrack() }
                 }
             }
-            h?.restingHr?.let { v ->
+            if (!prefs.focus) h?.restingHr?.let { v ->
                 add { m ->
                     StatTile(
                         "Resting HR", v.roundToInt().toString(), "bpm", rangeNote(v, h.restingHrRange, Good.LOWER), m,
@@ -308,7 +309,14 @@ fun TodayPage(
             }
         }
         revealItem("tiles", 5) { TileGrid(tiles) }
-        if (hd != null || workouts.isNotEmpty()) revealItem("rows", 6) {
+        if (prefs.focus) revealItem("water", 6) {
+            StripCard({ onOpen(3) }, "Log water", tint = Tint.WATER) {
+                Icon(NavIcons.drop, null, Modifier.padding(end = Space.m).size(18.dp), tint = Palette.Muted)
+                Text("Water", Modifier.weight(1f), style = Type.body, color = Palette.Text)
+                Text("${formatLiters(data.waterLiters)} of ${formatLiters(data.waterGoal)} L", style = Type.body, color = Palette.Muted)
+            }
+        }
+        if (!prefs.focus && (hd != null || workouts.isNotEmpty())) revealItem("rows", 6) {
             var expanded by rememberSaveable(data.date) { mutableStateOf(false) }
             Column(Modifier.animateContentSize()) {
                 RowGroup {
@@ -333,7 +341,7 @@ fun TodayPage(
                 }
             }
         }
-        if (prefs.showSuggestions && data.suggestions.isNotEmpty()) {
+        if (!prefs.focus && prefs.showSuggestions && data.suggestions.isNotEmpty()) {
             val first = data.suggestions.first()
             revealItem("suggestion-0", 7) {
                 StripCard(null, null) {
@@ -345,7 +353,7 @@ fun TodayPage(
                 RowGroup { data.suggestions.drop(1).forEachIndexed { i, s -> ListRow(suggestionIcon(s.kind), suggestionText(s), null, divider = i > 0) } }
             }
         }
-        item(key = "pills") {
+        if (!prefs.focus) item(key = "pills") {
             Row(Modifier.padding(horizontal = Space.l).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Pill("SHARE DAY", Palette.Text, Palette.Divider, onShareDay, Modifier.weight(1f))
                 Pill("ASK AI", Palette.Accent, Palette.Accent.copy(alpha = 0.45f), onAskAi, Modifier.weight(1f), icon = NavIcons.sparkle)

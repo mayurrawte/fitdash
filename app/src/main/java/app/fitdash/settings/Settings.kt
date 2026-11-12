@@ -44,6 +44,9 @@ data class Settings(
     val weekReviewSeen: LocalDate? = null,
     // No watch or ring: the phone counts steps and sleep is typed in.
     val phoneOnly: Boolean = false,
+    // Focus shows only recovery, sleep, steps and water on Today; off is the full dashboard.
+    val focus: Boolean = false,
+    val introSeen: Boolean = false,
 )
 
 class SettingsStore(context: Context) {
@@ -81,6 +84,8 @@ class SettingsStore(context: Context) {
         morningAlert = prefs.getBoolean("morningAlert", false),
         weekReviewSeen = prefs.getLong("weekReviewSeen", 0L).takeIf { it > 0 }?.let { LocalDate.ofEpochDay(it) },
         phoneOnly = prefs.getBoolean("phoneOnly", false),
+        focus = prefs.getBoolean("focus", false),
+        introSeen = prefs.getBoolean("introSeen", false),
     )
 
     fun update(change: (Settings) -> Settings) {
@@ -98,7 +103,7 @@ class SettingsStore(context: Context) {
             .putString("theme", s.theme.name)
             .putInt("proteinGoalG", s.proteinGoalG).putInt("bedtimeMinutes", s.bedtimeTarget?.let { it.hour * 60 + it.minute } ?: -1)
             .putBoolean("morningAlert", s.morningAlert).putLong("weekReviewSeen", s.weekReviewSeen?.toEpochDay() ?: 0L)
-            .putBoolean("phoneOnly", s.phoneOnly).apply()
+            .putBoolean("phoneOnly", s.phoneOnly).putBoolean("focus", s.focus).putBoolean("introSeen", s.introSeen).apply()
         _flow.value = s
     }
 
