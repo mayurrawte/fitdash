@@ -214,7 +214,7 @@ fun TodayPage(
                         Text("Yesterday you tagged $list.", style = Type.small, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs))
                     }
                     (data.readiness as? ReadinessResult.Ready)?.let { ready -> basedOn(ready.parts.keys)?.let { Text(it, style = Type.small, color = Palette.Muted, modifier = Modifier.padding(top = Space.xs)) } }
-                    if (data.isToday) missingRecoveryLine(data.sources)?.let { Text(it, style = Type.secondary, color = Palette.Warn, modifier = Modifier.padding(top = Space.xs)) }
+                    if (data.isToday && !prefs.phoneOnly) missingRecoveryLine(data.sources)?.let { Text(it, style = Type.secondary, color = Palette.Warn, modifier = Modifier.padding(top = Space.xs)) }
                 }
             }
         }
@@ -238,7 +238,7 @@ fun TodayPage(
                             a != null && hasSteps -> NumberWithUnits(listOf(formatSteps(a.steps) to goalText), style = Type.tile.copy(fontSize = 46.sp))
                             else -> Text("No sleep recorded", style = Type.value, color = Palette.Text)
                         }
-                        val line = if (s != null) sleepStreak else if (hasSteps) stepsStreak else "Check your data sources"
+                        val line = if (s != null) sleepStreak else if (hasSteps) stepsStreak else if (prefs.phoneOnly) "Add it in the Log tab" else "Check your data sources"
                         if (line != null) Text(line, style = Type.small, color = Palette.Muted)
                     }
                     if (s != null) Hypnogram(
