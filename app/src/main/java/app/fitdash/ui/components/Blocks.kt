@@ -77,11 +77,12 @@ import app.fitdash.ui.theme.noteCase
 val CardShape: Shape = RoundedCornerShape(24.dp)
 
 @Composable
-fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card)
+fun Modifier.cardSurface(): Modifier = clip(CardShape).background(Palette.Card).border(1.dp, Palette.Divider, CardShape)
 
 @Composable
 fun Modifier.tileSurface(tinted: Boolean = false): Modifier =
     clip(CardShape).background(if (tinted) Brush.linearGradient(listOf(Palette.Card, lerp(Palette.Card, Color.Black, 0.06f))) else SolidColor(Palette.Card))
+        .border(1.dp, Palette.Divider, CardShape)
 
 // Every tappable surface: a soft press scale, a light tick when haptics are on, and an accessibility label.
 @Composable

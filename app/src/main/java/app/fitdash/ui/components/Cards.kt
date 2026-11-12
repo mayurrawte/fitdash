@@ -1,6 +1,7 @@
 package app.fitdash.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.fitdash.ui.theme.LocalTheme
@@ -31,6 +33,8 @@ import app.fitdash.ui.theme.TintScope
 @Composable
 fun HeroCard(onClick: (() -> Unit)?, description: String, modifier: Modifier = Modifier, tint: Tint? = null, content: @Composable BoxScope.() -> Unit) {
     val t = LocalTheme.current
+    // Dark mode keeps the hero calm: a faint violet wash on the card instead of a full gradient.
+    val calm = tint == null && t.bgBottom.luminance() < 0.5f
     Box(
         modifier
             .padding(horizontal = Space.l)
@@ -39,7 +43,12 @@ fun HeroCard(onClick: (() -> Unit)?, description: String, modifier: Modifier = M
             .tappable(onClick, description)
             .shadow(14.dp, CardShape, ambientColor = t.orb3.copy(alpha = 0.33f), spotColor = t.orb3.copy(alpha = 0.33f))
             .clip(CardShape)
-            .background(if (tint != null) SolidColor(t.tints[tint.ordinal]) else Brush.linearGradient(listOf(t.orb2, t.orb3)))
+            .background(
+                if (tint != null) SolidColor(t.tints[tint.ordinal])
+                else if (calm) Brush.linearGradient(listOf(t.orb3.copy(alpha = 0.28f), t.card))
+                else Brush.linearGradient(listOf(t.orb2, t.orb3)),
+            )
+            .border(1.dp, if (calm) t.chipStrong else t.hairline, CardShape)
             .padding(horizontal = Space.l, vertical = Space.m),
     ) {
         if (tint != null) TintScope(tint) { content() }
@@ -58,6 +67,7 @@ fun RowGroup(content: @Composable ColumnScope.() -> Unit) {
             .fillMaxWidth()
             .clip(CardShape)
             .background(Palette.Group)
+            .border(1.dp, Palette.Divider, CardShape)
             .padding(6.dp),
         content = content,
     )

@@ -61,6 +61,12 @@ val Nunito = FontFamily(
     Font(R.font.nunito_sans, FontWeight.Bold, variationSettings = FontVariation.Settings(FontVariation.weight(700))),
 )
 
+@OptIn(ExperimentalTextApi::class)
+val GeistMono = FontFamily(
+    Font(R.font.geist_mono, FontWeight.Light, variationSettings = FontVariation.Settings(FontVariation.weight(300))),
+    Font(R.font.geist_mono, FontWeight.Normal, variationSettings = FontVariation.Settings(FontVariation.weight(400))),
+)
+
 // Small labels are written in sentence case and lowercase.
 private val ACRONYMS = setOf("HRV", "HR", "BMI", "AI", "REM", "SPO2", "SPO₂", "AM", "PM", "L")
 
@@ -83,13 +89,13 @@ object Type {
     private val displayWeight = FontWeight.Light
 
     val hero: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Nunito, fontSize = 68.sp, fontWeight = displayWeight, letterSpacing = (-0.03).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = GeistMono, fontSize = 64.sp, fontWeight = displayWeight, letterSpacing = (-0.06).em)
     val title: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = Nunito, fontSize = 30.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
     val value: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = Nunito, fontSize = 26.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
     val tile: TextStyle @Composable @ReadOnlyComposable get() =
-        TextStyle(fontFamily = Nunito, fontSize = 24.sp, fontWeight = displayWeight, letterSpacing = (-0.02).em, fontFeatureSettings = "tnum")
+        TextStyle(fontFamily = GeistMono, fontSize = 24.sp, fontWeight = displayWeight, letterSpacing = (-0.05).em)
     val body: TextStyle @Composable @ReadOnlyComposable get() =
         TextStyle(fontFamily = Nunito, fontSize = 14.sp, fontWeight = FontWeight.Normal, lineHeight = 21.sp)
     val small: TextStyle @Composable @ReadOnlyComposable get() =
