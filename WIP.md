@@ -2,6 +2,14 @@
 
 Last updated: 2026-11-11. Released: **v0.9.0** (tag `v0.9.0`, code 10), live on Google Play production since about 6 Nov and on GitHub. Site: https://mayurrawte.is-a.dev/fitdash/
 
+## 12 Nov: v0.10.0 prepared on `main`, not tagged
+
+`main` now also has the darker dark mode (near-black, hairline cards, Geist Mono numbers), the first-load fix (156 s to 95 s on the Pixel 9a debug build; what is left is Health Connect handing over 30 days of heart rate), Focus mode on Today with a switch in Settings, and first-run slides ending on the Focus or Advanced choice. Version is 0.10.0 (code 11) with `changelogs/11.txt`. Not tagged: tagging starts the release build.
+
+Checked on the Pixel 9a: the slides, the choice, Focus Today, the darker look, the second-night guard. Not checked: phone steps with no watch data, the no-data screen, light mode with the new card borders.
+
+Known: a save killed part-way leaves a `snapshot*.tmp` in the app's files that is never cleaned up. The Recovery tile's HRV chip can say "below usual" while the HRV tile says "in your normal range". In phone-only mode the Today Sleep card still says "Check your data sources". Next for speed: show recent days first and load the rest behind.
+
 ## 11 Nov: phone-only on `main`, not released
 
 `main` (06b5a52, pushed 9 Nov) has phone-only mode: "Use my phone instead" on the no-data screen, phone step counter saved to Health Connect, sleep typed in on the Log tab, and copy that points to the Log tab. Also the no-data screen scrolls and the Log tab refuses a night that is already in Health Connect. The `phone-only` branch is merged and can be deleted.

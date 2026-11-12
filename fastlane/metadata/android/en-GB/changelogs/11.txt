@@ -1,0 +1,5 @@
+Works without a watch: your phone counts steps, and you can type in last night's sleep on the Log tab.
+Focus mode: Today with only recovery, sleep, steps and water. Switch it in Settings.
+A short tour when you first open the app.
+A darker dark mode with calmer cards.
+A faster first load.
