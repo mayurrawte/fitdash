@@ -1,6 +1,14 @@
 # WIP — handoff
 
-Last updated: 2026-11-11. Released: **v0.9.0** (tag `v0.9.0`, code 10), live on Google Play production since about 6 Nov and on GitHub. Site: https://mayurrawte.is-a.dev/fitdash/
+Last updated: 2026-11-12. Released: **v0.10.0** (tag `v0.10.0`, code 11) on GitHub and Play internal testing; Play production is still v0.9.0 (code 10). Site: https://mayurrawte.is-a.dev/fitdash/
+
+## 12 Nov, later: v0.10.0 released
+
+Tagged `v0.10.0` (code 11); CI built it and the GitHub release is public, so the site's APK link serves 0.10.0. Dark mode is now neutral (white accent, greys; purple only in sleep stages and the water bottle). Play: code 11 is live on internal testing. Saved but NOT yet submitted in Publishing overview: the Closed testing - Alpha release of code 11 and the Health apps declaration (ACTIVITY_RECOGNITION justified; Steps and Sleep answers mention phone-only writes). Mayur has to press "Submit 2 changes for review" himself. Production stays on 0.9.0 until phone step counting is seen working on a real phone.
+
+Checked on a read-only emulator (API 35, no data): name, slides, Focus choice, Health Connect permissions, the no-data screen, "Use my phone instead", saving and removing a night, the second-night guard, water. Not checked anywhere: phone step counting.
+
+Still to do: Play screenshots from sample data (needs a debug-only demo data source; `ui/PreviewData.kt` has sample days), the website restyle, trader status by 1 Feb 2027.
 
 ## 12 Nov: v0.10.0 prepared on `main`, not tagged
 
